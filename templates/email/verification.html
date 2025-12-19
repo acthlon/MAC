@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+</head>
+<body>
+    { %if user == user and verify_email==verification_url% }
+        <p>Hi {{ user.username }},</p>
+        <p>Thank you for registering with us! Please click the link below to verify your email address and activate your account:</p>
+        <p><a href="{{ verify_email }}">Activate your account</a></p>
+        <p>If you did not sign up for this account, you can ignore this email.</p>
+    {% endif %}    
+</body>
+</html>
