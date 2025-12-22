@@ -14,6 +14,7 @@ from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from .serializers import CustomUserSerializer
 from django.urls import reverse
+from rest_framework_simplejwt.exceptions import TokenError 
 
 
 
@@ -151,3 +152,26 @@ class LoginView(APIView):
         except Exception as e:    
             return Response({'message':str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+
+class LogoutView(APIView):
+    
+    def post(self,request):
+
+        try:
+
+            refresh_token = request.data.get('refresh_token')
+
+            if refresh_token:
+
+                token = RefreshToken(refresh_token)
+
+                token.blacklist()
+
+                return Response({'message':'Logout successful'},status=status.HTTP_200_OK)
+            
+            else:
+                return Response({'message':'rfresh token not provided'})
+
+        except TokenError:
+            return Response({'messsage':'invalid token'}, status=status.HTTP_400_BAD_REQUEST)    
+        
