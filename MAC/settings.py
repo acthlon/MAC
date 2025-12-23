@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 from decouple import config
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -50,7 +51,7 @@ LOCAL_APPS = [
 THIRD_PARTY_APPS = [
     "phonenumber_field",
     "rest_framework",
-
+    "django_filter"
     # thirdparty authentication(e.g google, facebook)
     "django.contrib.sites",
     "allauth",
@@ -138,10 +139,24 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
 STATIC_URL = "static/"
 
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR,'media')
+
+
 AUTH_USER_MODEL = 'accounts.CustomUser'
-# DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+
+
+
+
+
 
 
 REST_FRAMEWORK = {
