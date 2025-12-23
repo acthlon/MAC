@@ -22,7 +22,7 @@ from django.conf import settings
 from rest_framework_simplejwt.views import TokenObtainPairView,TokenRefreshView
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path('materials', include('materials.urls')),
+    path('materials/', include('materials.urls')),
     path("api/",include("accounts.urls")),
     path('accounts/',include("allauth.urls")),
     path('api/token',TokenObtainPairView.as_view()),

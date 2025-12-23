@@ -46,12 +46,13 @@ INSTALLED_APPS = [
 
 LOCAL_APPS = [
     "accounts",
+    'materials',
 ]
 
 THIRD_PARTY_APPS = [
     "phonenumber_field",
     "rest_framework",
-    "django_filter"
+    "django_filters",
     # thirdparty authentication(e.g google, facebook)
     "django.contrib.sites",
     "allauth",

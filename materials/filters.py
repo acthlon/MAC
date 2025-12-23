@@ -1,6 +1,6 @@
 import django_filters
 from materials.models import Materials
-from materials.models import CATEGORIES
+from materials.models import CATEGORY_CHOICES
 
 
 
@@ -12,7 +12,7 @@ class MaterialsFilter(django_filters.FilterSet):
     min_price = django_filters.NumberFilter(field_name='price',lookup_expr='gte', empty_lable='All Prices')
     max_price = django_filters.NumberFilter(field_name='price',lookup_expr='lte',empty_lable='All Prices')
 
-    quality = django_filters.ChoiceFilter(chices=CATEGORIES,empty_label = 'All Qualities')
+    quality = django_filters.ChoiceFilter(choices=CATEGORY_CHOICES,empty_label = 'All Qualities')
 
     class Meta:
         model = Materials
