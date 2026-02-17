@@ -29,7 +29,7 @@ SECRET_KEY = config("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["127.0.0.1","localhost"]
 
 
 # Application definition
@@ -46,7 +46,14 @@ INSTALLED_APPS = [
 
 LOCAL_APPS = [
     "accounts",
-    'materials',
+    "materials",
+    "styles",
+    "review",
+    "cart",
+    "measurements",
+    "core",
+    "products",
+    "order"
 ]
 
 THIRD_PARTY_APPS = [
@@ -80,7 +87,7 @@ ROOT_URLCONF = "MAC.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR/'templates'],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -162,12 +169,16 @@ AUTH_USER_MODEL = 'accounts.CustomUser'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES':[
-        'rest_framework_simplejwt.authentication.JWTAuthentication'
+        'rest_framework.authentication.SessionAuthentication',        
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+
     ],
 
     'DEFAULT_PERMISSION_CLASSES':[
-        'rest_framework.permissions.IsAuthenticated'
-    ]
+        'rest_framework.permissions.AllowAny'
+    ],
+    'DEFAULT_PAGINATION_CLASS':'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 12,
 }
 
 
@@ -175,7 +186,7 @@ REST_FRAMEWORK = {
 from datetime import timedelta
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=7),
     'REFRESH_TOKEN_LIFETIME' : timedelta(days=7),
     'BLACKLIST_AFTER_ROTATION': True, # Enable token blacklisting 
 }
@@ -184,13 +195,9 @@ SIMPLE_JWT = {
 # e-mail configuration settings
 
 EMAIL_BACKEND = config('EMAIL_BACKEND')
-EMAIL_HOST = config('EMAIL_BACKEND')
-EMAIL_PORT = config('EMAIL_PORT')
-EMAIL_USE_TLS = config('EMAIL_USE_TLS')
-EMAIL_HOST_USER = config('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
+SENDGRID_API_KEY = config('SENDGRID_API_KEY')
+SENDGRID_SANDBOX_MODE_IN_DEBUG = config('SENDGRID_SANDBOX_MODE_IN_DEBUG')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL')
-
 
 
 # OAuth2 settings for Google and Facebook
@@ -204,14 +211,15 @@ SOCIAL_AUTH_FACEBOOK_SECRET = config('SOCIAL_AUTH_FACEBOOK_SECRET')
 
 
 AUTHENTICATION_BACKENDS = (
+    'accounts.authentication.backends.EmailClassBackend', # custom backend for regular Django authentication
     'django.contrib.auth.backends.ModelBackend',  # Default backend for regular Django authentication
     'allauth.account.auth_backends.AuthenticationBackend',  # Allauth backend for social logins
 )
 
 
-SITE_ID = 1  # Django Allauth requires a Site object, and this is the default site ID.
+SITE_ID = 7  # Django Allauth requires a Site object, and this is the default site ID.
 
-
+# SITE_URL = "localhost:8000"
 
 LOGIN_REDIRECT_URL = '/'  # Redirect to homepage after login
 LOGOUT_REDIRECT_URL = '/'  # Redirect to homepage after logout

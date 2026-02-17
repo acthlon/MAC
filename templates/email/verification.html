@@ -6,10 +6,10 @@
 
 </head>
 <body>
-    { %if user == user and verify_email==verification_url% }
+    {% if user  and  verification_url %}
         <p>Hi {{ user.username }},</p>
         <p>Thank you for registering with us! Please click the link below to verify your email address and activate your account:</p>
-        <p><a href="{{ verify_email }}">Activate your account</a></p>
+        <p><a href="{{ verification_url }}">Activate your account</a></p>
         <p>If you did not sign up for this account, you can ignore this email.</p>
     {% endif %}    
 </body>
