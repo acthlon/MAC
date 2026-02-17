@@ -20,15 +20,17 @@ from django.urls import path,include
 from django.conf.urls.static import static
 from django.conf import settings
 from rest_framework_simplejwt.views import TokenObtainPairView,TokenRefreshView
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     path('materials/', include('materials.urls')),
+    path('products/',include('products.urls')),
     path("api/",include("accounts.urls")),
     path('accounts/',include("allauth.urls")),
-    path('api/token',TokenObtainPairView.as_view()),
-    path('api/token/refresh',TokenRefreshView.as_view())
+    path('review/',include('review.urls')), 
+    path('cart/',include('cart.urls')),
+    path('order/',include('order.urls')),
+    path('checkout', include('order.urls'))
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root= settings.MEDIA_ROOT)
-
-
