@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 from decouple import config
-import os
+import os,sys
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -53,12 +53,12 @@ LOCAL_APPS = [
     "measurements",
     "core",
     "products",
-    "order"
+    "order",
 ]
 
 THIRD_PARTY_APPS = [
-    "phonenumber_field",
     "rest_framework",
+    "phonenumber_field",
     "django_filters",
     # thirdparty authentication(e.g google, facebook)
     "django.contrib.sites",
@@ -70,6 +70,8 @@ THIRD_PARTY_APPS = [
 ]
 
 INSTALLED_APPS += LOCAL_APPS + THIRD_PARTY_APPS
+
+
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -186,7 +188,7 @@ REST_FRAMEWORK = {
 from datetime import timedelta
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=7),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=30),
     'REFRESH_TOKEN_LIFETIME' : timedelta(days=7),
     'BLACKLIST_AFTER_ROTATION': True, # Enable token blacklisting 
 }

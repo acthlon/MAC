@@ -34,10 +34,9 @@ class CatalogBaseModel(TimeStampModel):
     name = models.CharField(max_length=255)
     description = models.TextField(max_length = 500)
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    discount = models.DecimalField(max_digits=10, decimal_places=2,null=True,blank=True)
+    discount = models.DecimalField(max_digits=10, decimal_places=2,default=0.00)
     image = models.ImageField(upload_to=image_path,null=True,blank=True)
     slug = models.SlugField(unique=True, blank=True)
-    discount = models.DecimalField(max_digits=10, decimal_places=2,null=True, blank=True)
 
 
     class Meta:
