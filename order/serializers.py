@@ -6,7 +6,10 @@ class AddressSerializer(serializers.ModelSerializer):
 
     def create(self,validated_data):
 
-        address = Address.objects.create(**validated_data)
+        request = self.context.get('request')
+        user = request.user
+        
+        address = Address.objects.create(**validated_data,user=user)
         address.save()
         return address
     
@@ -15,14 +18,14 @@ class AddressSerializer(serializers.ModelSerializer):
         for fields,value in validated_data.items():
             if hasattr(instance,fields):
                 setattr(instance,fields,value)
-                instance.save()
+        instance.save()
         return instance        
 
 
     class Meta:
         model = Address
         fields = [
-            'first_name','last_name','phone_number','delivery_address','city','state','country','address_type','is_default','additional_info','created_at','updated_at'
+            'id','first_name','last_name','phone_number','delivery_address','city','state','country','address_type','is_default','additional_info','created_at','updated_at'
         ]
         read_only_fields = ['created_at', 'updated_at']
 
@@ -31,8 +34,8 @@ class OrderItemSerialzer(serializers.ModelSerializer):
 
     item_image = serializers.SerializerMethodField()
     item_type = serializers.CharField(source='content_type.model')
-    item_name = serializers.CharField(source='content_type.name')
-    item_slug = serializers.CharField(source='content_type.slug')
+    item_name = serializers.CharField(source='content_object.name')
+    item_slug = serializers.CharField(source='content_object.slug')
 
     def get_item_image(self,obj):
 
@@ -47,7 +50,7 @@ class OrderItemSerialzer(serializers.ModelSerializer):
     
     class Meta:
         model = OrderItem
-        field = ['id','item_image','item_type','item_name','item_slug','quantity','unit_price','sub_total','discount_amount']
+        fields = ['id','item_image','item_type','item_name','item_slug','quantity','unit_price','sub_total','discount_amount']
 
 
 
@@ -61,18 +64,32 @@ class OrderDetailSerializer(serializers.ModelSerializer):
 
     orderitems = OrderItemSerialzer(many=True, read_only=True)
     shipping_address = serializers.SerializerMethodField(read_only=True)
+    delivery_method = serializers.SerializerMethodField(read_only=True)
+    payment_method = serializers.CharField(source='payment_method.display_name')
 
+    # def to_representation(self,instance):
+        
+    #     representation = super().to_representation(instance)
+        
+    #     representation[]
+    
+    def get_delivery_method(self,obj):
+        delivery_method = obj.delivery_method
+        serializer = DeliveryMethodSerializer(delivery_method)
+        return serializer.data
+
+
+    def get_shipping_address(self,obj):
+        
+        shipping_address = obj.shipping_address
+        serializer = AddressSerializer(shipping_address)
+        return serializer.data   
+     
     class Meta:
 
         model = Order
-        fields = ['id','shipping_address','total_amount','total_items','delivery_fee','status','created_at','updated_at','delivery_status' 'payment_method', 'payment_reference']
+        fields = ['id','total_amount','total_items','status','created_at','updated_at','delivery_status','payment_method', 'payment_reference','shipping_address','delivery_method','orderitems']
 
-        def get_shipping_address(self,obj):
-            request = self.context['request']
-
-            shipping_address = obj.shipping_address
-            serializer = AddressSerializer(shipping_address,  many=True, context={'request' : request})
-            return serializer.data
 
 
 
@@ -106,16 +123,19 @@ class DeliveryMethodSerializer(serializers.ModelSerializer):
         return representation
     
     class Meta:
-        models = DeliveryMethod
-        fields = ['id','user','name','description','cost','delivery_time']
+        model = DeliveryMethod
+        fields = ['id','name','description','cost','delivery_time']
 
 
-class CreateOrderFromCartSerializer(serializers.ModelSerializer):
+class CreateOrderFromCartSerializer(serializers.Serializer):
 
-    shipping_address_id = serializers.UUIDField(required = True)
-    billing_address_id = serializers.UUIDField(required=False,allow_null=True)
+
+    shipping_address_id = serializers.CharField(required = True)
+    billing_address_id = serializers.CharField(required=False,allow_null=True)
     use_shipping_as_billing = serializers.BooleanField(default=True,required=False)
-    payment_method = serializers.ChoiceField(choices = PAYMENT_METHOD_CHOICES, required=True)
+    payment_method = serializers.CharField(required=True)
+    delivery_method = serializers.CharField(required=True)
+
 
     def validate_shipping_address_id(self,value):
         
@@ -128,20 +148,30 @@ class CreateOrderFromCartSerializer(serializers.ModelSerializer):
         user = self.context['request']
         address = get_object_or_404(Address, user=user, id=value)
         return address
+    
+    def validate_payment_method(self,value):
+        payment = get_object_or_404(PaymentMethod,id=value)
+        return payment
 
+    def validate_delivery_method(self,value):
+        
+        delivery_method = get_object_or_404(DeliveryMethod,id=value)
+        return delivery_method
+    
     def validate(self,data):
 
-        shipping_as_billing = data.get('use_billing_as_shipping')
+        shipping_as_billing = data.get('use_shipping_as_billing')
         shipping_address_id = data.get('shipping_address_id')
         billing_address_id = data.get('billing_address_id')
 
         if shipping_as_billing:
             data['billing_address_id'] = shipping_address_id
-        else:
-            if not billing_address_id:
-                raise serializers.ValidationError('Billing address required when not using shipping address')   
 
-            data['billing_address_id'] = billing_address_id
+        elif not billing_address_id:
+
+            raise serializers.ValidationError('Billing address required when not using shipping address')   
+
+        data['billing_address_id'] = billing_address_id
 
         return data    
             

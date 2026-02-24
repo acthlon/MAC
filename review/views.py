@@ -20,7 +20,7 @@ class ReviewListView(generics.ListAPIView):
     perginator_class = ReviewPagination
     serializer_class = ReviewSerializer
 
-    # without generics apiview you will use this get unction belowi
+    # without generics apiview you will use this get function belowi
     # def get(self,request):
     #     try:
     #         reviews = Reviews.objects.select_related('profile').filter(verified_purchase=True ).order_by('?')[:6]

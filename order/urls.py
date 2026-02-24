@@ -3,11 +3,11 @@ from order.views import CheckoutPreviewAPIView,AddressView,OrderListView,OrderDe
 
 urlpatterns = [
     path('preview/',CheckoutPreviewAPIView.as_view(), name='cart-preview'),
-    path('address/create', AddressView.as_view(), name = 'address-create'),
-    path('address/update/<str:pk>/', AddressView.as_view(),name='address-update'),
-    path('place-order/', CreateOrderFromCartView.as_view(), name='place-order'),
+    path('address/create/', AddressView.as_view(), name = 'address-create'),
+    path('address/<uuid:pk>/update/', AddressView.as_view(),name='address-update'),
+    path('place_order/', CreateOrderFromCartView.as_view(), name='place-order'),
     path('lists/',OrderListView.as_view(),name='order-list'),
     path('<uuid:pk>/',OrderDetailsView.as_view(),name='order-details'),
     path('<uuid:pk>/initialize_payment/',InitializePaymentAPIView.as_view(),name='initialize-payment'
-),path('payment_callback',PaymentCallbackAPIView.as_view(),name='payment-callback')
+),path('payment_callback/',PaymentCallbackAPIView.as_view(),name='payment-callback')
 ]

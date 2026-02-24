@@ -10,8 +10,17 @@ class CartAdmin(admin.ModelAdmin):
 
 
 class CartItemAdmin(admin.ModelAdmin):
-    list_display = ('content_type','quantity','unit_price','sub_total','discount_amount')
+    list_display = ('item_name','content_type','quantity','unit_price','sub_total','discount_amount')
 
+    
+    def item_name(self,obj):
+        name = obj.content_object.name
+        return name
+    
+    item_name.short_description = 'Item Name'    
+    
+    
+    
     def formfield_for_foreignkey(self,db_field,request,**kwargs):
          
         if db_field.name == 'content_type':

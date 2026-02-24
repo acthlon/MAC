@@ -10,7 +10,7 @@ from django.db import models
 from rest_framework.response import Response
 from core.permissions import IsOwnerOrReadOnly,IsAdminOrIsOwner
 from rest_framework.permissions import IsAuthenticated
-
+from django.db.models import Prefetch,Sum
 
 
 class AddressView(APIView):
@@ -19,7 +19,7 @@ class AddressView(APIView):
 
     def post(self,request):
         try:
-            serializer = AddressSerializer(data=request.data)
+            serializer = AddressSerializer(data=request.data,context={'request':request})
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data)
@@ -29,18 +29,19 @@ class AddressView(APIView):
         except Exception as e:
             return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)    
         
-    def put(self,request):    
+    def put(self,request,pk):    
 
         user = request.user
-        try:
-            address = Address.objects.get(user=user,status='active')
-        except Exception as e:
-            return Response({'message' : str(e)})    
+
+        address = get_object_or_404(Address,user=user,id=pk)
         
         serializer = AddressSerializer(address,data=request.data, partial=True)
 
         if serializer.is_valid():
+            serializer.save()
             return Response(serializer.data,status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 
@@ -56,10 +57,9 @@ class OrderListView(APIView):
         except Exception as e:
             return Response({'message':str(e)},status=status.HTTP_400_BAD_REQUEST)
         
-        serializer = OrderListSerializer(order, context = {'request':request},many=True)
-
-        if serializer.is_valid():
-            return Response(serializer.data)        
+        serializer = OrderListSerializer(order,many=True)
+        
+        return Response(serializer.data)        
 
 
 class OrderDetailsView(APIView):
@@ -71,10 +71,9 @@ class OrderDetailsView(APIView):
         user=request.user
         order = get_object_or_404(Order, id=pk, user=user)
 
-        serializer = OrderDetailSerializer(order, many=True, context = {'request':request})
-
-        if serializer.is_valid():
-            return Response(serializer.data)
+        serializer = OrderDetailSerializer(order)
+        
+        return Response(serializer.data)
         
 
 
@@ -85,7 +84,7 @@ class CheckoutPreviewAPIView(APIView):
     def get(self,request):
         
         user = request.user
-        cart = Cart.objects.filter(user=user, status='active').prefetch_related('items', queryset=CartItem.objects.select_related('content_type'))
+        cart = Cart.objects.filter(user=user, status=True).prefetch_related(Prefetch('items', queryset=CartItem.objects.select_related('content_type'))).first()
         addresses = Address.objects.filter(user=user)
         payment_methods = PaymentMethod.objects.filter(is_active=True).order_by('display_order')
         delivery_method = DeliveryMethod.objects.filter(is_active=True).order_by('display_order')
@@ -93,20 +92,19 @@ class CheckoutPreviewAPIView(APIView):
         order_summary = []
 
         if cart:
-            total_amount = cart.items.aggregrate(total=models.Sum('sub_total'))['total__amounts'] or Decimal('0.00')
+            sub_total = cart.items.aggregate(total=Sum('sub_total'))['total'] or Decimal('0.00')
 
-            total_item = cart.items.aggregrate(total=models.Sum('quantity'))['total__items'] or  0
+            total_item = cart.items.aggregate(total=Sum('quantity'))['total'] or  0
 
-            delivery_fee = cart.items.delivery_fee
-            total = total_amount + delivery_fee 
+            total = sub_total
 
-            order_summary.append({
+            order_summary.append({ 
 
-                'total_amount': total_amount,
+                'sub_total': sub_total,
                 'total_item' : total_item,
-                'delivery_fee' : delivery_fee,
-                'total' : total
-
+                'delivery_fee' : None,
+                'total' : total,
+                'delivery_fee_note': 'Delivery fee will be added after you select an option'    
             })
 
         data = {
@@ -137,14 +135,16 @@ class CreateOrderFromCartView(APIView):
             
             user=user,
             shipping_address = serializer.validated_data['shipping_address_id'],
-            billing_address = serializer.validated_data['billing_address_id'],
-            status = 'pending',
+            # billing_address = serializer.validated_data['billing_address_id'],
+            delivery_method = serializer.validated_data['delivery_method'],
+            status = 'CREATED',
             payment_method = serializer.validated_data['payment_method'],
-            payment_status = 'pending',
-            delivery_status = 'pending'
+            payment_status = 'PENDING',
+            delivery_status = 'PENDING',
+            is_active = True
         )
 
-        cart = get_object_or_404(Cart,user=user,status='active')
+        cart = get_object_or_404(Cart,user=user,status=True)
 
         if not cart.items.exists():
             return Response({'message':'Your Cart is empty'})
@@ -153,12 +153,12 @@ class CreateOrderFromCartView(APIView):
 
             item = cart_item.content_object
 
-            if cart_item.quantity > item.quantity:
+            if cart_item.quantity > item.stock:
                 return Response({'message':f'Not enough stock for {item.name} \n available: {item.stock}'})
 
             unit_price = item.price    
             discount_amount = item.discount
-            subtotal = unit_price - discount_amount
+
 
             OrderItem.objects.create(
 
@@ -169,14 +169,20 @@ class CreateOrderFromCartView(APIView):
                 quantity = cart_item.quantity,
                 unit_price = unit_price,
                 discount_amount = discount_amount,
-                subtotal = subtotal
+
             )
-            item.stock -= cart_item.quantity
-            item.save()
-        order.status = 'created'    
+            
+            # this should be calculated after the payment status has been confirmed
+             
+            # item.stock -= cart_item.quantity
+            # item.save()
+
         order.save()
-        cart.status = 'ordered'
+        cart.status = True
         cart.save()
+        return Response('order created successfully')
+
+
 
 class InitializePaymentAPIView(APIView):
 
