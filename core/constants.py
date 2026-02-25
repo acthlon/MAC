@@ -17,3 +17,11 @@ RATING_CHOICES = [
     (FAIR,'Fair'),
     (POOR,'Poor'),
 ]
+
+
+
+PAYMENT_STATUS_CHOICES = [
+    ('PENDING','Pending'),
+    ('SUCCESSFUL','Successful'),
+    ('FAILED','Failed')
+]

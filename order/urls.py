@@ -8,6 +8,4 @@ urlpatterns = [
     path('place_order/', CreateOrderFromCartView.as_view(), name='place-order'),
     path('lists/',OrderListView.as_view(),name='order-list'),
     path('<uuid:pk>/',OrderDetailsView.as_view(),name='order-details'),
-    path('<uuid:pk>/initialize_payment/',InitializePaymentAPIView.as_view(),name='initialize-payment'
-),path('payment_callback/',PaymentCallbackAPIView.as_view(),name='payment-callback')
 ]

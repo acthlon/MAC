@@ -7,10 +7,11 @@ import uuid
 from accounts.models import CustomUser
 from phonenumber_field.modelfields import PhoneNumberField 
 from decimal import Decimal
-
+from core.constants import PAYMENT_STATUS_CHOICES
 
 ORDER_STATUS_CHOICES =[
     ('CREATED','Created'),
+    ('CONFIRMED','Confirmed'),
     ('SHIPPED','Shipped'),
     ('COMPLETED','Completed'),
     ('CANCELED','Canceled'),
@@ -21,11 +22,6 @@ ORDER_STATUS_CHOICES =[
 PAYMENT_METHOD_CHOICES = [
     ('PAYSTACK','Paystack'),
     ('CASH_ON_DELIVERY','Cash on Delivery'),
-]
-
-PAYMENT_STATUS_CHOICES = [
-    ('PENDING','Pending'),
-    ('PAID','Paid'),
 ]
 
 DELIVERY_STATUS_CHOICES =[
@@ -140,7 +136,7 @@ class DeliveryMethod(models.Model):
 class PaymentMethod(models.Model):
 
     id = models.UUIDField(unique=True,default=uuid.uuid4, editable=False,primary_key=True)
-    code = models.CharField(max_length=50,unique=True,)
+    code = models.CharField(max_length=50,unique=True,choices=PAYMENT_METHOD_CHOICES)
      
     display_name = models.CharField(max_length=100,help_text="Pay with Bank Cards - Paystack)",choices=PAYMENT_METHOD_CHOICES)
     description = models.TextField(blank=True,help_text="Short description under the name")
