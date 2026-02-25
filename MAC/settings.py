@@ -54,6 +54,7 @@ LOCAL_APPS = [
     "core",
     "products",
     "order",
+    'payments'
 ]
 
 THIRD_PARTY_APPS = [
@@ -171,7 +172,8 @@ AUTH_USER_MODEL = 'accounts.CustomUser'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES':[
-        'rest_framework.authentication.SessionAuthentication',        
+        'rest_framework.authentication.BasicAuthentication', 
+        'rest_framework.authentication.SessionAuthentication',          
         'rest_framework_simplejwt.authentication.JWTAuthentication',
 
     ],
@@ -225,3 +227,10 @@ SITE_ID = 7  # Django Allauth requires a Site object, and this is the default si
 
 LOGIN_REDIRECT_URL = '/'  # Redirect to homepage after login
 LOGOUT_REDIRECT_URL = '/'  # Redirect to homepage after logout
+
+
+
+# payment settings
+
+PAYSTACK_SECRET_KEY = config('PAYSTACK_SECRET_KEY')
+PAYSTACK_PUBLIC_KEY = config('PAYSTACK_PUBLIC_KEY')
