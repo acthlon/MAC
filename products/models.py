@@ -25,7 +25,7 @@ class Products(CatalogBaseModel):
     def save(self,*args,**kwargs):
 
         if self.stock <= 0:
-            self.stock = 0 
+            self.is_active = False 
         if not self.slug:
             self.slug = slugify(self.name)
         elif self.slug:

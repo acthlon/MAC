@@ -200,29 +200,35 @@ class Order(models.Model):
         (ExpressionWrapper(F('quantity') * F('unit_price') - F('discount_amount'), output_field=DecimalField(max_digits=12, decimal_places=2)))
                         )['total_amount'] or Decimal('0.00')
 
+
+        # total_amount_sum = self.orderitems.aggregate(
+        # total_amount=Sum
+        # (ExpressionWrapper(F('sub_total'), output_field=DecimalField(max_digits=12, decimal_places=2)))
+        #                 )['total_amount'] or Decimal('0.00')        
+
         delivery_fee = self.delivery_method.cost if self.delivery_method else Decimal('0.00')
 
         total_amount = total_amount_sum + delivery_fee
         return total_amount
     
-    @property
-    def get_payment_reference(self):
+    # @property
+    # def get_payment_reference(self):
         
-        ref = self.payment_method.display_name
-        return ref
+    #     ref = self.payment_method.display_name
+    #     return ref
 
     def save(self,*args,**kwargs):
         if self.pk:
             self.total_amount = self.calculate_total_amount
             self.total_items = self.calculate_total_items
 
-        if self.status == 'COMPLETED':
+        if self.status == 'CONFIRMED':
             self.is_active = False    
         elif not self.status == 'COMPLETED':
             self.is_active = True
         
-        if self.payment_method:
-            self.payment_reference = self.get_payment_reference 
+        # if self.payment_method:
+        #     self.payment_reference = self.get_payment_reference 
 
         super().save(*args,**kwargs)
 
@@ -275,3 +281,9 @@ class OrderItem(models.Model):
 
 # for the case of a model that is global (e.g DeliveryMethod, PaymentMethod), they don't need a user attribute, unlike a model whose object will be peculiar to each user (e.g Order, Address)  
 
+
+
+
+# total = order.orderitems.aggregate(total=Sum(ExpressionWrapper(F('quantity') * F('unit_price') - F('discount_amount'),output_field=DecimalField())))['total']
+# print("Calculated total:", total)
+# print("Stored total:", order.total_amount)
