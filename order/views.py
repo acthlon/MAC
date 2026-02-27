@@ -169,7 +169,6 @@ class CreateOrderFromCartView(APIView):
                 quantity = cart_item.quantity,
                 unit_price = unit_price,
                 discount_amount = discount_amount,
-
             )
             
             # this should be calculated after the payment status has been confirmed
@@ -181,16 +180,3 @@ class CreateOrderFromCartView(APIView):
         cart.status = True
         cart.save()
         return Response('order created successfully')
-
-
-
-class InitializePaymentAPIView(APIView):
-
-    # def post(self,request,pk):
-    pass
-
-
-class PaymentCallbackAPIView(APIView):
-
-    # def get(self,request):
-    pass

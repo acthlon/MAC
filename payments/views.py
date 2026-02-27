@@ -11,8 +11,13 @@ from django.conf import settings
 from payments.models import Payment
 from django.urls import reverse
 from django.contrib.sites.shortcuts import get_current_site
-
-
+from django.views.decorators.csrf import csrf_exempt
+import json
+import hmac
+import hashlib
+import json
+from django.views.decorators.http import require_POST
+from django.http import HttpResponse
 
 
 
@@ -87,24 +92,97 @@ class initializePaymentAPIView(APIView):
         return Response(payment,response,status=status.HTTP_200_OK)
 
 
+# class PaymentCallbackAPIView(APIView):
+    
+#     permission_classes = [IsAuthenticated,] 
+    
+#     def get(self, request):
+
+#         reference = request.query_params.get('reference')
+#         payment = get_object_or_404(Payment, reference=reference)
+#         transaction = Transaction(secret_key=settings.PAYSTACK_SECRET_KEY)
+#         response = transaction.verify(reference=reference)
+
+#         if response['status'] and response['data']['status'] == 'success':
+#             # payment.status = 'SUCCESSFUL'
+#             # payment.save()
+#             # payment.order.status = 'CONFIRMED'
+#             # payment.order.save()
+#             return Response({"message": "Payment successful",'response':response},status=status.HTTP_200_OK)
+#         else:
+#             # payment.status = 'FAILED'
+#             # payment.save()
+#             return Response({"message": "Payment failed"}, status=status.HTTP_400_BAD_REQUEST)
+        
 class PaymentCallbackAPIView(APIView):
     
-    permission_classes = [IsAuthenticated,] 
-    
     def get(self, request):
-    
         reference = request.query_params.get('reference')
-        payment = get_object_or_404(Payment, reference=reference)
-        transaction = Transaction(secret_key=settings.PAYSTACK_SECRET_KEY)
-        response = transaction.verify(reference=reference)
+        if reference:
+            payment = Payment.objects.filter(reference=reference).first()
+            if payment:
+                # Optional: show message based on payment status
+                if payment.status == 'SUCCESSFUL':
+                    return Response({"message": "Payment successful — order confirmed!"})
+                elif payment.status == 'FAILED':
+                    return Response({"message": "Payment failed — please try again"})
+                else:
+                    return Response({"message": "Payment pending — we'll notify you soon"},)
+        return Response({"message": "Invalid reference"})    
+    
+    
 
-        if response['status'] and response['data']['status'] == 'success':
+@require_POST
+@csrf_exempt
+def paystack_webhook(request):
+
+    request_body = request.body
+    secret = settings.PAYSTACK_SECRET_KEY.encode()
+
+    signature = request.headers.get('x-paystack-signature')
+    if not signature:
+        return Response(status=400)
+
+    expected_signature = hmac.new(secret, request_body, hashlib.sha512).hexdigest()
+    if signature != expected_signature:
+        return Response(status=400)
+
+    # Parse event
+    try:
+        post_response = json.loads(request_body)
+        # print(post_response)
+    except json.JSONDecodeError:
+        return Response(status=400)
+
+
+    if post_response['event'] == 'charge.success':
+        reference = post_response['data']['reference']
+        payment = get_object_or_404(Payment, reference=reference)
+
+        if payment.status != 'SUCCESSFUL':
+            print(payment.status)
             payment.status = 'SUCCESSFUL'
             payment.save()
-            payment.order.status = 'CONFIRMED'
-            payment.order.save()
-            return Response({"message": "Payment successful",'response':response})
-        else:
-            payment.status = 'FAILED'
-            payment.save()
-            return Response({"message": "Payment failed"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+            order = payment.order
+
+            # Deduct stock from all order items
+            for order_item in order.orderitems.all():
+                print(order_item)
+                
+                item = order_item.content_object 
+                print(item.stock)
+                item.stock -= order_item.quantity
+                item.save()
+            
+            
+            print(order.status)
+            print(order.payment_status)
+            order.status = 'CONFIRMED'
+            order.payment_status = 'SUCCESSFUL'
+            order.save()
+            print(order)
+            
+                        
+    return HttpResponse(status=200)                  
