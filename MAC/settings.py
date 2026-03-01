@@ -68,7 +68,8 @@ LOCAL_APPS = [
     "core",
     "products",
     "order",
-    'payments'
+    'payments',
+    'notifications',
 ]
 
 THIRD_PARTY_APPS = [

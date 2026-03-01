@@ -1,0 +1,147 @@
+{% comment %} <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    
+    <div>
+        {% if user %}
+        <p>Hi {{ user.username }}, welcome to MAC Store ❤️❤️❤️</p>
+        <p>Thank you for registering with us! Please click the link below to verify your email address and activate your account:</p>
+        <p><a href="{{ verification_url }}">Activate your account</a></p>
+        <p>If you did not sign up for this account, you can ignore this email.</p>
+    {% endif %}  
+    </div>
+
+
+
+</body>
+</html> {% endcomment %}
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Welcome to [Your Store Name]!</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacOSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background-color: #f6f9fc;
+      color: #333333;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .header {
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      color: white;
+      text-align: center;
+      padding: 48px 24px 40px;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 32px;
+      font-weight: 700;
+    }
+    .content {
+      padding: 40px 32px;
+      text-align: center;
+    }
+    .content h2 {
+      margin-top: 0;
+      color: #1e293b;
+      font-size: 24px;
+    }
+    .button {
+      display: inline-block;
+      margin: 24px 0;
+      padding: 16px 40px;
+      background-color: #6366f1;
+      color: white !important;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 18px;
+      border-radius: 8px;
+      transition: background-color 0.2s;
+    }
+    .button:hover {
+      background-color: #4f46e5;
+    }
+    .footer {
+      background-color: #f1f5f9;
+      padding: 32px 24px;
+      text-align: center;
+      font-size: 14px;
+      color: #64748b;
+    }
+    .footer a {
+      color: #6366f1;
+      text-decoration: none;
+    }
+    .highlight {
+      color: #6366f1;
+      font-weight: 600;
+    }
+    @media only screen and (max-width: 600px) {
+      .content { padding: 32px 20px; }
+      .header { padding: 40px 20px 32px; }
+      .button { width: 100%; box-sizing: border-box; }
+    }
+  </style>
+</head>
+<body>
+
+    {%if user%}
+        <div class="container">
+            <!-- Header -->
+            <div class="header">
+            <h1>Welcome to [Marvelam Apparel & Clothing]!</h1>
+            </div>
+
+            <!-- Main Content -->
+            <div class="content">
+            <h2>Hello {{ user.username|default:"there" }},welcome to MAC Store ❤️❤️❤️</h2>
+
+            <p>We're thrilled to have you join us!</p>
+
+            <p>You’ve just taken the first step into a world of <span class="highlight">quality products</span>, great prices, and fast delivery right here in Nigeria.</p>
+
+            <p>Explore thousands of items, enjoy exclusive deals, and let us help you find exactly what you need.</p>
+
+            <a href="{{ site_url|default:"https://yourstore.com" }}" class="button">
+                Start Shopping Now →
+            </a>
+
+            <p style="margin-top: 32px; font-size: 15px;">
+                Got questions? Our support team is just a message away.<br>
+                Reply to this email or chat with us anytime.
+            </p>
+            </div>
+
+            <!-- Footer -->
+            <div class="footer">
+            <p>Thank you for choosing <strong>[Marvelam Apparel $ Clothing]</strong></p>
+            <p>
+                <a href="{{ site_url|default:"https://yourstore.com" }}">Visit Store</a> •
+                <a href="#">Help Center</a> •
+                <a href="#">Unsubscribe</a>
+            </p>
+            <p>© {{ year|default:"2025" }} [Marvelam Apparel $ Clothing]. All rights reserved.</p>
+            </div>
+        </div>
+    {% endif %}
+</body>
+</html>

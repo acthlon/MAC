@@ -21,7 +21,7 @@ from decouple import config
 from django.utils import timezone
 from django.utils.encoding import force_bytes 
 from core.permissions import IsOwnerOrReadOnly
-
+from notifications.utils import send_welcome_email
 
 
 
@@ -72,7 +72,7 @@ class RegistrationView(APIView):
 
                 return Response({'message':f'registration was successful, check your e-mail for verification'}, status=status.HTTP_201_CREATED)
             
-            else:
+            elif response.status_code != 202:
                 return Response({'message':'Error in sending mail'},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
         return Response(serializer.errors, status = status.HTTP_400_BAD_REQUEST)
@@ -101,10 +101,13 @@ class VerifyEmailView(APIView):
                 user.is_active = True
                 user.save(update_fields=['is_active'])     
 
-                return Response({'messsage':'verification was successful, your account is now active and you can proceed to login'}, status=status.HTTP_400_BAD_REQUEST)
-            
+
+                return Response({'messsage':'verification was successful, your account is now active and you can proceed to login'}, status=status.HTTP_200_OK)
+
             else:
                 return Response({'message':'invalid or expired token'}, status = status.HTTP_400_BAD_REQUEST)
+
+
         except Exception as e:
             return Response({'message':str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
@@ -214,7 +217,7 @@ class PasswordResetConfirmView(APIView):
                     return Response({'message':'password set successfully'},status=status.HTTP_200_OK)
             
                 else:
-                    return Response({'message': 'Ensure bth password fields are the same'}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({'message': 'Ensure both password fields are the same'}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 return Response({'message':'invalid token or token expired, request for a new token'}, status=status.HTTP_400_BAD_REQUEST)
             
@@ -319,11 +322,13 @@ class UserProfileView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-    def patch(self,request):
+    def put(self,request,pk):
         
         try:
+            
+            profile = get_object_or_404(UserProfile,user__id=pk)
 
-            serializer = UserProfileSerializer(data = request.data, partial=True)
+            serializer = UserProfileSerializer(profile,data = request.data, partial=True, context = {'request':request})
 
             if serializer.is_valid():
                 serializer.save()

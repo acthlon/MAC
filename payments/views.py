@@ -18,7 +18,7 @@ import hashlib
 import json
 from django.views.decorators.http import require_POST
 from django.http import HttpResponse
-
+from notifications.utils import send_order_confirmation_email,send_order_status_update_email,send_welcome_email
 
 
 class initializePaymentAPIView(APIView):
@@ -118,16 +118,24 @@ class PaymentCallbackAPIView(APIView):
     
     def get(self, request):
         reference = request.query_params.get('reference')
+        
         if reference:
-            payment = Payment.objects.filter(reference=reference).first()
+            payment = get_object_or_404(Payment,reference=reference)
+            # print({'payment':payment})
+            
             if payment:
-                # Optional: show message based on payment status
+     
                 if payment.status == 'SUCCESSFUL':
+
+                    # print({'message':'payment-email sent successfully'})
                     return Response({"message": "Payment successful — order confirmed!"})
+
                 elif payment.status == 'FAILED':
                     return Response({"message": "Payment failed — please try again"})
-                else:
+                
+                elif payment.status == 'PENDING':
                     return Response({"message": "Payment pending — we'll notify you soon"},)
+                
         return Response({"message": "Invalid reference"})    
     
     
@@ -150,39 +158,45 @@ def paystack_webhook(request):
     # Parse event
     try:
         post_response = json.loads(request_body)
-        # print(post_response)
+
     except json.JSONDecodeError:
         return Response(status=400)
 
 
     if post_response['event'] == 'charge.success':
+        # print(post_response)
+        
         reference = post_response['data']['reference']
+
         payment = get_object_or_404(Payment, reference=reference)
 
+        
         if payment.status != 'SUCCESSFUL':
-            print(payment.status)
+            # print(payment.status)
             payment.status = 'SUCCESSFUL'
             payment.save()
 
-
+            # send_order_confirmation_email(payment.order,payment.user) 
+            # send_welcome_email(payment.user)
+            
             order = payment.order
 
             # Deduct stock from all order items
             for order_item in order.orderitems.all():
-                print(order_item)
+                # print(order_item)
                 
                 item = order_item.content_object 
-                print(item.stock)
+                # print(item.stock)
                 item.stock -= order_item.quantity
                 item.save()
             
             
-            print(order.status)
-            print(order.payment_status)
+            # print(order.status)
+            # print(order.payment_status)
             order.status = 'CONFIRMED'
             order.payment_status = 'SUCCESSFUL'
             order.save()
-            print(order)
+            # print(order)
             
                         
     return HttpResponse(status=200)                  
