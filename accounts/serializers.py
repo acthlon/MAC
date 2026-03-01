@@ -58,14 +58,14 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     profile_image = serializers.ImageField(required=False)
     phone = serializers.SerializerMethodField(required = False) 
-    email = serializers.EmailField(required=False,source = 'user.email')
-    first_name = serializers.CharField(required=False,source = 'user.first_name')
-    last_name = serializers.CharField(required=False,source = 'user.last_name')
+    # email = serializers.EmailField(required=False,source = 'user.email')
+    # first_name = serializers.CharField(required=False,source = 'user.first_name')
+    # last_name = serializers.CharField(required=False,source = 'user.last_name')
     password = serializers.CharField(required=False,write_only = True)
     old_password = serializers.CharField(required=False,write_only=True)
-    date_joined = serializers.DateTimeField(read_only=True,source='user.date_joined')
-    gender = serializers.CharField(read_only=True, source='user.gender')
-
+    # date_joined = serializers.DateTimeField(read_only=True,source='user.date_joined')
+    # gender = serializers.CharField(source='user.gender')
+    user = CustomUserSerializer()
 
 
     def get_phone(self,obj):
@@ -80,7 +80,11 @@ class UserProfileSerializer(serializers.ModelSerializer):
         
             user = self.context['request'].user   
 
-            if 'profile-image' in data:
+            # for field in data:
+            #     if hasattr(self.instance.user,field):
+            #         raise serializers.ValidationError('This Field is incorrect')
+                
+            if 'profile_image' in data:
                 profile_image = data.get('profile_image')
 
                 if profile_image and profile_image.size > 5 * 1024 * 1024:
@@ -142,20 +146,28 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
         try:
             if 'password' in validated_data and 'old_password' in validated_data:
-                old_password = validated_data.pop('old_password')
-                password = validated_data.pop('password')
+                old_password = validated_data.pop('old_password',None)
+                password = validated_data.pop('password',None)
                 
 
                 if instance.user.check_password(old_password):
                     instance.user.set_password(password)
                     instance.user.save()
-        
+
 
             for field ,values in validated_data.items():
                 if hasattr(instance.user,field):
                     setattr(instance.user,field,values)
 
                     instance.user.save()
+                
+            
+            for field,values in validated_data.items():
+                
+                if hasattr(instance,field):
+                    setattr(instance,field,values)
+                    
+                    instance.save()
 
             return super(UserProfileSerializer,self).update(instance,validated_data)
 
@@ -166,4 +178,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
             
     class Meta:
         model = UserProfile
-        fields = ['country', 'state', 'city', 'address','profile_image','old_password','password','email','last_name','first_name','phone','date_joined','gender']
+        # fields = ['country', 'state', 'city', 'address','profile_image','old_password','password','email','last_name','first_name','phone','date_joined','gender']
+        
+        fields = ['country', 'state', 'city', 'address','profile_image','old_password','password','phone','user']        

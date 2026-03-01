@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Order Update – #{{ order.id }}</title>
+  <style type="text/css">
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacOSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f5f5f5;
+      color: #333333;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 640px;
+      margin: 0 auto 20px;
+      background-color: #ffffff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    }
+    .header {
+      background: linear-gradient(135deg, #ff6b00 0%, #ff8c00 100%);
+      color: white;
+      text-align: center;
+      padding: 48px 24px 32px;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 700;
+    }
+    .content {
+      padding: 40px 32px;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 8px 20px;
+      background-color: #d1fae5;
+      color: #065f46;
+      font-weight: 600;
+      border-radius: 20px;
+      font-size: 16px;
+      margin-bottom: 24px;
+    }
+    .status-timeline {
+      margin: 32px 0;
+      padding: 0;
+      list-style: none;
+    }
+    .status-timeline li {
+      position: relative;
+      padding-left: 40px;
+      margin-bottom: 24px;
+      font-size: 15px;
+    }
+    .status-timeline li strong {
+      display: block;
+      color: #1a1a1a;
+    }
+    .status-timeline li::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: #ff6b00;
+      font-size: 24px;
+      line-height: 1;
+    }
+    .status-timeline li.active strong {
+      color: #ff6b00;
+    }
+    .order-details table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .order-details td {
+      padding: 12px 0;
+      border-bottom: 1px solid #eeeeee;
+    }
+    .total-row td {
+      font-weight: 700;
+      font-size: 18px;
+      border-top: 2px solid #eeeeee;
+      padding-top: 16px;
+    }
+    .button {
+      display: inline-block;
+      margin: 32px 0;
+      padding: 16px 40px;
+      background-color: #ff6b00;
+      color: white !important;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 18px;
+      border-radius: 8px;
+    }
+    .footer {
+      background-color: #f8f9fa;
+      padding: 32px 24px;
+      text-align: center;
+      font-size: 14px;
+      color: #64748b;
+    }
+    .footer a {
+      color: #ff6b00;
+      text-decoration: none;
+    }
+    @media only screen and (max-width: 600px) {
+      .content { padding: 32px 20px; }
+      .header { padding: 40px 20px 32px; }
+      .button { width: 100%; box-sizing: border-box; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+    {% if order %}
+        <div class="container">
+
+            <!-- Header -->
+            <div class="header">
+            <h1>Order Update</h1>
+            <p style="margin: 12px 0 0; font-size: 18px;">Your order has been updated</p>
+            </div>
+
+            <!-- Content -->
+            <div class="content">
+
+            <h2 style="margin-top: 0;">Hello {{ user.first_name|default:user.username }},</h2>
+
+            <p>We have an update for your order <strong>#{{ order.id }}</strong>.</p>
+
+            <!-- Current Status -->
+            <div style="text-align:center; margin: 32px 0;">
+                <span class="status-badge">
+                {{ order.get_status_display|default:order.status }}
+                </span>
+            </div>
+
+            <!-- Status Timeline (shows progress) -->
+            <ul class="status-timeline">
+                <li {% if order.status == 'PENDING' or order.status == 'CONFIRMED' %}class="active"{% endif %}>
+                <strong>Order Placed</strong>
+                <span>{{ order.created_at|date:"d M Y" }}</span>
+                </li>
+                <li {% if order.status == 'PROCESSING' %}class="active"{% endif %}>
+                <strong>Processing</strong>
+                <span>We are preparing your items</span>
+                </li>
+                <li {% if order.status == 'SHIPPED' %}class="active"{% endif %}>
+                <strong>Shipped</strong>
+                <span>Your order is on its way</span>
+                </li>
+                <li {% if order.status == 'DELIVERED' %}class="active"{% endif %}>
+                <strong>Delivered</strong>
+                <span>Order has been delivered</span>
+                </li>
+            </ul>
+
+            <!-- Order Summary -->
+            <div class="order-details">
+                <table>
+                <tr>
+                    <td><strong>Order ID</strong></td>
+                    <td style="text-align:right;">#{{ order.id }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Order Date</strong></td>
+                    <td style="text-align:right;">{{ order.created_at|date:"d M Y" }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Delivery Address</strong></td>
+                    <td style="text-align:right;">{{ order.shipping_address|default:"N/A" }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Payment Status</strong></td>
+                    <td style="text-align:right;">{{ order.payment_status|default:"Paid" }}</td>
+                </tr>
+                <tr class="total-row">
+                    <td>Total Amount</td>
+                    <td style="text-align:right;">₦{{ order.total_amount|floatformat:2 }}</td>
+                </tr>
+                </table>
+            </div>
+
+            <p>If your order status has changed to <strong>Shipped</strong>, we'll share tracking details soon.</p>
+
+            <a href="{{ site_url|default:"https://yourstore.com/orders/" }}{{ order.id }}" class="button">
+                View Order Details
+            </a>
+
+            <p style="margin-top: 32px;">
+                Need help? We're here for you:<br>
+                Email: support@yourstore.com<br>
+                Phone: +234 123 456 7890<br>
+                WhatsApp: +234 987 654 3210
+            </p>
+
+            </div>
+
+            <!-- Footer -->
+            <div class="footer">
+            <p>Thank you for shopping with <strong>[Your Store Name]</strong></p>
+            <p>
+                <a href="{{ site_url|default:"https://yourstore.com" }}">Shop Again</a> •
+                <a href="#">Track Order</a> •
+                <a href="#">Help Center</a>
+            </p>
+            <p>© {{ year|default:"2026" }} [Your Store Name]. All rights reserved.</p>
+            </div>
+
+        </div>
+    {% endif %}
+</body>
+</html>
