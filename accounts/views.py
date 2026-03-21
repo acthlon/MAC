@@ -11,7 +11,7 @@ from django.shortcuts import get_object_or_404
 from django.contrib.sites.shortcuts import get_current_site
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.template.loader import render_to_string
-from accounts.serializers import CustomUserSerializer,UserProfileSerializer
+from accounts.serializers import CustomUserSerializer,UserProfileSerializer,UpdateUserProfileSerializer,UpdatePasswordSerializer
 from django.urls import reverse
 from rest_framework_simplejwt.exceptions import TokenError 
 from sendgrid.helpers.mail import Mail
@@ -22,6 +22,7 @@ from django.utils import timezone
 from django.utils.encoding import force_bytes 
 from core.permissions import IsOwnerOrReadOnly
 from notifications.utils import send_welcome_email
+from accounts.utils.mails import send_registration_email,send_password_reset_email 
 
 
 
@@ -40,44 +41,19 @@ class RegistrationView(APIView):
             
             # the email verification aspect
             # parameters needed
-        
-            token = default_token_generator.make_token(user)
-            encoded_uuid = urlsafe_base64_encode(str(user.pk).encode('utf-8'))
 
-            site_domain = get_current_site(request).domain
-
-            verification_url = reverse('verify-email',kwargs={'user_id':encoded_uuid,'verification_token':token})
-
-            final_verification_url = f'http://{site_domain}:8000/{verification_url}'
-
-            
-
-            # sending of e-mail
-            subject = 'Activate your email'
-            message = render_to_string('email/verification.html',{'user':user,'verification_url': final_verification_url})
-
-            email_message = Mail(
-                from_email=config("DEFAULT_FROM_EMAIL"),
-                to_emails=user.email,
-                subject=subject,
-                html_content=message,
-                plain_text_content= f'hi {user.username}, click on the link above to verify your email'
-            )
-
-            api_key=config("SENDGRID_API_KEY")
-            sg = SendGridAPIClient(api_key=api_key)
-            response = sg.send(email_message)
+            response = send_registration_email(request,user)
             
             if response.status_code == 202:
 
                 return Response({'message':f'registration was successful, check your e-mail for verification'}, status=status.HTTP_201_CREATED)
-            
+    
             elif response.status_code != 202:
                 return Response({'message':'Error in sending mail'},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
+        
         return Response(serializer.errors, status = status.HTTP_400_BAD_REQUEST)
-        # except Exception as e:
-        #     return Response({'message':str(e)},status=status.HTTP_400_BAD_REQUEST)
+
     
 
 class VerifyEmailView(APIView):
@@ -117,37 +93,36 @@ class PasswordResetRequestView(APIView):
 
     permission_classes = [AllowAny,]
 
-    def send_email(self,user,request,email):
-        try:
+    # def send_password_reset_email(self,user,request,email):
+    #     try:
 
-            token = default_token_generator.make_token(user)
-            encoded_uuid = urlsafe_base64_encode(str(user.pk).encode('utf-8'))
+    #         token = default_token_generator.make_token(user)
+    #         encoded_uuid = urlsafe_base64_encode(str(user.pk).encode('utf-8'))
 
-            password_reset_link = reverse('password-reset-confirm',kwargs={'password_reset_token':token,'user_id':encoded_uuid})
-            password_resend_link = reverse('password-reset-request') 
-            site_domain = get_current_site(request).domain
+    #         password_reset_link = reverse('password-reset-confirm',kwargs={'password_reset_token':token,'user_id':encoded_uuid})
+    #         password_resend_link = reverse('password-reset-request') 
+    #         site_domain = get_current_site(request).domain
 
-            password_reset_url = f'http://{site_domain}:8000/{password_reset_link}'
-            password_resend_url = f'http://{site_domain}:8000{password_resend_link}?resend_email={email}'
+    #         password_reset_url = f'http://{site_domain}:8000/{password_reset_link}'
+    #         password_resend_url = f'http://{site_domain}:8000{password_resend_link}?resend_email={email}'
 
-            message = render_to_string('email/password-reset.html',{'password_reset_url': password_reset_url,'password_resend_url': password_resend_url,
-            'user':user})
-            subject = "Reset Your Password"
+    #         message = render_to_string('email/password-reset.html',{'password_reset_url': password_reset_url,'password_resend_url': password_resend_url,
+    #         'user':user})
+    #         subject = "Reset Your Password"
 
-            email_message = Mail(
-                from_email = config("DEFAULT_FROM_EMAIL"),
-                to_emails = user.email,
-                subject= subject,
-                html_content=message 
-            )
+    #         email_message = Mail(
+    #             from_email = config("DEFAULT_FROM_EMAIL"),
+    #             to_emails = user.email,
+    #             subject= subject,
+    #             html_content=message 
+    #         )
 
-            api_key = config("SENDGRID_API_KEY")
-            sg = SendGridAPIClient(api_key=api_key)
-            response = sg.send(email_message)
-        except Exception as e:
-            return Response({'message': str(e)},status=status.HTTP_400_BAD_REQUEST)    
+    #         api_key = config("SENDGRID_API_KEY")
+    #         sg = SendGridAPIClient(api_key=api_key)
+    #         response = sg.send(email_message)
+    #     except Exception as e:
+    #         return Response({'message': str(e)},status=status.HTTP_400_BAD_REQUEST)    
 
-    
 
     def post(self,request):
 
@@ -160,9 +135,16 @@ class PasswordResetRequestView(APIView):
             if user is not None: 
             
                 if resend_email == None:
-
-                    self.send_email(user,request,email)
-                    return Response({'message': f'password reset link has been sent to your email'}, status=status.HTTP_200_OK)
+                    try:
+                        response = send_password_reset_email(user,request,email)
+                    except Exception as e:
+                        return Response({'message': str(e)},status=status.HTTP_400_BAD_REQUEST)
+                    
+                    if response.status_code == 202:
+                            
+                        return Response({'message': f'password reset link has been sent to your email'}, status=status.HTTP_200_OK)
+                    else:
+                        return Response({'message':'Error in sending mail'},status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
             
         except Exception as e:    
             return Response({'message':str(e)} , status=status.HTTP_404_NOT_FOUND)                    
@@ -177,8 +159,13 @@ class PasswordResetRequestView(APIView):
             if resend_email == user.email:
                 email=resend_email
 
-                self.send_email(user,request,email)
-                return Response({'message': 'a new reset link has been sent to your e-mail'})                    
+                response = send_password_reset_email(user,request,email)
+                
+                if response.status_code == 202:
+                    
+                    return Response({'message': 'a new reset link has been sent to your e-mail'})       
+                else :
+                    return Response({'message': 'Error in sending mail'},status=status.HTTP_500_INTERNAL_SERVER_ERROR)             
 
                 
         except Exception as e:
@@ -220,7 +207,7 @@ class PasswordResetConfirmView(APIView):
                     return Response({'message': 'Ensure both password fields are the same'}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 return Response({'message':'invalid token or token expired, request for a new token'}, status=status.HTTP_400_BAD_REQUEST)
-            
+              
         except Exception as e:
                 return Response({'message':str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -257,7 +244,6 @@ class LoginView(APIView):
 
 
 class RefreshTokenView(APIView):
-
 
     permission_classes = [AllowAny,]
 
@@ -308,15 +294,13 @@ class LogoutView(APIView):
 class UserProfileView(APIView):
     
 
-    permission_classes = [IsOwnerOrReadOnly,]
+    permission_classes = [IsAuthenticated,]
 
     def get(self,request,pk):
 
         user = request.user
-        try:
-            profile = UserProfile.objects.get(user__id = pk)
-        except UserProfile.DoesNotExist:
-            return Response({'message':'Profile does not exist for this user'})    
+        profile = user.userprofile
+  
         serializer = UserProfileSerializer(profile)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -326,11 +310,13 @@ class UserProfileView(APIView):
         
         try:
             
-            profile = get_object_or_404(UserProfile,user__id=pk)
-
-            serializer = UserProfileSerializer(profile,data = request.data, partial=True, context = {'request':request})
-
+            user = request.user
+            profile = user.userprofile
+            print(profile)
+            serializer = UpdateUserProfileSerializer(profile,data = request.data, partial=True, context = {'request':request})
+            
             if serializer.is_valid():
+                print(serializer.validated_data)
                 serializer.save()
                 return Response({'status':'success',
                                  'message':'Profile Updated successfully',
@@ -341,4 +327,21 @@ class UserProfileView(APIView):
         except Exception as e:
             return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)    
 
-  
+
+class UpdatePasswordView(APIView):
+    
+    def put(self,request,pk):
+        
+        try:
+            user = request.user
+            serializer = UpdatePasswordSerializer(user,data=request.data,context={'request':request},partial=True)
+            
+            if serializer.is_valid():
+                serializer.save()
+                
+                return Response(serializer.data,status=status.HTTP_200_OK)
+            else:
+                return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+            
+        except Exception as e:
+            return Response({'message':str(e)})

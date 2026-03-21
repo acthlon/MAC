@@ -5,7 +5,7 @@ from decouple import config
 from rest_framework.response import Response
 from rest_framework import status
 from django.utils.html import strip_tags
-
+from django.conf import settings
 
 def send_welcome_email(user):
     
@@ -17,19 +17,19 @@ def send_welcome_email(user):
             
 
             email_message = Mail(
-                from_email = config("DEFAULT_FROM_EMAIL"),
+                from_email = settings.DEFAULT_FROM_EMAIL,
                 to_emails = user.email,
                 subject= subject,
                 html_content=html_message, 
             )
 
-            api_key=config("SENDGRID_API_KEY")
+            api_key=settings.SENDGRID_API_KEY
             sg = SendGridAPIClient(api_key=api_key)
             response = sg.send(email_message)
 
 
             if response.status_code == 202:
-                print({'message': 'Email sent successfully'})
+                print({'message': 'Email sent successfully welcome message'})
             
             else:
                 print({'message': 'Email not sent successfully'})
@@ -55,13 +55,13 @@ def send_order_confirmation_email(order,user):
 
 
         email_message = Mail(
-            from_email = config("DEFAULT_FROM_EMAIL"),
+            from_email = settings.DEFAULT_FROM_EMAIL,
             to_emails = user.email,
             subject= subject,
             html_content=html_message, 
         )
         
-        api_key=config("SENDGRID_API_KEY")
+        api_key=settings.SENDGRID_API_KEY
         sg = SendGridAPIClient(api_key=api_key)
         response = sg.send(email_message)
 
@@ -106,13 +106,13 @@ def send_order_status_update_email(order,new_status,user):
 
 
         email_message = Mail(
-            from_email = config("DEFAULT_FROM_EMAIL"),
+            from_email = settings.DEFAULT_FROM_EMAIL,
             to_emails = user.email,
             subject= subject,
             html_content=html_message, 
         )
         
-        api_key=config("SENDGRID_API_KEY")
+        api_key=settings.SENDGRID_API_KEY
         sg = SendGridAPIClient(api_key=api_key)
         response = sg.send(email_message)
 

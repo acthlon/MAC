@@ -3,7 +3,7 @@ from django.core.exceptions import ValidationError
 
 def validate_password_strength(password):
 
-    if not  re.search(r'[A-Z]',password):
+    if not re.search(r'[A-Z]',password):
         raise ValidationError('Password must contain at least one upper case letter ')
     
     if not re.search(r'[a-z]',password):
