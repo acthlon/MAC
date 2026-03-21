@@ -19,7 +19,7 @@ def create_user_profile(sender,instance,created,**kwargs):
     if created:
         UserProfile.objects.create(user=instance)   
 
-@receiver(post_save,sender=CustomUser)
-def update_user_profile(sender,instance,**kwargs):
+# @receiver(post_save,sender=CustomUser)
+# def update_user_profile(sender,instance,**kwargs):
 
-    instance.userprofile.save()
+#     instance.userprofile.save()

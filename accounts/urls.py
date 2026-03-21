@@ -1,5 +1,5 @@
 from django.urls import path,include
-from accounts.views import RegistrationView,LoginView,VerifyEmailView,PasswordResetRequestView,PasswordResetConfirmView,LogoutView,RefreshTokenView,UserProfileView
+from accounts.views import RegistrationView,LoginView,VerifyEmailView,PasswordResetRequestView,PasswordResetConfirmView,LogoutView,RefreshTokenView,UserProfileView,UpdatePasswordView
 
 
 urlpatterns = [
@@ -12,6 +12,6 @@ urlpatterns = [
     path('token/refresh/',RefreshTokenView.as_view(),name="regenerate-access-token"),
     path('profile/<uuid:pk>/',UserProfileView.as_view(),name='retrieve-profile'),
     path('update_profile/<uuid:pk>/',UserProfileView.as_view(),name='profile-update'),
-    path('update_password/<uuid:pk>/',UserProfileView.as_view(),name='password-update'),
+    path('update_password/<uuid:pk>/',UpdatePasswordView.as_view(),name='password-update'),
     
 ]
