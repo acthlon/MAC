@@ -18,7 +18,10 @@ import hashlib
 import json
 from django.views.decorators.http import require_POST
 from django.http import HttpResponse
-from notifications.utils import send_order_confirmation_email,send_order_status_update_email,send_welcome_email
+from notifications.tasks import send_order_confirmation_email_task,send_order_status_update_email_task
+
+
+
 
 
 class initializePaymentAPIView(APIView):
@@ -177,7 +180,7 @@ def paystack_webhook(request):
             payment.save()
 
             # send_order_confirmation_email(payment.order,payment.user) 
-            # send_welcome_email(payment.user)
+            #_task(payment.user)
             
             order = payment.order
 

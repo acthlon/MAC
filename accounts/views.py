@@ -21,8 +21,9 @@ from decouple import config
 from django.utils import timezone
 from django.utils.encoding import force_bytes 
 from core.permissions import IsOwnerOrReadOnly
-from notifications.utils import send_welcome_email
-from accounts.utils.mails import send_registration_email,send_password_reset_email 
+from notifications.tasks import send_registration_email_task,send_password_reset_email_task
+
+
 
 
 
@@ -42,14 +43,11 @@ class RegistrationView(APIView):
             # the email verification aspect
             # parameters needed
 
-            response = send_registration_email(request,user)
+            send_registration_email_task.delay(user.id)
             
-            if response.status_code == 202:
 
-                return Response({'message':f'registration was successful, check your e-mail for verification'}, status=status.HTTP_201_CREATED)
-    
-            elif response.status_code != 202:
-                return Response({'message':'Error in sending mail'},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'message':f'registration was successful, check your e-mail for verification'}, status=status.HTTP_201_CREATED)
+
         
         
         return Response(serializer.errors, status = status.HTTP_400_BAD_REQUEST)
@@ -93,37 +91,6 @@ class PasswordResetRequestView(APIView):
 
     permission_classes = [AllowAny,]
 
-    # def send_password_reset_email(self,user,request,email):
-    #     try:
-
-    #         token = default_token_generator.make_token(user)
-    #         encoded_uuid = urlsafe_base64_encode(str(user.pk).encode('utf-8'))
-
-    #         password_reset_link = reverse('password-reset-confirm',kwargs={'password_reset_token':token,'user_id':encoded_uuid})
-    #         password_resend_link = reverse('password-reset-request') 
-    #         site_domain = get_current_site(request).domain
-
-    #         password_reset_url = f'http://{site_domain}:8000/{password_reset_link}'
-    #         password_resend_url = f'http://{site_domain}:8000{password_resend_link}?resend_email={email}'
-
-    #         message = render_to_string('email/password-reset.html',{'password_reset_url': password_reset_url,'password_resend_url': password_resend_url,
-    #         'user':user})
-    #         subject = "Reset Your Password"
-
-    #         email_message = Mail(
-    #             from_email = config("DEFAULT_FROM_EMAIL"),
-    #             to_emails = user.email,
-    #             subject= subject,
-    #             html_content=message 
-    #         )
-
-    #         api_key = config("SENDGRID_API_KEY")
-    #         sg = SendGridAPIClient(api_key=api_key)
-    #         response = sg.send(email_message)
-    #     except Exception as e:
-    #         return Response({'message': str(e)},status=status.HTTP_400_BAD_REQUEST)    
-
-
     def post(self,request):
 
         try:
@@ -136,16 +103,13 @@ class PasswordResetRequestView(APIView):
             
                 if resend_email == None:
                     try:
-                        response = send_password_reset_email(user,request,email)
+                        send_password_reset_email_task.delay(user.id,email)
                     except Exception as e:
                         return Response({'message': str(e)},status=status.HTTP_400_BAD_REQUEST)
                     
-                    if response.status_code == 202:
-                            
-                        return Response({'message': f'password reset link has been sent to your email'}, status=status.HTTP_200_OK)
-                    else:
-                        return Response({'message':'Error in sending mail'},status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
-            
+
+                    return Response({'message': f'password reset link has been sent to your email'}, status=status.HTTP_200_OK)
+
         except Exception as e:    
             return Response({'message':str(e)} , status=status.HTTP_404_NOT_FOUND)                    
             
@@ -159,13 +123,10 @@ class PasswordResetRequestView(APIView):
             if resend_email == user.email:
                 email=resend_email
 
-                response = send_password_reset_email(user,request,email)
+                send_password_reset_email_task.delay(user.id,email)
                 
-                if response.status_code == 202:
-                    
-                    return Response({'message': 'a new reset link has been sent to your e-mail'})       
-                else :
-                    return Response({'message': 'Error in sending mail'},status=status.HTTP_500_INTERNAL_SERVER_ERROR)             
+
+                return Response({'message': 'a new reset link has been sent to your e-mail'})                 
 
                 
         except Exception as e:
