@@ -8,7 +8,7 @@ from django.contrib.contenttypes.models import ContentType
 
 class OrderAdmin(admin.ModelAdmin):
 
-    list_display = ('user','shipping_address','total_items','delivery_method','total_amount','status','payment_method','payment_reference','delivery_status','payment_status','delivery_status','is_active')
+    list_display = ('user','shipping_address','total_items','delivery_method','total_amount','status','payment_method','payment_reference','delivery_status','payment_status','tracking_id','is_active')
 
 
 class OrderItemAdmin(admin.ModelAdmin):

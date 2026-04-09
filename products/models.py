@@ -26,6 +26,8 @@ class Products(CatalogBaseModel):
 
         if self.stock <= 0:
             self.is_active = False 
+        elif self.stock > 0:
+            self.is_active = True 
         if not self.slug:
             self.slug = slugify(self.name)
         elif self.slug:

@@ -182,6 +182,7 @@ class Order(models.Model):
     payment_status = models.CharField(max_length=50, choices=PAYMENT_STATUS_CHOICES,default='PENDING')
     delivery_status = models.CharField(max_length=40,default='PENDING',choices=DELIVERY_STATUS_CHOICES)
     is_active = models.BooleanField(default = True)
+    tracking_id = models.CharField(max_length=50, null=True,blank=True)
 
 
 

@@ -26,4 +26,5 @@ class Payment(models.Model):
         return f'Payment {self.reference} for Order {self.order.id}'
     
     class Meta:
+        ordering = ['-created_at']
         verbose_name_plural = 'Payments' 
