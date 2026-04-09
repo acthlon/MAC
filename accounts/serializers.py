@@ -4,7 +4,7 @@ from accounts.models import CustomUser,UserProfile
 from accounts.utils.passwordvalidate import validate_password_strength
 from django.core.exceptions import ValidationError
 from phonenumbers import PhoneNumber
-
+from django.db import transaction
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
@@ -38,7 +38,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
         return data        
 
 
-
+    @transaction.atomic
     def create(self,validated_data):
         password = validated_data.pop("password")
         user = CustomUser.objects.create_user(**validated_data)
@@ -87,36 +87,6 @@ class UpdateUserProfileSerializer(serializers.ModelSerializer):
                 if profile_image and profile_image.size > 5 * 1024 * 1024:
                     raise serializers.ValidationError({'profile_image': 'Profile Image must not exceed 5MB'})
                 
-
-            # if 'first_name' in data:
-            #     first_name = data.get('first_name')
-
-            #     if not first_name.isalpha():
-            #         raise serializers.ValidationError({'First Name': 'First name should contain only alphabet'})
-                
-
-            # if 'phone' in data:
-            #     phone = data.get('phone')
-            #     try:
-            #         phonenumber = PhoneNumber.from_string(phone)
-
-            #         if not phonenumber.is_valid():
-                        # raise serializers.ValidationError('Phone number is not valid')     
-                # except Exception as e:
-                    # raise serializers.ValidationError({'phone':str(e)})
-
-
-            # if 'last_name' in data:
-            #     last_name = data.get('last_name')
-
-            #     if not last_name.isalpha():
-            #         raise serializers.ValidationError({'Last Name': 'Last name should contain only alphabet'})
-                    
-
-            # if 'email' in data:
-            #     new_email = data.get('email')
-            #     if CustomUser.objects.filter(email=new_email).exclude(id=user.id).exists():
-            #         raise serializers.ValidationError({'email':'Email is already in use by another user'})
         return data
      
      

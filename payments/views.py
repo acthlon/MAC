@@ -32,13 +32,16 @@ class initializePaymentAPIView(APIView):
         
         serializer = InitiatePaymentSerializer(data=request.data)
         if not serializer.is_valid():
+            print(serializer.data, 'this is getting hotter')
             return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
         
         
         user = request.user
         order_id = pk
-        order = get_object_or_404(Order,id=order_id, user=user,status='CREATED')
+        order = get_object_or_404(Order,id=order_id,status='CREATED')
         payment_method = PaymentMethod.objects.get(code=serializer.validated_data['method_code'])
+        
+        print(order)
         
         
         payment = Payment.objects.create(
@@ -74,6 +77,13 @@ class initializePaymentAPIView(APIView):
             )
             
             if response['status']:
+                
+                
+                print(f'Response-Status: {response['status']}')
+                print(f'Response-Status: {response}')
+                
+                
+                
                 order.payment_reference = response['data']['reference']
                 payment.reference = response['data']['reference']
                 order.save()
@@ -124,7 +134,7 @@ class PaymentCallbackAPIView(APIView):
         
         if reference:
             payment = get_object_or_404(Payment,reference=reference)
-            # print({'payment':payment})
+            print({'payment':payment})
             
             if payment:
      
@@ -143,63 +153,128 @@ class PaymentCallbackAPIView(APIView):
     
     
 
+# @require_POST
+# @csrf_exempt
+# def paystack_webhook(request):
+
+#     request_body = request.body
+#     secret = settings.PAYSTACK_SECRET_KEY.encode()
+
+#     signature = request.headers.get('x-paystack-signature')
+#     if not signature:
+#         return Response(status=400)
+
+#     expected_signature = hmac.new(secret, request_body, hashlib.sha512).hexdigest()
+#     if signature != expected_signature:
+#         return Response(status=400)
+
+#     # Parse event
+#     try:
+#         post_response = json.loads(request_body)
+
+#     except json.JSONDecodeError:
+#         return Response(status=400)
+
+
+#     if post_response['event'] == 'charge.success':
+#         # print(post_response)
+        
+#         reference = post_response['data']['reference']
+
+#         payment = get_object_or_404(Payment, reference=reference)
+
+        
+#         if payment.status != 'SUCCESSFUL':
+#             # print(payment.status)
+#             payment.status = 'SUCCESSFUL'
+#             payment.save()
+
+#             # send_order_confirmation_email(payment.order,payment.user) 
+#             #_task(payment.user)
+            
+#             order = payment.order
+
+#             # Deduct stock from all order items
+#             for order_item in order.orderitems.all():
+#                 # print(order_item)
+                
+#                 item = order_item.content_object 
+#                 # print(item.stock)
+#                 item.stock -= order_item.quantity
+#                 item.save()
+            
+            
+#             # print(order.status)
+#             # print(order.payment_status)
+#             order.status = 'CONFIRMED'
+#             order.payment_status = 'SUCCESSFUL'
+#             order.payment_reference = payment.reference
+#             order.save(update_fields=['status', 'payment_status', 'payment_reference'])
+#             # print(order)
+            
+                        
+#     return HttpResponse(status=200)                  
+
+
+
+
+
+
+
+
+
 @require_POST
 @csrf_exempt
 def paystack_webhook(request):
-
+    
+    # Verify Paystack signature
     request_body = request.body
     secret = settings.PAYSTACK_SECRET_KEY.encode()
-
     signature = request.headers.get('x-paystack-signature')
+
     if not signature:
         return Response(status=400)
 
     expected_signature = hmac.new(secret, request_body, hashlib.sha512).hexdigest()
+    
     if signature != expected_signature:
         return Response(status=400)
 
-    # Parse event
+    # Parse the webhook data
     try:
         post_response = json.loads(request_body)
-
     except json.JSONDecodeError:
         return Response(status=400)
 
-
+    # Handle successful payment
     if post_response['event'] == 'charge.success':
-        # print(post_response)
         
         reference = post_response['data']['reference']
 
         payment = get_object_or_404(Payment, reference=reference)
 
-        
+        # Prevent processing the same payment multiple times
         if payment.status != 'SUCCESSFUL':
-            # print(payment.status)
+            
+            # Update payment status
             payment.status = 'SUCCESSFUL'
             payment.save()
 
-            # send_order_confirmation_email(payment.order,payment.user) 
-            #_task(payment.user)
-            
             order = payment.order
 
-            # Deduct stock from all order items
+            # Deduct stock from products
             for order_item in order.orderitems.all():
-                # print(order_item)
-                
-                item = order_item.content_object 
-                # print(item.stock)
-                item.stock -= order_item.quantity
-                item.save()
-            
-            
-            # print(order.status)
-            # print(order.payment_status)
+                item = order_item.content_object
+                if item.stock >= order_item.quantity:
+                    item.stock -= order_item.quantity
+                    item.save()
+
+            # Update order status - This is the most important part
             order.status = 'CONFIRMED'
             order.payment_status = 'SUCCESSFUL'
-            order.save()
-            # print(order)
-            
-                        
-    return HttpResponse(status=200)                  
+            order.payment_reference = payment.reference
+            order.save(update_fields=['status', 'payment_status', 'payment_reference'])
+
+            print(f"✅ Order #{order.id} has been confirmed successfully.")
+
+    return HttpResponse(status=200)

@@ -34,8 +34,8 @@ class Materials(CatalogBaseModel):
       if self.stock <= 0:
          self.is_active = False
          
-      # elif self.stock >= 1:
-      #    self.stock = True
+      elif self.stock > 0:
+         self.stock = True
          
       if not self.slug:
          self.slug = slugify(self.name)

@@ -11,19 +11,20 @@ from order.models import Order
 def welcome_email_handler(sender,instance,created,**kwargs):
     
     if instance.is_active:
-        send_welcome_email_task(instance.id)
+        send_welcome_email_task.delay(instance.id)
 
 
-@receiver(post_save,sender=Payment)
-def payment_status_handler(sender,instance,created,**kwargs):
+@receiver(post_save,sender=Order)
+def order_confirmation_status_handler(sender,instance,created,**kwargs):
     
-    if instance.status == 'SUCCESSFUL':
-        print('this is it')
-        send_order_confirmation_email_task(instance.order,instance.user.id)
+    if instance.status == 'CONFIRMED' and not instance.tracking_id:
+        send_order_confirmation_email_task.delay(instance.id,instance.user.id)
+    
+            
 
 
 @receiver(post_save,sender=Order)
 def order_status_change_handler(sender,instance,created,**kwargs):
     
-    if instance.status != 'CREATED':
-        send_order_status_update_email_task(instance,instance.status,instance.user.id)
+    if instance.status != 'CREATED' and instance.tracking_id:
+        send_order_status_update_email_task.delay(instance.id,instance.status,instance.user.id)

@@ -18,6 +18,9 @@ from rest_framework_simplejwt.exceptions import TokenError
 from sendgrid.helpers.mail import Mail
 from sendgrid import SendGridAPIClient
 from django.conf import settings
+from order.models import Order
+
+import uuid
 
 
 
@@ -55,11 +58,24 @@ def send_welcome_email_task(self,user_id):
 
 
 @shared_task(bind=True)
-def send_order_confirmation_email_task(self,order,user_id):
+def send_order_confirmation_email_task(self,order_id,user_id):
    
-   user = get_object_or_404(CustomUser, id=user_id)
    
-   try: 
+    user = CustomUser.objects.get(id=user_id)
+    order = Order.objects.get(id=order_id)
+   
+    try:
+        if order.status == 'CONFIRMED' and not order.tracking_id:
+            
+            unique_number = str(order.id)[:8].upper()
+            tracking_number = f'MAC-{unique_number}'
+        
+            order.tracking_id = tracking_number
+            order.save(update_fields = ['tracking_id'])
+            
+            print(f'THIS UNIQUE NUMBER IS TO BE PRINTED{unique_number}')
+        
+   
         subject = f'Order Confirmation - #{order.id}'
         context = {'order': order,
                    'user':user}
@@ -81,19 +97,22 @@ def send_order_confirmation_email_task(self,order,user_id):
 
         return {"status": "sent", "email": user.email, "status_code": response.status_code}
         
-   except Exception as e:
+    except Exception as e:
         return ({'message': str(e)}) 
    
    
    
+
+   
    
 
 @shared_task(bind=True)
-def send_order_status_update_email_task(self,order,new_status,user_id):
+def send_order_status_update_email_task(self,order_id,new_status,user_id):
     
     try:
         
         user = CustomUser.objects.get(id=user_id)
+        order = Order.objects.get(id=order_id)
         subject = f'Order Update - #{order.id} - {new_status}'
         
         context = {

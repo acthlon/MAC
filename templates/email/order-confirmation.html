@@ -97,6 +97,13 @@
       .header { padding: 40px 20px 32px; }
       .button { width: 100%; box-sizing: border-box; text-align: center; }
     }
+
+    .tracking-id{
+
+      font-family:'Cormorant'
+      font-size: 50px;
+      font-weight:200px;
+    }
   </style>
 </head>
 <body>
@@ -115,6 +122,8 @@
             <h2 style="margin-top: 0;">Hello {{ user.first_name|default:user.username }},</h2>
 
             <p>Your payment for order <strong>#{{ order.id }}</strong> was successful.</p>
+
+            <p >Trackings Number: <span class="tracking-id">{{order.tracking_id}}</span></p>
 
             <div class="order-details">
                 <table>
