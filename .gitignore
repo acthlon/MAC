@@ -20,3 +20,7 @@ ENV/
 # apps
 measurements
 styles
+
+
+# Celery Beat schedule files
+celerybeat-schedule.*
