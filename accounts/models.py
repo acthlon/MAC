@@ -14,7 +14,7 @@ class generated_image_path():
     def __call__(self,instance,filename):
 
         extension = filename.split('.')[-1]
-        path = f'images/profile/{instance.user.username}.{extension}'
+        path = f'images/profile/{instance.id}.{extension}'
         return path
 
 image_path = generated_image_path()    
@@ -68,7 +68,13 @@ class CustomUser(AbstractUser):
     is_active= models.BooleanField(default=False)
     gender = models.CharField(choices=GENDER_CATEGORY)
     email = models.EmailField(max_length = 500,unique=True)
+    country = models.CharField(max_length = 500, null=True, blank=True)
+    state = models.CharField(max_length = 200, null=True, blank=True)
+    city = models.CharField(max_length=500, null=True, blank=True)
+    address = models.TextField(max_length = 1000, null=True, blank=True)
+    profile_image = models.ImageField(upload_to=image_path, null = True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
 
     USERNAME_FIELD = "email"
@@ -87,12 +93,14 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return f"{self.username}"
+    
+    def get_phone_number(self):
+        return self.phone_number()
 
 
 
 class UserProfile(models.Model):
-
-
+    # NOTE: YOU MAY REMOVE THIS, ALL THE FIELDS BELOW CAN BE IN *CustomUser* model
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE,related_name='userprofile') 
     country = models.CharField(max_length = 500, null=True, blank=True)
     state = models.CharField(max_length = 200, null=True, blank=True)

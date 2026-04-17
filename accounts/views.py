@@ -1,30 +1,36 @@
 import uuid
-from django.shortcuts import render,redirect
-from rest_framework.response import Response 
-from rest_framework.views import APIView
-from rest_framework import status
-from accounts.models import CustomUser,UserProfile
-from django.contrib.auth import authenticate,login
-from rest_framework_simplejwt.tokens import RefreshToken 
-from django.contrib.auth.tokens import default_token_generator
-from django.shortcuts import get_object_or_404
-from django.contrib.sites.shortcuts import get_current_site
-from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-from django.template.loader import render_to_string
-from accounts.serializers import CustomUserSerializer,UserProfileSerializer,UpdateUserProfileSerializer,UpdatePasswordSerializer
-from django.urls import reverse
-from rest_framework_simplejwt.exceptions import TokenError 
-from sendgrid.helpers.mail import Mail
-from sendgrid import SendGridAPIClient
-from rest_framework.permissions import IsAuthenticated,AllowAny
+
 from decouple import config
+from django.contrib.auth import authenticate, login
+from django.contrib.auth.tokens import default_token_generator
+from django.contrib.sites.shortcuts import get_current_site
+from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
+from django.urls import reverse
 from django.utils import timezone
-from django.utils.encoding import force_bytes 
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from rest_framework import generics, status
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.tokens import RefreshToken
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
+
+from accounts.models import CustomUser
+from accounts.serializers import (
+    CustomUserSerializer,
+    UpdatePasswordSerializer,
+    UpdateUserProfileSerializer,
+    UserProfileSerializer
+)
 from core.permissions import IsOwnerOrReadOnly
-from notifications.tasks import send_registration_email_task,send_password_reset_email_task
-
-
-
+from notifications.tasks import (
+    send_password_reset_email_task,
+    send_registration_email_task
+)
 
 
 class RegistrationView(APIView):
@@ -35,21 +41,10 @@ class RegistrationView(APIView):
     def post(self,request):
 
         serializer = CustomUserSerializer(data=request.data,context={'request':request})
-        # try:
-
         if serializer.is_valid():
             user = serializer.save()
-            
-            # the email verification aspect
-            # parameters needed
-
             send_registration_email_task.delay(user.id)
-            
-
             return Response({'message':f'registration was successful, check your e-mail for verification'}, status=status.HTTP_201_CREATED)
-
-        
-        
         return Response(serializer.errors, status = status.HTTP_400_BAD_REQUEST)
 
     
@@ -122,10 +117,7 @@ class PasswordResetRequestView(APIView):
 
             if resend_email == user.email:
                 email=resend_email
-
                 send_password_reset_email_task.delay(user.id,email)
-                
-
                 return Response({'message': 'a new reset link has been sent to your e-mail'})                 
 
                 
@@ -137,8 +129,7 @@ class PasswordResetRequestView(APIView):
 
 
 class PasswordResetConfirmView(APIView):
-
-
+    
     permission_classes = [AllowAny,]
 
     def post(self,request,user_id,password_reset_token):
@@ -174,12 +165,9 @@ class PasswordResetConfirmView(APIView):
 
 
 class LoginView(APIView):
-
-
     permission_classes = [AllowAny,]
 
     def post(self,request):
-
         try:
             email = request.data.get('email')
             password = request.data.get('password')
@@ -187,7 +175,7 @@ class LoginView(APIView):
           
             if user is not None:
 
-                login(request,user)
+                # login(request,user)
                 token = RefreshToken.for_user(user)
 
                 return Response({
@@ -238,7 +226,7 @@ class LogoutView(APIView):
             if refresh_token:
 
                 token = RefreshToken(refresh_token)
-# cache
+                
                 token.blacklist()
 
                 return Response({'message':'Logout successful'},status=status.HTTP_200_OK)
@@ -252,57 +240,62 @@ class LogoutView(APIView):
 
 
 
-class UserProfileView(APIView):
-    
+# class UserProfileView(APIView):
 
+#     permission_classes = [IsAuthenticated,]
+
+#     def get(self,request,pk):
+
+#         user = request.user
+#         profile = user.userprofile
+  
+#         serializer = UserProfileSerializer(profile)
+
+#         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+#     def put(self,request,pk):
+        
+#         try:
+            
+#             user = request.user
+#             profile = user.userprofile
+#             print(profile)
+#             serializer = UpdateUserProfileSerializer(profile,data = request.data, partial=True, context = {'request':request})
+            
+#             if serializer.is_valid():
+#                 print(serializer.validated_data)
+#                 serializer.save()
+#                 return Response({'status':'success',
+#                                  'message':'Profile Updated successfully',
+#                                  'data':serializer.data})
+#             else:
+#                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+#         except Exception as e:
+#             return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)    
+
+
+
+class UserProfileView(generics.RetrieveUpdateAPIView):
+    serializer_class = UpdateUserProfileSerializer
     permission_classes = [IsAuthenticated,]
 
-    def get(self,request,pk):
-
-        user = request.user
-        profile = user.userprofile
-  
-        serializer = UserProfileSerializer(profile)
-
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    def get_object(self):
+        return self.request.user
 
 
-    def put(self,request,pk):
-        
-        try:
-            
-            user = request.user
-            profile = user.userprofile
-            print(profile)
-            serializer = UpdateUserProfileSerializer(profile,data = request.data, partial=True, context = {'request':request})
-            
-            if serializer.is_valid():
-                print(serializer.validated_data)
-                serializer.save()
-                return Response({'status':'success',
-                                 'message':'Profile Updated successfully',
-                                 'data':serializer.data})
-            else:
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        except Exception as e:
-            return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)    
 
 
 class UpdatePasswordView(APIView):
     
-    def put(self,request,pk):
-        
-        try:
-            user = request.user
-            serializer = UpdatePasswordSerializer(user,data=request.data,context={'request':request},partial=True)
-            
-            if serializer.is_valid():
-                serializer.save()
-                
-                return Response(serializer.data,status=status.HTTP_200_OK)
-            else:
-                return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
-            
-        except Exception as e:
-            return Response({'message':str(e)})
+    def put(self,request, *args, **kwargs):
+        user = request.user
+        data = request.data
+
+        serializer = UpdatePasswordSerializer(user,data=request.data,context={'request':request})
+        serializer.is_valid(raise_exception=True)
+        response_data = serializer.update(user, data)
+        return Response(response_data,status=status.HTTP_200_OK)
+    
