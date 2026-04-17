@@ -189,7 +189,6 @@ def send_registration_email_task(self,user_id):
 
 @shared_task(bind=True)
 def send_password_reset_email_task(self,user_id,email):
-
     try:
         
         user = CustomUser.objects.get(id=user_id)

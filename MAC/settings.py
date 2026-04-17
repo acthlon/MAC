@@ -61,10 +61,10 @@ INSTALLED_APPS = [
 LOCAL_APPS = [
     "accounts",
     "materials",
-    "styles",
+    # "styles",
     "review",
     "cart",
-    "measurements",
+    # "measurements",
     "core",
     "products",
     "order",

@@ -6,11 +6,12 @@ from django.core.exceptions import ValidationError
 from phonenumbers import PhoneNumber
 from django.db import transaction
 
+from accounts.constants import MAX_FILE_SIZE
+
 
 class CustomUserSerializer(serializers.ModelSerializer):
 
-
-    password = serializers.CharField(write_only=True, min_length= 9)
+    password = serializers.CharField(write_only=True, min_length=9)
     username= serializers.CharField(read_only=True)
 
 
@@ -57,7 +58,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
 class UserProfileSerializer(serializers.ModelSerializer):
 
 
-    user = CustomUserSerializer()
+    user = CustomUserSerializer(required=False)
 
     def get_phone(self,obj):
         return obj.get_phone_number()    
@@ -66,105 +67,65 @@ class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
         
-        fields = ['country', 'state', 'city', 'address','profile_image','user']        
+        fields = ['country', 'state', 'city', 'address','profile_image','first_name', 'last_name']        
 
 
 class UpdateUserProfileSerializer(serializers.ModelSerializer):
-    
-    
-    def validate(self,data):
+    username = serializers.CharField(required=False)
+    gender = serializers.CharField(required=False)
 
-        request = self.context['request']
-        request_method = request.method
-        user = request.user  
-
-
-        if request_method in ['PUT','PATCH']:
-                        
-            if 'profile_image' in data:
-                profile_image = data.get('profile_image')
-
-                if profile_image and profile_image.size > 5 * 1024 * 1024:
-                    raise serializers.ValidationError({'profile_image': 'Profile Image must not exceed 5MB'})
-                
-        return data
-     
-     
-    def update(self,instance,validated_data):
-
-        try:
-
-            for field ,values in validated_data.items():
-                if hasattr(instance,field):
-                    setattr(instance,field,values)
-
-                    instance.save()
-
-            return super().update(instance,validated_data)
-
-        except Exception as e:
-            raise serializers.ValidationError({'info': str(e)})    
-        
     class Meta:
-        model = UserProfile
-        fields = ['country', 'state', 'city', 'address','profile_image']        
+        model = CustomUser
+        fields = ['country', 'state', 'city', 'address','profile_image', "phone_number", "first_name", "last_name", "email", "username", "gender"]
+        read_only_fields = ["email"]        
 
-
-
-class UpdatePasswordSerializer(serializers.ModelSerializer):
     
-    password = serializers.CharField(required=True)
-    old_password = serializers.CharField(write_only = True, required=True)
-    confirm_password = serializers.CharField(write_only = True,required=True)
+    def validate(self,data):
+        user = self.context["request"].user     
+        profile_image = data.get('profile_image') 
+        username = data.get("username")
+
+        if profile_image and profile_image.size > MAX_FILE_SIZE:
+            raise serializers.ValidationError({'message': f'Profile Image must not exceed {MAX_FILE_SIZE}MB'})
+
+        if username and CustomUser.objects.filter(username=username).exclude(id=user.id).first():
+            raise serializers.ValidationError({"message": "username exists"})        
+
+        return data
+       
+
+
+
+
+class UpdatePasswordSerializer(serializers.Serializer):
+    
+    password = serializers.CharField(write_only=True, required=True)
+    old_password = serializers.CharField(write_only=True, required=True)
+    confirm_password = serializers.CharField(write_only=True, required=True)
     
     
     def validate(self,data):
-        
         request = self.context.get('request')
         user = request.user
         
-        if 'old_password' not in data:
-            raise serializers.ValidationError({'password':'old_password is required'})
-
-        if 'password' not in data:
-            raise serializers.ValidationError({'password':'password is required'})
-
-        if 'confirm_password' not in data:
-            raise serializers.ValidationError({'password':'confirm_password is required'})
+        password = data.get('password')
+        confirm_password = data.get('confirm_password')
+        old_password = data.get('old_password')
+        
+        if not user.check_password(old_password):
+            raise serializers.ValidationError({'message': "Old password doesn't match"})
             
-        if 'password' in data and 'confirm_password' in data and 'old_password' in data:
-            password = data.get('password')
-            confirm_password = data.get('confirm_password')
-            old_password = data.get('old_password')
-            
-            if old_password and not user.check_password(old_password):
-                print(user.password)
-                raise serializers.ValidationError({'Password': "Old password doesn't match"})
-                
-            if password != confirm_password:
-                raise ValidationError('The passwords must match')
-            
-            validate_password_strength(password)
+        if password != confirm_password:
+            raise ValidationError('The passwords must match')
+        
+        validate_password_strength(password)
         return data
                 
                 
-    def update(self,instance,validated_data):
+    def update(self,instance, validated_data):
+        password = validated_data.pop('password')
+        instance.set_password(password)
+        instance.save(update_fields=["password"])
 
-        try:
-            if 'password' in validated_data and 'old_password' in validated_data:
-                old_password = validated_data.pop('old_password',None)
-                password = validated_data.pop('password',None)
-                
-
-                if instance.check_password(old_password):
-                    instance.set_password(password)
-                    instance.save()
-            
-            return super().update(instance,validated_data)
-
-        except Exception as e:
-            raise serializers.ValidationError({'message':str(e)})
-         
-    class Meta:
-        model = CustomUser
-        fields = ['password','old_password','confirm_password']
+        return {"message": "Password updated successfully"}
+    

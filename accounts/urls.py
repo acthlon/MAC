@@ -10,8 +10,7 @@ urlpatterns = [
     path('password_reset/<user_id>/<password_reset_token>/',PasswordResetConfirmView.as_view(),name='password-reset-confirm'),
     path('logout/',LogoutView.as_view(),name='logout'),
     path('token/refresh/',RefreshTokenView.as_view(),name="regenerate-access-token"),
-    path('profile/<uuid:pk>/',UserProfileView.as_view(),name='retrieve-profile'),
-    path('update_profile/<uuid:pk>/',UserProfileView.as_view(),name='profile-update'),
-    path('update_password/<uuid:pk>/',UpdatePasswordView.as_view(),name='password-update'),
-    
+   
+    path('profile/',UserProfileView.as_view(),name='profile'),
+    path('update-password/', UpdatePasswordView.as_view(),name='update_password'),   
 ]
