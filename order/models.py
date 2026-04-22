@@ -9,6 +9,8 @@ from phonenumber_field.modelfields import PhoneNumberField
 from decimal import Decimal
 from core.constants import PAYMENT_STATUS_CHOICES
 
+# NOTE: USE TextChoices
+
 ORDER_STATUS_CHOICES =[
     ('CREATED','Created'),
     ('CONFIRMED','Confirmed'),
@@ -89,6 +91,8 @@ class DeliveryMethod(models.Model):
     description = models.CharField(max_length=255,null=True,blank=True)
     cost = models.DecimalField(max_digits=12, decimal_places=2)
     delivery_time = models.CharField(max_length=100)
+
+    # 9am, 2pm
     # estimated_date = models.CharField(max_length=100)
     # time_added = models.DateTimeField(aut_now_add=True)
     display_order = models.PositiveSmallIntegerField(default=0)

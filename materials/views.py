@@ -19,6 +19,14 @@ from core.permissions import IsAdminOrReadOnly
 class MaterialsListView(generics.ListAPIView):
     
     permission_classes = [AllowAny,]
+    filter_backends = [DjangoFilterBackend,SearchFilter,OrderingFilter]
+    serializer_class = MaterialSerializer 
+    paginator_class = CatalogPagination 
+    
+    filterset_class = MaterialsFilter    
+    search_fields = ['name','description']
+    ordering_fields = ['price','category']
+
 
     def get_queryset(self):
 
@@ -32,14 +40,6 @@ class MaterialsListView(generics.ListAPIView):
             queryset =  Materials.objects.filter(is_active=True)
             return queryset
         
-    serializer_class = MaterialSerializer 
-    paginator_class = CatalogPagination 
-
-    filter_backends = (DjangoFilterBackend,SearchFilter,OrderingFilter)
-
-    filterset_class = MaterialsFilter    
-    search_fields = ('name','description')
-    ordering_fields = ('price','category')
             
             
 class MaterialCreateView(APIView):    

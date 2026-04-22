@@ -58,7 +58,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
 class UserProfileSerializer(serializers.ModelSerializer):
 
 
-    user = CustomUserSerializer(required=False)
+    user = CustomUserSerializer()
 
     def get_phone(self,obj):
         return obj.get_phone_number()    
@@ -72,14 +72,13 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 class UpdateUserProfileSerializer(serializers.ModelSerializer):
     username = serializers.CharField(required=False)
-    gender = serializers.CharField(required=False)
+    gender = serializers.ChoiceField(choices=[CustomUser.MALE, CustomUser.FEMALE, CustomUser.OTHERS], required=False)
 
     class Meta:
         model = CustomUser
         fields = ['country', 'state', 'city', 'address','profile_image', "phone_number", "first_name", "last_name", "email", "username", "gender"]
         read_only_fields = ["email"]        
 
-    
     def validate(self,data):
         user = self.context["request"].user     
         profile_image = data.get('profile_image') 
@@ -94,7 +93,15 @@ class UpdateUserProfileSerializer(serializers.ModelSerializer):
         return data
        
 
+# {
+#     "message": [
+#         "invalid image file"
+#     ]
+# }
 
+{
+    "message": "invalid image file"
+}
 
 
 class UpdatePasswordSerializer(serializers.Serializer):
@@ -113,7 +120,7 @@ class UpdatePasswordSerializer(serializers.Serializer):
         old_password = data.get('old_password')
         
         if not user.check_password(old_password):
-            raise serializers.ValidationError({'message': "Old password doesn't match"})
+            raise serializers.ValidationError({'message': "Pls recheck provided information"})
             
         if password != confirm_password:
             raise ValidationError('The passwords must match')

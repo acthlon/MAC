@@ -4,8 +4,7 @@ from accounts.models import CustomUser
 from order.models import Order,PaymentMethod
 
 from core.constants import PAYMENT_STATUS_CHOICES
-
-
+from payments.choices import PaymentStatusChoices, PaymentCurrencyChoices
 
 
 class Payment(models.Model):
@@ -15,8 +14,8 @@ class Payment(models.Model):
     order = models.ForeignKey(Order,on_delete=models.PROTECT, related_name='payments')
     payment_method = models.ForeignKey(PaymentMethod, on_delete=models.PROTECT)
     amount = models.DecimalField(max_digits=12,decimal_places=2)
-    currency = models.CharField(max_length=4,default='NGN')
-    status=models.CharField(choices=PAYMENT_STATUS_CHOICES, max_length=20, default='pending')
+    currency = models.CharField(max_length=4,default=PaymentCurrencyChoices.NGN,choices=PaymentCurrencyChoices.choices)
+    status=models.CharField(choices=PaymentStatusChoices.choices, max_length=20, default=PaymentStatusChoices.PENDING)
     reference = models.CharField(max_length=100,blank=True,null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

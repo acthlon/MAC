@@ -47,7 +47,18 @@ class RegistrationView(APIView):
             return Response({'message':f'registration was successful, check your e-mail for verification'}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status = status.HTTP_400_BAD_REQUEST)
 
-    
+
+class RegistrationView(generics.CreateAPIView):
+    serializer_class = CustomUserSerializer
+    permission_classes = [AllowAny,]
+
+    def post(self,request,*args,**kwargs):
+        serializer = self.get_serializer(data=request.data, context={'request':request})
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        send_registration_email_task.delay(user.id)
+        return Response({'message':f'registration was successful, check your e-mail for verification'}, status=status.HTTP_201_CREATED)
+
 
 class VerifyEmailView(APIView):
 
@@ -184,34 +195,42 @@ class LoginView(APIView):
                 }, status=status.HTTP_200_OK)
             
             else:
-                return Response({'message':'invalid credentials, user with this email does not exist, proceed to signup'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'message':'invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
             
         except Exception as e:    
             print(f'{user.email}')
             return Response({'message':str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+from rest_framework import generics, serializers
 
-class RefreshTokenView(APIView):
+class RefeshSerializer(serializers.Serializer):
+    refresh_token = serializers.CharField(write_only=True, required=True)
 
+    def validate_refresh_token(self, value):
+        try:
+            RefreshToken(value)
+        except TokenError:
+            raise serializers.ValidationError('Invalid refresh token')
+        return value
+class RefreshTokenView(generics.GenericAPIView):
+    serializer_class = RefeshSerializer
     permission_classes = [AllowAny,]
 
     def post(self,request):
-        refresh_token = request.data.get('refresh_token')
-        print(refresh_token)
-        
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        refresh_token = serializer.validated_data['refresh_token']
+
         try:
-            if not refresh_token:
-                return Response({'message':'Refresh token is required'},status = status.HTTP_400_BAD_REQUEST)
-            
-            else:
-                refresh = RefreshToken(refresh_token)
-                access_token = str(refresh.access_token) 
+            token = RefreshToken(refresh_token)
+            new_access_token = str(token.access_token)
 
-                return Response({"access_token": access_token},status=status.HTTP_200_OK)
+            return Response({'access_token': new_access_token}, status=status.HTTP_200_OK)
 
-        except TokenError as e:
-            return Response({'message':str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except TokenError:
+            return Response({'message':'Invalid refresh token'}, status=status.HTTP_400_BAD_REQUEST)
 
 class LogoutView(APIView):
     
@@ -228,6 +247,7 @@ class LogoutView(APIView):
                 token = RefreshToken(refresh_token)
                 
                 token.blacklist()
+                
 
                 return Response({'message':'Logout successful'},status=status.HTTP_200_OK)
             
@@ -275,6 +295,21 @@ class LogoutView(APIView):
 #         except Exception as e:
 #             return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)    
 
+
+from rest_framework import generics
+# NOTE: START GETTING USED TO generics
+(
+    generics.RetrieveUpdateAPIView,
+    generics.RetrieveAPIView,
+    generics.UpdateAPIView,
+    generics.ListAPIView,
+    generics.CreateAPIView,
+    generics.DestroyAPIView,
+    generics.ListCreateAPIView,
+    generics.RetrieveDestroyAPIView,
+    generics.RetrieveUpdateDestroyAPIView,
+    generics.GenericAPIView
+)
 
 
 class UserProfileView(generics.RetrieveUpdateAPIView):

@@ -22,10 +22,11 @@ from order.models import Order
 
 import uuid
 
+from django.core.mail import send_mail
 
 
 
-
+# NOTE: Seperate these tasks, e.g accounts related task should be in accounts app 
 @shared_task(bind=True)
 def send_welcome_email_task(self,user_id):
     
@@ -44,6 +45,14 @@ def send_welcome_email_task(self,user_id):
                 html_content=html_message, 
             )
 
+            #NOTE: use `send_mail` method for mail functionalities, 
+            # after configuring sending of mail using SMTP in `settings.py`` 
+            send_mail(
+                subject,
+                from_email = settings.DEFAULT_FROM_EMAIL,
+                recipient_list = [user.email],
+                html_message = html_message,
+            )
             api_key=settings.SENDGRID_API_KEY
             sg = SendGridAPIClient(api_key=api_key)
             response = sg.send(email_message)

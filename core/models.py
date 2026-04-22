@@ -20,8 +20,11 @@ class generated_image_path():
 image_path = generated_image_path()
 
 
+import uuid
+# BaseModel
 class TimeStampModel(models.Model):
-
+    # NOTE: YOU MAY RENAME THIS TO `BaseModel`, and make all your other models inherit it
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     created_at = models.DateTimeField(auto_now_add = True)
     updatred_at = models.DateTimeField(auto_now = True)
 
