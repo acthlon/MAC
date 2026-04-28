@@ -257,7 +257,7 @@ class UserProfileView(APIView):
 
     permission_classes = [IsAuthenticated,]
 
-    def get(self,request,pk):
+    def get(self,request):
 
         user = request.user
         profile = user.userprofile
@@ -267,7 +267,7 @@ class UserProfileView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-    def put(self,request,pk):
+    def put(self,request):
         
         try:
             
@@ -277,7 +277,7 @@ class UserProfileView(APIView):
             serializer = UpdateUserProfileSerializer(profile,data = request.data, partial=True, context = {'request':request})
             
             if serializer.is_valid():
-                print(serializer.validated_data)
+
                 serializer.save()
                 return Response({'status':'success',
                                  'message':'Profile Updated successfully',
@@ -291,18 +291,18 @@ class UserProfileView(APIView):
 
 class UpdatePasswordView(APIView):
     
-    def put(self,request,pk):
+    permission_classes = [IsAuthenticated,]
+    
+    def put(self,request,*args,**kwargs):
         
         try:
             user = request.user
-            serializer = UpdatePasswordSerializer(user,data=request.data,context={'request':request},partial=True)
+            serializer = UpdatePasswordSerializer(user,data=request.data,context={'request':request})
             
-            if serializer.is_valid():
-                serializer.save()
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
                 
-                return Response(serializer.data,status=status.HTTP_200_OK)
-            else:
-                return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.data,status=status.HTTP_200_OK)
             
         except Exception as e:
             return Response({'message':str(e)})

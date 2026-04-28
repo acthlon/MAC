@@ -176,8 +176,6 @@ class CreateOrderFromCartSerializer(serializers.Serializer):
         return data    
             
 
-        
-
 
     
 

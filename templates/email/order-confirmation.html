@@ -1,188 +1,458 @@
-<!DOCTYPE html>
-<html lang="en">
+{% load static %}
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Payment Confirmation - Order #{{ order.id }}</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="x-apple-disable-message-reformatting" />
+  <title>MAC — Order Confirmed</title>
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
   <style type="text/css">
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacOSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background-color: #f5f5f5;
-      color: #333333;
-      line-height: 1.6;
-    }
-    .container {
-      max-width: 640px;
-      margin: 0 auto;
-      background-color: #ffffff;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-    }
-    .header {
-      background: linear-gradient(135deg, #ff6b00 0%, #ff8c00 100%);
-      color: white;
-      text-align: center;
-      padding: 48px 24px 32px;
-    }
-    .header h1 {
-      margin: 0;
-      font-size: 28px;
-      font-weight: 700;
-    }
-    .content {
-      padding: 40px 32px;
-    }
-    .section-title {
-      font-size: 20px;
-      font-weight: 600;
-      color: #1a1a1a;
-      margin: 0 0 16px;
-    }
-    .order-details {
-      background: #f8f9fa;
-      border-radius: 8px;
-      padding: 24px;
-      margin: 24px 0;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    td {
-      padding: 12px 0;
-      border-bottom: 1px solid #eeeeee;
-    }
-    .total-row td {
-      font-weight: 700;
-      font-size: 18px;
-      border-top: 2px solid #eeeeee;
-      padding-top: 16px;
-    }
-    .status-badge {
-      display: inline-block;
-      padding: 6px 16px;
-      background-color: #d1fae5;
-      color: #065f46;
-      font-weight: 600;
-      border-radius: 20px;
-      font-size: 14px;
-    }
-    .button {
-      display: inline-block;
-      margin: 24px 0;
-      padding: 16px 40px;
-      background-color: #ff6b00;
-      color: white !important;
-      text-decoration: none;
-      font-weight: 600;
-      font-size: 18px;
-      border-radius: 8px;
-    }
-    .footer {
-      background-color: #f8f9fa;
-      padding: 32px 24px;
-      text-align: center;
-      font-size: 14px;
-      color: #64748b;
-    }
-    .footer a {
-      color: #ff6b00;
-      text-decoration: none;
-    }
+    /* Reset */
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-collapse: collapse !important; }
+    img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; display: block; }
+    body { margin: 0 !important; padding: 0 !important; width: 100% !important; }
+
+    /* Responsive */
     @media only screen and (max-width: 600px) {
-      .content { padding: 32px 20px; }
-      .header { padding: 40px 20px 32px; }
-      .button { width: 100%; box-sizing: border-box; text-align: center; }
-    }
-
-    .tracking-id{
-
-      font-family:'Cormorant'
-      font-size: 50px;
-      font-weight:200px;
+      .email-wrapper { width: 100% !important; }
+      .email-body { padding: 24px 16px !important; }
+      .two-col td { display: block !important; width: 100% !important; padding-bottom: 16px !important; }
+      .hero-title { font-size: 22px !important; }
+      .timeline-step td { padding: 0 6px !important; }
+      .timeline-label { font-size: 9px !important; }
     }
   </style>
 </head>
-<body>
-    {% if order and user %}
-        <div class="container">
 
-            <!-- Header -->
-            <div class="header">
-            <h1>Payment Confirmed!</h1>
-            <p style="margin: 12px 0 0; font-size: 18px;">Thank you for shopping with us</p>
-            </div>
 
-            <!-- Content -->
-            <div class="content">
+<body style="margin:0;padding:0;background-color:#0a0a0a;font-family:Georgia,serif;">
 
-            <h2 style="margin-top: 0;">Hello {{ user.first_name|default:user.username }},</h2>
+  {% if order and user %}
+    <!-- Preheader (hidden preview text) -->
+    <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">
+      Your MAC order {{order.tracking_id}} has been confirmed. Thank you for shopping with us. &#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;
+    </div>
 
-            <p>Your payment for order <strong>#{{ order.id }}</strong> was successful.</p>
+    <!-- Full-width background -->
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:#0a0a0a;">
+      <tr>
+        <td align="center" style="padding:32px 16px 48px;">
 
-            <p >Trackings Number: <span class="tracking-id">{{order.tracking_id}}</span></p>
+          <!-- Email container -->
+          <table role="presentation" class="email-wrapper" cellpadding="0" cellspacing="0" width="600" style="max-width:600px;width:100%;">
 
-            <div class="order-details">
-                <table>
-                <tr>
-                    <td><strong>Order ID</strong></td>
-                    <td style="text-align:right;">#{{ order.id }}</td>
-                </tr>
-                <tr>
-                    <td><strong>Payment Status</strong></td>
-                    <td style="text-align:right;">
-                    <span class="status-badge">Paid</span>
-                    </td>
-                </tr>
-                <tr>
-                    <td><strong>Payment Method</strong></td>
-                    <td style="text-align:right;">{{ order.payment_method.display_name|default:"Paystack" }}</td>
-                </tr>
-                <tr>
-                    <td><strong>Delivery Address</strong></td>
-                    <td style="text-align:right;">{{ order.shipping_address|default:"N/A" }}</td>
-                </tr>
-                <tr>
-                    <td><strong>Order Date</strong></td>
-                    <td style="text-align:right;">{{ order.created_at|date:"d M Y" }}</td>
-                </tr>
-                <tr class="total-row">
-                    <td>Total Amount</td>
-                    <td style="text-align:right;">₦{{ order.total_amount|floatformat:2 }}</td>
-                </tr>
+            <!-- ═══════════════════════════════ -->
+            <!-- HEADER / LOGO                  -->
+            <!-- ═══════════════════════════════ -->
+            <tr>
+              <td align="center" style="background-color:#000000;padding:36px 40px 28px;border-top:3px solid #FFB400;">
+                <!-- Logo -->
+                <img src="images/logo.png" width="88" height="88" alt="MAC" style="display:block;margin:0 auto 14px;width:88px;height:88px;object-fit:contain;" />
+                <!-- Brand name -->
+                <p style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:10px;letter-spacing:7px;color:#FFB400;text-transform:uppercase;">M &nbsp; A &nbsp; C</p>
+              </td>
+            </tr>
+
+            <!-- Gold top accent line under header -->
+            <tr>
+              <td style="background:linear-gradient(to right,#000,#FFB400,#000);height:1px;font-size:1px;line-height:1px;">&nbsp;</td>
+            </tr>
+
+            <!-- ═══════════════════════════════ -->
+            <!-- SUCCESS HERO                   -->
+            <!-- ═══════════════════════════════ -->
+            <tr>
+              <td align="center" class="email-body" style="background-color:#060606;padding:44px 40px 36px;">
+
+                <!-- Checkmark circle -->
+                <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 24px;">
+                  <tr>
+                    <td align="center" valign="middle" width="68" height="68" style="width:68px;height:68px;border-radius:50%;border:2px solid #FFB400;background-color:#141200;text-align:center;vertical-align:middle;">
+                      <!-- SVG checkmark as image alternative: unicode -->
+                      <span style="font-size:28px;line-height:1;color:#FFB400;">✓</span>
+                    </td>fn  n vbnbvcvb m
+                  </tr>
                 </table>
-            </div>
 
-            <p>We’re preparing your order and will notify you once it ships.</p>
+                <h1 class="hero-title" style="margin:0 0 10px;font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:700;letter-spacing:2px;color:#ffffff;text-align:center;">Order Confirmed</h1>
+                <p style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:16px;font-style:italic;font-weight:400;color:#888888;letter-spacing:0.3px;text-align:center;">Your purchase has been received and is being prepared</p>
 
-            <a href="{{ site_url|default:"https://yourstore.com/orders/" }}{{ order.id }}" class="button">
-                View Order Details
-            </a>
+                <!-- Gold divider -->
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin:28px 0 0;">
+                  <tr>
+                    <td style="background-color:#333;height:1px;font-size:1px;">&nbsp;</td>
+                    <td width="8" align="center" valign="middle" style="font-size:8px;color:#FFB400;padding:0 10px;">◆</td>
+                    <td style="background-color:#333;height:1px;font-size:1px;">&nbsp;</td>
+                  </tr>
+                </table>
 
-            <p style="margin-top: 32px;">
-                Questions? Contact us anytime:<br>
-                Email: support@yourstore.com<br>
-                Phone: +234 123 456 7890<br>
-                WhatsApp: +234 987 654 3210
-            </p>
+              </td>
+            </tr>
 
-            </div>
+            <!-- ═══════════════════════════════ -->
+            <!-- ORDER META                     -->
+            <!-- ═══════════════════════════════ -->
+            <tr>
+              <td style="background-color:#0a0a0a;padding:0 40px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border:1px solid #2a2200;background-color:#0d0900;margin:20px 0 0;">
+                  <tr>
+                    <td style="padding:24px 28px 20px;">
+                      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" class="two-col">
+                        <tr>
+                          <td valign="top" width="50%" style="padding-bottom:18px;padding-right:12px;">
+                            <p style="margin:0 0 5px;font-family:Georgia,serif;font-size:9px;letter-spacing:3px;color:#FFB400;text-transform:uppercase;">Order Number</p>
+                            <p style="margin:0;font-family:Georgia,serif;font-size:15px;color:#eeeeee;">#{{order.tracking_id}}</p>
+                          </td>
+                          <td valign="top" width="50%" style="padding-bottom:18px;padding-left:12px;">
+                            <p style="margin:0 0 5px;font-family:Georgia,serif;font-size:9px;letter-spacing:3px;color:#FFB400;text-transform:uppercase;">Order Date</p>
+                            <p style="margin:0;font-family:Georgia,serif;font-size:15px;color:#eeeeee;">{{order.updated_at}}</p>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td valign="top" width="50%" style="padding-right:12px;">
+                            <p style="margin:0 0 5px;font-family:Georgia,serif;font-size:9px;letter-spacing:3px;color:#FFB400;text-transform:uppercase;">Payment</p>
+                            <p style="margin:0;font-family:Georgia,serif;font-size:15px;color:#eeeeee;">{{order.payment_method.masked_card}}</p>
+                          </td>
+                          <td valign="top" width="50%" style="padding-left:12px;">
+                            <p style="margin:0 0 5px;font-family:Georgia,serif;font-size:9px;letter-spacing:3px;color:#FFB400;text-transform:uppercase;">Est. Delivery</p>
+                            <p style="margin:0;font-family:Georgia,serif;font-size:15px;color:#eeeeee;">April 14–16, 2026</p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
 
-            <!-- Footer -->
-            <div class="footer">
-            <p>Thank you for choosing <strong>[Your Store Name]</strong></p>
-            <p>
-                <a href="{{ site_url|default:"https://yourstore.com" }}">Shop Again</a> •
-                <a href="#">Track Order</a> •
-                <a href="#">Help Center</a>
-            </p>
-            <p>© {{ year|default:"2026" }} [Your Store Name]. All rights reserved.</p>
-            </div>
+            <!-- ═══════════════════════════════ -->
+            <!-- ITEMS ORDERED                  -->
+            <!-- ═══════════════════════════════ -->
+            <tr>
+              <td style="background-color:#0a0a0a;padding:28px 40px 0;">
+                <p style="margin:0 0 16px;font-family:Georgia,serif;font-size:9px;letter-spacing:4px;color:#FFB400;text-transform:uppercase;">Items Ordered</p>
 
-        </div>
-    {% endif %}
+                <!-- Item 1 -->
+                {% for orderitem in orderitems %} 
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-bottom:1px solid #1a1a1a;padding-bottom:16px;margin-bottom:16px;">
+                  <tr>
+                    <td valign="middle" width="52" style="padding-right:16px;">
+                      <table role="presentation" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td align="center" valign="middle" width="52" height="52" style="width:52px;height:52px;border:1px solid #2a2200;background-color:#100d00;">
+                            <span style="font-size:22px;">👜</span>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                    <td valign="middle">
+                      <p style="margin:0 0 3px;font-family:Georgia,serif;font-size:15px;font-weight:bold;color:#eeeeee;">{{orderitem.content_object.name}}</p>
+                      {% comment %} <p style="margin:0;font-family:Georgia,serif;font-size:13px;font-style:italic;color:#777777;">Black / Gold Hardware — Large</p> {% endcomment %}
+                    </td>
+                    <td valign="middle" align="right" style="white-space:nowrap;padding-left:12px;">
+                      <p style="margin:0 0 2px;font-family:Georgia,serif;font-size:15px;font-weight:bold;color:#eeeeee;">₦{{orderitem.sub_total}}</p>
+                      <p style="margin:0;font-family:Georgia,serif;font-size:12px;color:#666666;letter-spacing:1px;">Qty {{orderitem.quantity}}</p>
+                    </td>
+                  </tr>
+                </table>
+                {% endfor %}
+
+            <!-- ═══════════════════════════════ -->
+            <!-- ORDER TOTALS                   -->
+            <!-- ═══════════════════════════════ -->
+            <tr>
+              <td style="background-color:#0a0a0a;padding:20px 40px 0;">
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border:1px solid #1f1800;background-color:#0d0900;">
+                  <tr>
+                    <td style="padding:20px 24px;">
+
+                      <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                        <tr>
+                          <td style="padding-bottom:10px;">
+                            <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                              <tr>
+                                <td style="font-family:Georgia,serif;font-size:14px;color:#777777;">Subtotal</td>
+                                <td align="right" style="font-family:Georgia,serif;font-size:14px;color:#cccccc;">₦{{order.sub_total_amount}}</td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding-bottom:10px;">
+                            <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                              <tr>
+                                <td style="font-family:Georgia,serif;font-size:14px;color:#777777;">Shipping</td>
+                                <td align="right" style="font-family:Georgia,serif;font-size:14px;color:#cccccc;">₦{{order.delivery_method.cost}}</td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding-bottom:14px;">
+                            <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                              <tr>
+                                <td style="font-family:Georgia,serif;font-size:14px;color:#777777;">Discount (ROYAL10)</td>
+                                <td align="right" style="font-family:Georgia,serif;font-size:14px;color:#FFB400;">-₦{{order.total_discount}}</td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                        <!-- Grand total row -->
+                        <tr>
+                          <td style="border-top:1px solid #2a2200;padding-top:14px;">
+                            <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                              <tr>
+                                <td style="font-family:Georgia,serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#FFB400;">Total</td>
+                                <td align="right" style="font-family:Georgia,serif;font-size:20px;font-weight:bold;color:#FFB400;letter-spacing:1px;">₦{{order.total_amount}}</td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- ═══════════════════════════════ -->
+            <!-- SHIPPING + BILLING ADDRESSES   -->
+            <!-- ═══════════════════════════════ -->
+            <tr>
+              <td style="background-color:#0a0a0a;padding:20px 40px 0;">
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%" class="two-col">
+                  <tr>
+                    <!-- Shipping -->
+                    <td valign="top" width="50%" style="padding-right:8px;">
+                      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border:1px solid #1a1a1a;background-color:#080808;">
+                        <tr>
+                          <td style="padding:18px 18px 16px;">
+                            <p style="margin:0 0 10px;font-family:Georgia,serif;font-size:9px;letter-spacing:3px;color:#FFB400;text-transform:uppercase;">Shipping Address</p>
+                            <p style="margin:0;font-family:Georgia,serif;font-size:13px;color:#888888;line-height:1.8;">
+                              {{order.shipping_address.first_name}}&nbsp; {{order.shippng_address.last_name}}<br/>
+                              {{order.shipping_address.delivery_address}}<br/>
+                              GRA,&nbsp;{{order.shipping_address.city}}<br/>
+                              {{order.shipping_address.state}},&nbsp;{{order.shipping_address.country}}
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                    <!-- Billing -->
+                    <td valign="top" width="50%" style="padding-left:8px;">
+                      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border:1px solid #1a1a1a;background-color:#080808;">
+                        <tr>
+                          <td style="padding:18px 18px 16px;">
+                            <p style="margin:0 0 10px;font-family:Georgia,serif;font-size:9px;letter-spacing:3px;color:#FFB400;text-transform:uppercase;">Billing Address</p>
+                            <p style="margin:0;font-family:Georgia,serif;font-size:13px;color:#888888;line-height:1.8;">
+                              Adebayo Williams<br/>
+                              14 Adekunle Crescent<br/>
+                              GRA, Ibadan<br/>
+                              Oyo State, Nigeria
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- ═══════════════════════════════ -->
+            <!-- ORDER STATUS TIMELINE          -->
+            <!-- ═══════════════════════════════ -->
+            <tr>
+              <td style="background-color:#0a0a0a;padding:20px 40px 0;">
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border:1px solid #1f1800;background-color:#080600;">
+                  <tr>
+                    <td style="padding:22px 20px 20px;">
+
+                      <p style="margin:0 0 18px;font-family:Georgia,serif;font-size:9px;letter-spacing:4px;color:#FFB400;text-transform:uppercase;text-align:center;">Order Status</p>
+
+                      <!-- Timeline steps -->
+                      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" class="timeline-step">
+                        <tr>
+                          <!-- Step 1: Confirmed (active) -->
+                          <td align="center" valign="top" style="padding:0 8px;width:25%;">
+                            <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;">
+                              <tr>
+                                <td align="center" valign="middle" width="26" height="26" style="width:26px;height:26px;border-radius:50%;border:2px solid #FFB400;background-color:#1a1000;text-align:center;vertical-align:middle;">
+                                  <span style="font-size:10px;color:#FFB400;font-weight:bold;">✓</span>
+                                </td>
+                              </tr>
+                            </table>
+                            <p class="timeline-label" style="margin:8px 0 0;font-family:Georgia,serif;font-size:10px;letter-spacing:1px;color:#FFB400;text-align:center;text-transform:uppercase;">Confirmed</p>
+                          </td>
+
+                          <!-- Connector -->
+                          <td valign="middle" style="padding-bottom:18px;">
+                            <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                              <tr><td style="border-top:1px solid #2a2200;font-size:1px;">&nbsp;</td></tr>
+                            </table>
+                          </td>
+
+                          <!-- Step 2: Processing -->
+                          <td align="center" valign="top" style="padding:0 8px;width:25%;">
+                            <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;">
+                              <tr>
+                                <td align="center" valign="middle" width="26" height="26" style="width:26px;height:26px;border-radius:50%;border:2px solid #333333;background-color:#0d0d0d;text-align:center;vertical-align:middle;">
+                                  <span style="display:block;width:8px;height:8px;border-radius:50%;background-color:#333;margin:0 auto;"></span>
+                                </td>
+                              </tr>
+                            </table>
+                            <p class="timeline-label" style="margin:8px 0 0;font-family:Georgia,serif;font-size:10px;letter-spacing:1px;color:#444444;text-align:center;text-transform:uppercase;">Processing</p>
+                          </td>
+
+                          <!-- Connector -->
+                          <td valign="middle" style="padding-bottom:18px;">
+                            <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                              <tr><td style="border-top:1px solid #1a1a1a;font-size:1px;">&nbsp;</td></tr>
+                            </table>
+                          </td>
+
+                          <!-- Step 3: Shipped -->
+                          <td align="center" valign="top" style="padding:0 8px;width:25%;">
+                            <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;">
+                              <tr>
+                                <td align="center" valign="middle" width="26" height="26" style="width:26px;height:26px;border-radius:50%;border:2px solid #333333;background-color:#0d0d0d;text-align:center;vertical-align:middle;">
+                                  <span style="display:block;width:8px;height:8px;border-radius:50%;background-color:#333;margin:0 auto;"></span>
+                                </td>
+                              </tr>
+                            </table>
+                            <p class="timeline-label" style="margin:8px 0 0;font-family:Georgia,serif;font-size:10px;letter-spacing:1px;color:#444444;text-align:center;text-transform:uppercase;">Shipped</p>
+                          </td>
+
+                          <!-- Connector -->
+                          <td valign="middle" style="padding-bottom:18px;">
+                            <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                              <tr><td style="border-top:1px solid #1a1a1a;font-size:1px;">&nbsp;</td></tr>
+                            </table>
+                          </td>
+
+                          <!-- Step 4: Delivered -->
+                          <td align="center" valign="top" style="padding:0 8px;width:25%;">
+                            <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;">
+                              <tr>
+                                <td align="center" valign="middle" width="26" height="26" style="width:26px;height:26px;border-radius:50%;border:2px solid #333333;background-color:#0d0d0d;text-align:center;vertical-align:middle;">
+                                  <span style="display:block;width:8px;height:8px;border-radius:50%;background-color:#333;margin:0 auto;"></span>
+                                </td>
+                              </tr>
+                            </table>
+                            <p class="timeline-label" style="margin:8px 0 0;font-family:Georgia,serif;font-size:10px;letter-spacing:1px;color:#444444;text-align:center;text-transform:uppercase;">Delivered</p>
+                          </td>
+
+                        </tr>
+                      </table>
+
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- ═══════════════════════════════ -->
+            <!-- THANK YOU MESSAGE              -->
+            <!-- ═══════════════════════════════ -->
+            <tr>
+              <td style="background-color:#0a0a0a;padding:20px 40px 0;">
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border:1px solid #1f1800;background-color:#080600;">
+                  <tr>
+                    <td align="center" style="padding:28px 32px;">
+                      <p style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:16px;font-style:italic;font-weight:400;color:#888888;line-height:1.8;text-align:center;">
+                        Thank you for choosing <span style="font-style:normal;font-weight:bold;color:#eeeeee;">MAC</span>. Your order is carefully being prepared. A shipping confirmation with tracking details will arrive within <span style="font-style:normal;color:#eeeeee;">24 hours</span>.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- ═══════════════════════════════ -->
+            <!-- CTA BUTTON                     -->
+            <!-- ═══════════════════════════════ -->
+            <tr>
+              <td align="center" style="background-color:#0a0a0a;padding:28px 40px 0;">
+                <!-- MSO button wrapper -->
+                <!--[if mso]>
+                <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="https://macbrand.com/track" style="height:46px;v-text-anchor:middle;width:200px;" arcsize="0%" stroke="f" fillcolor="#FFB400">
+                  <w:anchorlock/>
+                  <center style="color:#000000;font-family:Georgia,sans-serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;font-weight:bold;">TRACK MY ORDER</center>
+                </v:roundrect>
+                <![endif]-->
+                <!--[if !mso]><!-->
+                <a href="https://macbrand.com/track" style="display:inline-block;background-color:#FFB400;color:#000000;font-family:Georgia,serif;font-size:10px;font-weight:bold;letter-spacing:3px;text-transform:uppercase;text-decoration:none;padding:14px 36px;border:2px solid #FFB400;">TRACK MY ORDER</a>
+                <!--<![endif]-->
+              </td>
+            </tr>
+
+            <!-- Gold divider line -->
+            <tr>
+              <td style="background-color:#0a0a0a;padding:32px 40px 0;">
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                  <tr>
+                    <td style="border-top:1px solid #1a1800;font-size:1px;">&nbsp;</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- ═══════════════════════════════ -->
+            <!-- FOOTER                         -->
+            <!-- ═══════════════════════════════ -->
+            <tr>
+              <td align="center" style="background-color:#000000;padding:28px 40px 32px;border-bottom:3px solid #FFB400;">
+
+                <p style="margin:0 0 6px;font-family:Georgia,serif;font-size:12px;letter-spacing:5px;color:#FFB400;text-transform:uppercase;opacity:0.7;">M &nbsp; A &nbsp; C</p>
+                <p style="margin:0 0 16px;font-family:Georgia,serif;font-size:13px;font-style:italic;color:#444444;">Questions? Contact us at <a href="mailto:support@macbrand.com" style="color:#FFB400;text-decoration:none;">support@macbrand.com</a></p>
+
+                <!-- Footer links -->
+                <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 16px;">
+                  <tr>
+                    <td style="padding:0 10px;border-right:1px solid #222222;">
+                      <a href="#" style="font-family:Georgia,serif;font-size:10px;letter-spacing:1.5px;color:#444444;text-decoration:none;text-transform:uppercase;">Returns</a>
+                    </td>
+                    <td style="padding:0 10px;border-right:1px solid #222222;">
+                      <a href="#" style="font-family:Georgia,serif;font-size:10px;letter-spacing:1.5px;color:#444444;text-decoration:none;text-transform:uppercase;">Support</a>
+                    </td>
+                    <td style="padding:0 10px;border-right:1px solid #222222;">
+                      <a href="#" style="font-family:Georgia,serif;font-size:10px;letter-spacing:1.5px;color:#444444;text-decoration:none;text-transform:uppercase;">Privacy</a>
+                    </td>
+                    <td style="padding:0 10px;">
+                      <a href="#" style="font-family:Georgia,serif;font-size:10px;letter-spacing:1.5px;color:#444444;text-decoration:none;text-transform:uppercase;">Unsubscribe</a>
+                    </td>
+                  </tr>
+                </table>
+
+                <p style="margin:0;font-family:Georgia,serif;font-size:11px;color:#2d2d2d;">
+                  &copy; 2026 MAC Brand. All rights reserved.<br/>
+                  <span style="font-size:10px;color:#222222;">You received this email because you placed an order with MAC Brand.</span>
+                </p>
+
+              </td>
+            </tr>
+
+          </table>
+          <!-- End email container -->
+
+        </td>
+      </tr>
+    </table>
+  {% endif %}
+
 </body>
 </html>

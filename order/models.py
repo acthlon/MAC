@@ -16,6 +16,7 @@ ORDER_STATUS_CHOICES =[
     ('COMPLETED','Completed'),
     ('CANCELED','Canceled'),
     ('FAILED','Failed'),
+    ('RETURNED','Returned')
     ]
 
 
@@ -26,7 +27,7 @@ PAYMENT_METHOD_CHOICES = [
 
 DELIVERY_STATUS_CHOICES =[
     ('PENDING','Pending'),
-    ('PROCESSING','Processing'),
+    ('SHPPING','Processing'),
     ('OUT FOR DELIVERY','Out For Delivery'),
     ('DELIVERED','Delivered'),
     ('CANCELED','Canceled'),
@@ -183,6 +184,8 @@ class Order(models.Model):
     delivery_status = models.CharField(max_length=40,default='PENDING',choices=DELIVERY_STATUS_CHOICES)
     is_active = models.BooleanField(default = True)
     tracking_id = models.CharField(max_length=50, null=True,blank=True)
+    sub_total_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0, editable=False)
+    total_discount = models.DecimalField(max_digits=12, decimal_places=2, default=0, editable=False)
 
 
 
@@ -217,13 +220,58 @@ class Order(models.Model):
         
     #     ref = self.payment_method.display_name
     #     return ref
+    @property
+    def calculate_sub_total_amount(self):
+        
+        total_amount_sum = self.orderitems.aggregate(
+        total_amount=Sum
+        (ExpressionWrapper(F('quantity') * F('unit_price'), output_field=DecimalField(max_digits=12, decimal_places=2)))
+                        )['total_amount'] or Decimal('0.00')
 
+
+        # total_amount_sum = self.orderitems.aggregate(
+        # total_amount=Sum
+        # (ExpressionWrapper(F('sub_total'), output_field=DecimalField(max_digits=12, decimal_places=2)))
+        #                 )['total_amount'] or Decimal('0.00')        
+
+        delivery_fee = self.delivery_method.cost if self.delivery_method else Decimal('0.00')
+
+        total_amount = total_amount_sum
+        return total_amount
+        
+    @property
+    def calculate_total_discount_amount(self):
+        
+        total_discount_sum = self.orderitems.aggregate(
+        total_discount=Sum
+        (ExpressionWrapper(F('discount_amount'), output_field=DecimalField(max_digits=12, decimal_places=2)))
+                        )['total_discount'] or Decimal('0.00')
+        
+        return total_discount_sum
+    
+    @property
+    def generate_tracking_id(self):
+            
+        if not self.tracking_id:
+            
+            unique_number = str(self.id)[:8].upper()
+            tracking_number = f'MAC-{unique_number}'
+        
+            self.tracking_id = tracking_number
+            self.save(update_fields = ['tracking_id'])
+            print(f'THIS UNIQUE NUMBER IS TO BE PRINTED{unique_number}')
+    
     def save(self,*args,**kwargs):
         if self.pk:
             self.total_amount = self.calculate_total_amount
             self.total_items = self.calculate_total_items
+            self.sub_total_amount = self.calculate_sub_total_amount
+            self.total_discount = self.calculate_total_discount_amount
+        
+        
 
         if self.status == 'CONFIRMED':
+            self.tracking_id = self.generate_tracking_id
             self.is_active = False    
         elif not self.status == 'COMPLETED':
             self.is_active = True

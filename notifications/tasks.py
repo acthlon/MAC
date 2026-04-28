@@ -19,6 +19,7 @@ from sendgrid.helpers.mail import Mail
 from sendgrid import SendGridAPIClient
 from django.conf import settings
 from order.models import Order
+from payments.models import RefundRequest
 
 import uuid
 
@@ -58,6 +59,53 @@ def send_welcome_email_task(self,user_id):
 
 
 @shared_task(bind=True)
+def send_refund_confirmation_email(self,refund_id,user_id):    
+
+
+    try:
+        refund_request= RefundRequest.objects.get(id=refund_id, user=user_id)
+        site_url = get_current_site('request')
+        site_domain = Site.objects.get_current().domain
+        site_url = f'http://{site_domain}:8000/'
+        
+        subject = f"Refund Processed Successfully - Order #{refund_request.order.id}"
+            
+        context={
+
+            'user': refund_request.user,
+            'order': refund_request.order,
+            'reason': refund_request.reason,
+            'refund_amount': refund_request.refund_amount,
+            'processed_at': refund_request.processed_at,
+            # 'site_url': "https://yourstore.com",
+            'site_url': site_url,
+        }
+        
+        html_message = render_to_string('email/refund.html',context=context)
+
+        email_message = Mail(
+            from_email = settings.DEFAULT_FROM_EMAIL,
+            to_emails = refund_request.user.email,
+            subject= subject,
+            html_content=html_message, 
+        )
+
+        api_key=settings.SENDGRID_API_KEY
+        sg = SendGridAPIClient(api_key=api_key)
+        response = sg.send(email_message)
+        
+        print(f"Refund success email sent to {refund_request.user.email}")
+        return True
+
+    except Exception as e:
+        print(f"Failed to send refund success email: {str(e)}")
+        return False
+    
+    
+    
+    
+
+@shared_task(bind=True)
 def send_order_confirmation_email_task(self,order_id,user_id):
    
    
@@ -65,20 +113,11 @@ def send_order_confirmation_email_task(self,order_id,user_id):
     order = Order.objects.get(id=order_id)
    
     try:
-        if order.status == 'CONFIRMED' and not order.tracking_id:
-            
-            unique_number = str(order.id)[:8].upper()
-            tracking_number = f'MAC-{unique_number}'
-        
-            order.tracking_id = tracking_number
-            order.save(update_fields = ['tracking_id'])
-            
-            print(f'THIS UNIQUE NUMBER IS TO BE PRINTED{unique_number}')
-        
    
         subject = f'Order Confirmation - #{order.id}'
         context = {'order': order,
-                   'user':user}
+                   'user':user,
+                   'orderitems':order.orderitems.all()}
         
         html_message = render_to_string('email/order-confirmation.html', context)
 
@@ -98,7 +137,8 @@ def send_order_confirmation_email_task(self,order_id,user_id):
         return {"status": "sent", "email": user.email, "status_code": response.status_code}
         
     except Exception as e:
-        return ({'message': str(e)}) 
+        print(f"❌ Error sending confirmation email: {str(e)}")
+        raise self.retry(exc=e, countdown=60, max_retries=3)
    
    
    
@@ -185,6 +225,7 @@ def send_registration_email_task(self,user_id):
         # raise self.retry(exc=e, countdown=60, max_retries=3)
 
 
+
     
 
 @shared_task(bind=True)
@@ -222,5 +263,5 @@ def send_password_reset_email_task(self,user_id,email):
         
         return {"status": "sent", "email": user.email, "status_code": response.status_code}
     
-    except Exception as exc:
+    except Exception as e:
         return ({'message': str(e)})    

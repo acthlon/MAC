@@ -19,9 +19,23 @@ RATING_CHOICES = [
 ]
 
 
-
 PAYMENT_STATUS_CHOICES = [
     ('PENDING','Pending'),
     ('SUCCESSFUL','Successful'),
     ('FAILED','Failed')
+]
+
+
+REFUND_STATUS_CHOICES = [
+        ('PENDING', 'Pending Review'),
+        ('UNDER_REVIEW','Under Review'),
+        ('APPROVED', 'Approved'),
+        ('REJECTED', 'Rejected'),
+        ('COMPLETED', 'Refund Completed'),
+    ]
+
+
+ACTION_CHOICES = [
+    ('APPROVED','Approved'),
+    ('REJECTED','Rejected'),
 ]

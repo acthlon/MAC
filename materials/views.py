@@ -83,7 +83,7 @@ class MaterialUpdateView(APIView):
 
     permission_classes = [IsAdminOrReadOnly,]
 
-    def put(self,request,pk,slug):
+    def patch(self,request,pk,slug):
         try:
             material = Materials.objects.get(pk=pk,slug=slug)
 
