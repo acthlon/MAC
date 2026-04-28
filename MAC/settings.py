@@ -180,7 +180,8 @@ AUTH_USER_MODEL = 'accounts.CustomUser'
 
 
 
-
+STATIC_URL = 'static/'
+STATICFILES_DIRS = [BASE_DIR/'static']
 
 
 

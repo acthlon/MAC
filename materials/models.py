@@ -7,6 +7,11 @@ from core.constants import CATEGORY_CHOICES
 from django.contrib.contenttypes.fields import GenericRelation
 from review.models import Reviews
 
+
+
+
+
+
 class Materials(CatalogBaseModel):
 
    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
@@ -35,7 +40,7 @@ class Materials(CatalogBaseModel):
          self.is_active = False
          
       elif self.stock > 0:
-         self.stock = True
+         self.is_active = True
          
       if not self.slug:
          self.slug = slugify(self.name)

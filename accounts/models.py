@@ -5,6 +5,7 @@ from django.utils.deconstruct import deconstructible
 import uuid
 from django.contrib.auth.models import BaseUserManager
 
+
 @deconstructible
 class generated_image_path():
 
@@ -112,6 +113,6 @@ class UserProfile(models.Model):
         verbose_name_plural = 'UserProfiles'    
         ordering = ['-created_at']    
 
-    def __Str__(self):
+    def __str__(self):
         return f'{self.user.username} Profile'
 
