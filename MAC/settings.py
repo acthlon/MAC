@@ -44,8 +44,6 @@ CSRF_TRUSTED_ORIGINS = [
 
 
 
-
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -61,10 +59,10 @@ INSTALLED_APPS = [
 LOCAL_APPS = [
     "accounts",
     "materials",
-    "styles",
+    # "styles",
     "review",
     "cart",
-    "measurements",
+    # "measurements",
     "core",
     "products",
     "order",
@@ -213,10 +211,23 @@ SIMPLE_JWT = {
 
 # e-mail configuration settings
 
+# this configuration is specific for sendgrid
+# EMAIL_BACKEND = config('EMAIL_BACKEND')
+# SENDGRID_API_KEY = config('SENDGRID_API_KEY')
+# SENDGRID_SANDBOX_MODE_IN_DEBUG = config('SENDGRID_SANDBOX_MODE_IN_DEBUG')
+# DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL')
+
+
+# dynamic e-mail configuration
+
+
 EMAIL_BACKEND = config('EMAIL_BACKEND')
-SENDGRID_API_KEY = config('SENDGRID_API_KEY')
-SENDGRID_SANDBOX_MODE_IN_DEBUG = config('SENDGRID_SANDBOX_MODE_IN_DEBUG')
-DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL')
+EMAIL_HOST = config('EMAIL_HOST')
+EMAIL_PORT = config('EMAIL_PORT')
+EMAIL_USE_TLS = config('EMAIL_USE_TLS')
+EMAIL_HOST_USER = config('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL= config('DEFAULT_FROM_EMAIL')
 
 
 # OAuth2 settings for Google and Facebook

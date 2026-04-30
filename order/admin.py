@@ -35,7 +35,7 @@ class OrderItemAdmin(admin.ModelAdmin):
 
 class DeliveryMethodAdmin(admin.ModelAdmin):
 
-    list_display = ('name','cost','delivery_time','description','is_active','is_displayed')
+    list_display = ('name','cost','description','estimated_date','is_active','is_displayed')
 
 
 class PaymentMethodAdmin(admin.ModelAdmin):
