@@ -8,6 +8,10 @@ from accounts.models import CustomUser
 from phonenumber_field.modelfields import PhoneNumberField 
 from decimal import Decimal
 from core.constants import PAYMENT_STATUS_CHOICES
+from django.utils import timezone
+from datetime import timedelta
+
+
 
 ORDER_STATUS_CHOICES =[
     ('CREATED','Created'),
@@ -28,11 +32,11 @@ PAYMENT_METHOD_CHOICES = [
 DELIVERY_STATUS_CHOICES =[
     ('PENDING','Pending'),
     ('SHPPING','Processing'),
-    ('OUT FOR DELIVERY','Out For Delivery'),
+    ('OUT_FOR_DELIVERY','Out For Delivery'),
     ('DELIVERED','Delivered'),
     ('CANCELED','Canceled'),
     ('RETURNED','Returned'),
-    ('FAILED DELIVERY','Failed Delivery'), 
+    ('FAILED_DELIVERY','Failed Delivery'), 
     ]
 
 ADDRESS_TYPE_CHOICES = [
@@ -42,9 +46,9 @@ ADDRESS_TYPE_CHOICES = [
 ]
 
 DELIVERY_CHOICES = [
-    ('STANDARD DELIVERY','Standard Delivery'),
-    ('EXPRESS DELIVERY','Express Delivery'),
-    ('PREMIUM DELIVERY', 'Premium Delivery'),
+    ('STANDARD_DELIVERY','Standard Delivery'),
+    ('EXPRESS_DELIVERY','Express Delivery'),
+    ('PREMIUM_DELIVERY', 'Premium Delivery'),
 ]
 
 
@@ -89,40 +93,60 @@ class DeliveryMethod(models.Model):
     name = models.CharField(max_length=255, choices=DELIVERY_CHOICES)
     description = models.CharField(max_length=255,null=True,blank=True)
     cost = models.DecimalField(max_digits=12, decimal_places=2)
-    delivery_time = models.CharField(max_length=100)
-    # estimated_date = models.CharField(max_length=100)
-    # time_added = models.DateTimeField(aut_now_add=True)
+    estimated_date = models.CharField(max_length=100,null=True,blank=True)
     display_order = models.PositiveSmallIntegerField(default=0)
     is_active = models.BooleanField(default=True)
     is_displayed = models.BooleanField(default=True)
 
 
-    # def get_delivery_day(self):
-    #     start_date = self.time_added
 
-    #     if self.name == 'STANDARD_DELIVERY':
-    #         completion_date1 = start_date + 5
-    #         completion_date2 = start_date + 7
-    #         delivery_day = f'{completion_date1} - {completion_date2}'
+
+    def _add_business_days(self,start_date,days):
         
-    #     elif self.name == 'EXPRESS_DELIVERY ':
-    #         completion_date1 = start_date + 2
-    #         completion_date2 = start_date + 3
-    #         delivery_day = f'{completion_date1} - {completion_date2}'
+        current_date = start_date
+        added_day = 0
+        while added_day < days:
+            current_date += timedelta(days=1)
+            if current_date.weekday() < 5:
+                added_day += 1
+        return current_date
+            
         
-    #     elif self.name == 'PREMIUM_DELIVERY':
-    #         completion_date1 = start_date + 1
 
-    #         delivery_day = f'Next business day - {completion_date1}'
 
-    #     return delivery_day
+    @property
+    def delivery_day(self):
+        start_date = timezone.now().date()
+
+        if self.name == 'STANDARD_DELIVERY':
+            date1 = self._add_business_days(start_date,days=5)
+            date2 = self._add_business_days(start_date,days=7)
+            delivery_day = f'Delivery Between {date1.strftime('%a %d %b')} - {date2.strftime('%a %d %b')}'
+            return delivery_day
+        
+        elif self.name == "EXPRESS_DELIVERY":
+            date1 = self._add_business_days(start_date,days=3)
+            date2 = self._add_business_days(start_date,days=5)
+            delivery_day = f'Delivery Between {date1.strftime('%a %d %b')} - {date2.strftime('%a %d %b')}'
+            return delivery_day
+            
+        
+        elif self.name == 'PREMIUM_DELIVERY':
+            date1 = self._add_business_days(start_date,days=2)
+            date2 = self._add_business_days(start_date,days=3)
+            delivery_day = f'Delivery Between {date1.strftime('%a %d %b')} - {date2.strftime('%a %d %b')}'
+            return delivery_day
+
+        return "Delivery date not available"
 
 
 
     def save(self,*args,**kwargs):
 
-        # self.estimated_date = self.get_delivery_day()
+        self.estimated_date = self.delivery_day
+        print(self.estimated_date)
         super().save(*args,**kwargs)
+        
 
     def __str__(self):
         return self.name
@@ -139,8 +163,8 @@ class PaymentMethod(models.Model):
     id = models.UUIDField(unique=True,default=uuid.uuid4, editable=False,primary_key=True)
     code = models.CharField(max_length=50,unique=True,choices=PAYMENT_METHOD_CHOICES)
      
-    display_name = models.CharField(max_length=100,help_text="Pay with Bank Cards - Paystack)",choices=PAYMENT_METHOD_CHOICES)
-    description = models.TextField(blank=True,help_text="Short description under the name")
+    display_name = models.CharField(max_length=100,choices=PAYMENT_METHOD_CHOICES)
+    description = models.TextField(blank=True,null=True)
     icon = models.ImageField(upload_to='payment_icons/',blank=True,null=True)
  
 

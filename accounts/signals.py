@@ -1,6 +1,13 @@
 from django.db.models.signals import pre_save,post_save
 from accounts.models import CustomUser,UserProfile
 from django.dispatch import receiver
+from accounts.tasks import send_welcome_email_task
+
+
+
+
+
+
 
 @receiver(pre_save,sender=CustomUser)
 def create_username(sender,instance,**kwargs):
@@ -18,6 +25,15 @@ def create_user_profile(sender,instance,created,**kwargs):
     
     if created:
         UserProfile.objects.create(user=instance)   
+
+
+@receiver(post_save,sender=CustomUser)
+def welcome_email_handler(sender,instance,created,**kwargs):
+    
+    if instance.is_active and not instance.last_login:
+        send_welcome_email_task.delay(instance.id)
+
+
 
 # @receiver(post_save,sender=CustomUser)
 # def update_user_profile(sender,instance,**kwargs):

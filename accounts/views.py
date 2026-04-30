@@ -21,7 +21,7 @@ from decouple import config
 from django.utils import timezone
 from django.utils.encoding import force_bytes 
 from core.permissions import IsOwnerOrReadOnly
-from notifications.tasks import send_registration_email_task,send_password_reset_email_task
+from accounts.tasks import send_registration_email_task,send_password_reset_email_task
 
 
 
