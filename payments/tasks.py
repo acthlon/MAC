@@ -22,9 +22,6 @@ from django.utils.html import strip_tags
 
 
 
-
-
-
 @shared_task(bind=True,max_retries=3, default_retry_delay=60)
 def send_refund_confirmation_email(self,refund_id,user_id):    
 

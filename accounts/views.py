@@ -3,7 +3,7 @@ from django.shortcuts import render,redirect
 from rest_framework.response import Response 
 from rest_framework.views import APIView
 from rest_framework import status
-from accounts.models import CustomUser,UserProfile
+from accounts.models import CustomUser
 from django.contrib.auth import authenticate,login
 from rest_framework_simplejwt.tokens import RefreshToken 
 from django.contrib.auth.tokens import default_token_generator
@@ -260,7 +260,7 @@ class UserProfileView(APIView):
     def get(self,request):
 
         user = request.user
-        profile = user.userprofile
+        profile = user
   
         serializer = UserProfileSerializer(profile)
 
@@ -272,7 +272,7 @@ class UserProfileView(APIView):
         try:
             
             user = request.user
-            profile = user.userprofile
+            profile = user
             print(profile)
             serializer = UpdateUserProfileSerializer(profile,data = request.data, partial=True, context = {'request':request})
             

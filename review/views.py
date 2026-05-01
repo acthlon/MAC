@@ -1,7 +1,6 @@
 from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework import status
-from accounts.models import UserProfile
 from review.serializers import ReviewSerializer,ReviewCreateSerializer,ReviewSerializerUpdate
 from review.models import Reviews 
 from rest_framework.views import APIView
@@ -23,7 +22,7 @@ class ReviewListView(generics.ListAPIView):
     # without generics apiview you will use this get function belowi
     # def get(self,request):
     #     try:
-    #         reviews = Reviews.objects.select_related('profile').filter(verified_purchase=True ).order_by('?')[:6]
+    #         reviews = Reviews.objects.select_related('user').filter(verified_purchase=True ).order_by('?')[:6]
     #     except Reviews.DoesNotExist:
     #         return Response({'message':'Reviews Not Found'})
         
@@ -35,7 +34,7 @@ class ReviewListView(generics.ListAPIView):
         user = self.request.user
 
         if not user.is_staff:
-            queryset = Reviews.objects.select_related('profile').filter(verified_purchase = True).order_by('?')[:6]
+            queryset = Reviews.objects.select_related('user').filter(verified_purchase = True).order_by('?')[:6]
 
             return queryset
         
@@ -83,7 +82,7 @@ class ReviewListByItem(APIView):
         except ContentType.DoesNotExist:
             return Response({'error': 'Wrong model type'},status=status.HTTP_400_BAD_REQUEST)
 
-        review = Reviews.objects.filter(content_type=content_type, object_id=pk, verified_purchase = 'True').select_related('profile').order_by('-created_at')
+        review = Reviews.objects.filter(content_type=content_type, object_id=pk, verified_purchase = 'True').select_related('user').order_by('-created_at')
         
         paginator = ReviewPagination()
         paginated_review = paginator.paginate_queryset(review,request)

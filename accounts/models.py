@@ -69,8 +69,16 @@ class CustomUser(AbstractUser):
     is_active= models.BooleanField(default=False)
     gender = models.CharField(choices=GENDER_CATEGORY)
     email = models.EmailField(max_length = 500,unique=True)
+    
+    # Profile fields
+    
+    country = models.CharField(max_length = 500, null=True, blank=True)
+    state = models.CharField(max_length = 200, null=True, blank=True)
+    city = models.CharField(max_length=500, null=True, blank=True)
+    address = models.TextField(max_length = 1000, null=True, blank=True)
+    profile_image = models.ImageField(upload_to=image_path, null = True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
-
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
@@ -88,31 +96,3 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return f"{self.username}"
-
-
-
-class UserProfile(models.Model):
-
-
-    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE,related_name='userprofile') 
-    country = models.CharField(max_length = 500, null=True, blank=True)
-    state = models.CharField(max_length = 200, null=True, blank=True)
-    city = models.CharField(max_length=500, null=True, blank=True)
-    address = models.TextField(max_length = 1000, null=True, blank=True)
-    profile_image = models.ImageField(upload_to=image_path, null = True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-
-
-    def get_phone_number(self):
-        return self.user.phone_number()
-
-
-    class Meta:
-        verbose_name_plural = 'UserProfiles'    
-        ordering = ['-created_at']    
-
-    def __str__(self):
-        return f'{self.user.username} Profile'
-

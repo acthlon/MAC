@@ -19,7 +19,6 @@ import hashlib
 import json
 from django.views.decorators.http import require_POST
 from django.http import HttpResponse
-from notifications.tasks import send_order_confirmation_email_task,send_order_status_update_email_task
 from celery import shared_task
 
 
