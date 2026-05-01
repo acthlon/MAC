@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from phonenumber_field.serializerfields import PhoneNumberField as SerializerPhoneNumberField
-from accounts.models import CustomUser,UserProfile
+from accounts.models import CustomUser
 from accounts.utils.passwordvalidate import validate_password_strength
 from django.core.exceptions import ValidationError
 from phonenumbers import PhoneNumber
@@ -60,13 +60,14 @@ class UserProfileSerializer(serializers.ModelSerializer):
     user = CustomUserSerializer()
 
     def get_phone(self,obj):
-        return obj.get_phone_number()    
+        return obj.phone_number()    
     
             
     class Meta:
-        model = UserProfile
+        model = CustomUser
         
-        fields = ['country', 'state', 'city', 'address','profile_image','user']        
+        fields = ['country', 'state', 'city', 'address','profile_image','phone','gender','email','first_name','last_name']       
+        read_only_fields = ['gender','email','first_name','last_name'] 
 
 
 class UpdateUserProfileSerializer(serializers.ModelSerializer):
@@ -106,7 +107,7 @@ class UpdateUserProfileSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'info': str(e)})    
         
     class Meta:
-        model = UserProfile
+        model = CustomUser
         fields = ['country', 'state', 'city', 'address','profile_image']        
 
 

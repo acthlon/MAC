@@ -1,5 +1,5 @@
 from django.db import models
-from accounts.models import UserProfile  
+from accounts.models import CustomUser
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey 
 from django.db.models import Avg
@@ -7,9 +7,11 @@ from core.constants import RATING_CHOICES
 
 
 
+
 class Reviews(models.Model):
 
-    profile = models.ForeignKey(UserProfile, on_delete=models.PROTECT, related_name='reviews')
+
+    user = models.ForeignKey(CustomUser, on_delete=models.PROTECT, related_name='user_reviews')
     comment = models.TextField(max_length=500, blank=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -26,7 +28,7 @@ class Reviews(models.Model):
             return self.content_object.name    
 
     def get_total_customers(self):
-        profile_numbers = UserProfile.objects.count() 
+        profile_numbers = CustomUser.objects.count() 
         return profile_numbers
     
     def get_item_average_rating(self):

@@ -1,5 +1,5 @@
 from django.db.models.signals import pre_save,post_save
-from accounts.models import CustomUser,UserProfile
+from accounts.models import CustomUser
 from django.dispatch import receiver
 from accounts.tasks import send_welcome_email_task
 
@@ -19,12 +19,6 @@ def create_username(sender,instance,**kwargs):
         username = f"{first_name}-{last_name}".lower().title()
 
         instance.username = username
-
-@receiver(post_save,sender=CustomUser)
-def create_user_profile(sender,instance,created,**kwargs):
-    
-    if created:
-        UserProfile.objects.create(user=instance)   
 
 
 @receiver(post_save,sender=CustomUser)

@@ -57,7 +57,7 @@ DELIVERY_CHOICES = [
 class Address(models.Model):
 
     id = models.UUIDField(unique=True,default=uuid.uuid4, editable=False,primary_key=True)
-    user = models.ForeignKey(CustomUser,on_delete=models.CASCADE)
+    user = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name='del_address')
     phone_number = PhoneNumberField()
     first_name = models.CharField(max_length=150)
     last_name = models.CharField(max_length=150)
