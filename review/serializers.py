@@ -7,6 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.sites.shortcuts import get_current_site
 from order.models import OrderItem
 from django.shortcuts import get_object_or_404
+from rest_framework.reverse import reverse
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -23,22 +24,23 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 
     def get_item_name(self,obj) :
-        return obj.get_item_name()   
+        return obj.get_item_name 
 
     def get_total_customers(self,obj):
-        return obj.get_total_customers()
+        return obj.get_total_customers
     
     def get_item_average_rating(self,obj):
-        return obj.get_item_average_rating()  
+        return obj.get_item_average_rating  
 
     def get_total_average_rating(self,obj):
-        return obj.get_total_average_rating()    
+        return obj.get_total_average_rating    
     
     def get_review_update_url(self,obj):
         request = self.context['request']
-        url = f'{obj.pk}/update/'
-        site_domain = get_current_site(request).domain
-        final_url = f"http://{site_domain}:8000/review/{url}"
+        # url = f'{obj.pk}/update/'
+        # site_domain = get_current_site(request).domain
+        # final_url = f"http://{site_domain}:8000/review/{url}"
+        final_url = reverse('review_update',request=request)
         return final_url
             
 

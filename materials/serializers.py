@@ -1,6 +1,6 @@
 from rest_framework import serializers
-from materials.models import Materials
-from django.urls import reverse
+from materials.models import Materials,MaterialVariant
+from rest_framework.reverse import reverse
 from django.contrib.sites.shortcuts import get_current_site
 
 
@@ -15,10 +15,9 @@ class MaterialSerializer(serializers.ModelSerializer):
     def get_item_detail_url(self,obj):
 
         request = self.context.get('request')
-        url = reverse('material-details', kwargs={'slug':obj.slug, 'pk':obj.id})
-        site_domain = get_current_site(request).domain
-        final_url = f"http://{site_domain}:8000/{url}"
-        return final_url
+        url = reverse('material_details',kwargs={'slug':obj.slug, 'pk':obj.id},request=request)
+        return url
+        
     
 
     def validate(self,data):
@@ -82,7 +81,7 @@ class MaterialSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Materials
-        fields = ('id','name','description','price','image','category','color','slug','stock','discount','item_detail_url','is_active')
+        fields = ('id','name','description','price','quality_category','slug','discount',"get_percent_disount",'item_detail_url','is_active',"categories",)
 
 
 
@@ -94,8 +93,8 @@ class MaterialDetailSerializer(serializers.ModelSerializer):
     def get_similar_material(self,material_obj):
 
         try:
-            similar_material = material_obj.get_similar_material()
-            serialized_similar_material = MaterialSerializer(similar_material, many=True)
+            similar_material = material_obj.get_similar_material
+            serialized_similar_material = MaterialSerializer(similar_material, many=True, context=self.context)
             return serialized_similar_material.data
         
         except Exception as e:
@@ -103,4 +102,13 @@ class MaterialDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Materials
-        fields = ('id','name','description','price','image','category','color','slug','stock','discount','similar_material')        
+        fields = ('id','name','description','price','image','quality_category','color','slug','stock','discount',"get_percent_disount",'similar_material',"categories",)        
+        
+        
+        
+class MaterialVariantSerializer(serializers.ModelSerializer):
+    
+    
+    class Meta:
+        model = MaterialVariant
+        fields = ('stock','sku','color','price_adjustment',)

@@ -62,13 +62,13 @@ class VerifyEmailView(APIView):
     def get(self,request,user_id,verification_token):
         try:
 
-            decoded_bytes = urlsafe_base64_decode(user_id)
+            # decoded_bytes = urlsafe_base64_decode(user_id)
 
-            decoded_uuid_str = decoded_bytes.decode('utf-8')
+            # decoded_uuid_str = decoded_bytes.decode('utf-8')
 
-            decoded_uuid = uuid.UUID(decoded_uuid_str) 
+            # decoded_uuid = uuid.UUID(decoded_uuid_str) 
 
-            user = get_object_or_404(CustomUser,pk=decoded_uuid)
+            user = get_object_or_404(CustomUser,pk=user_id)
 
             if default_token_generator.check_token(user,verification_token):
 
@@ -144,13 +144,13 @@ class PasswordResetConfirmView(APIView):
     def post(self,request,user_id,password_reset_token):
 
         try:
-            decode_uuid = urlsafe_base64_decode(user_id)
+            # decode_uuid = urlsafe_base64_decode(user_id)
 
-            decoded_uuid_str = decode_uuid.decode('utf-8')
+            # decoded_uuid_str = decode_uuid.decode('utf-8')
 
-            user_uuid = uuid.UUID(decoded_uuid_str) 
+            # user_uuid = uuid.UUID(decoded_uuid_str) 
 
-            user = CustomUser.objects.get(pk=user_uuid)
+            user = CustomUser.objects.get(pk=user_id)
 
             serializer = CustomUserSerializer(data=request.data)
 
@@ -225,6 +225,7 @@ class RefreshTokenView(APIView):
         except TokenError as e:
             return Response({'message':str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+
 class LogoutView(APIView):
     
     permission_classes = [IsAuthenticated,]
@@ -267,7 +268,7 @@ class UserProfileView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-    def put(self,request):
+    def patch(self,request):
         
         try:
             
@@ -293,7 +294,7 @@ class UpdatePasswordView(APIView):
     
     permission_classes = [IsAuthenticated,]
     
-    def put(self,request,*args,**kwargs):
+    def patch(self,request,*args,**kwargs):
         
         try:
             user = request.user

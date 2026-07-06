@@ -25,7 +25,7 @@ class MaterialsListView(generics.ListAPIView):
         user = self.request.user
 
         if user.is_staff:
-            queryset =  Materials.objects.all()     
+            queryset =  Materials.objects.select_related('categories').defer('categories__image','categories__icon')     
             return queryset
         
         elif not user.is_staff:
@@ -39,8 +39,11 @@ class MaterialsListView(generics.ListAPIView):
 
     filterset_class = MaterialsFilter    
     search_fields = ('name','description')
-    ordering_fields = ('price','category')
-            
+    ordering_fields = ('price','quality_category')
+
+
+
+
             
 class MaterialCreateView(APIView):    
 

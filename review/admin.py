@@ -24,7 +24,7 @@ class ReviewAdmin(admin.ModelAdmin):
     content_type.short_description = 'Item Type'
 
     def profiles(self,obj):
-          return obj.profile.user.username
+          return obj.user.username
     
     profiles.short_description = "profiles"
 

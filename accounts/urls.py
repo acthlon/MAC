@@ -5,13 +5,13 @@ from accounts.views import RegistrationView,LoginView,VerifyEmailView,PasswordRe
 urlpatterns = [
     path('register/',RegistrationView.as_view(),name = 'register'),
     path('login/',LoginView.as_view(),name='login'),
-    path('verify_email/<user_id>/<verification_token>/',VerifyEmailView.as_view(),name='verify-email'),
-    path('password_reset/',PasswordResetRequestView.as_view(),name='password-reset-request'),
-    path('password_reset/<user_id>/<password_reset_token>/',PasswordResetConfirmView.as_view(),name='password-reset-confirm'),
+    path('verify-email/<uuid:user_id>/<str:verification_token>/',VerifyEmailView.as_view(),name='verify_email'),
+    path('password-reset/',PasswordResetRequestView.as_view(),name='password_reset_request'),
+    path('password-reset/<uuid:user_id>/<str:password_reset_token>/',PasswordResetConfirmView.as_view(),name='password_reset_confirm'),
     path('logout/',LogoutView.as_view(),name='logout'),
-    path('token/refresh/',RefreshTokenView.as_view(),name="regenerate-access-token"),
-    path('profile/<uuid:pk>/',UserProfileView.as_view(),name='retrieve-profile'),
-    path('update_profile/<uuid:pk>/',UserProfileView.as_view(),name='profile-update'),
-    path('update_password/<uuid:pk>/',UpdatePasswordView.as_view(),name='password-update'),
+    path('token/refresh/',RefreshTokenView.as_view(),name="regenerate_access_token"),
+    path('profile/<uuid:pk>/',UserProfileView.as_view(),name='retrieve_profile'),
+    path('update-profile/<uuid:pk>/',UserProfileView.as_view(),name='profile_update'),
+    path('update-password/<uuid:pk>/',UpdatePasswordView.as_view(),name='password_update'),
     
 ]

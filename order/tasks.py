@@ -25,14 +25,15 @@ from django.utils.html import strip_tags
 
 
 
-
 @shared_task(bind=True,max_retries=3,default_retry_delay=60)
 def send_order_confirmation_email_task(self,order_id,user_id):
    
    
-    user = CustomUser.objects.get(id=user_id)
+    
     order = Order.objects.get(id=order_id)
-   
+    user = order.user
+    
+    
     try:
         subject = f'Order Confirmation - #{order.id}'
         context = {'order': order,
@@ -70,14 +71,18 @@ def send_order_status_update_email_task(self,order_id,new_status,user_id):
     
     try:
         
-        user = CustomUser.objects.get(id=user_id)
         order = Order.objects.get(id=order_id)
+        user = order.user
         subject = f'Order Update - #{order.id} - {new_status}'
+        site_domain = settings.SITE_URL
+        home_url = reverse()
+        website_url = f"{site_domain}{home_url}"
         
         context = {
             'order' : order,
             'status' : new_status,
-            'user':user
+            'user':user,
+            'website_url': website_url
         }
         
 

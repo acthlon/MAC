@@ -50,9 +50,6 @@ class CustomUserManager(BaseUserManager):
 
 
 
-
-
-
 class CustomUser(AbstractUser):
  
     MALE = "Male"

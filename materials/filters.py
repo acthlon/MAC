@@ -1,6 +1,6 @@
 import django_filters
 from materials.models import Materials
-from core.constants import CATEGORY_CHOICES,RATING_CHOICES
+from core.constants import MATERIAL_CATEGORY_CHOICES,RATING_CHOICES,QUALITY_CHOICES
 
 
 
@@ -12,9 +12,10 @@ class MaterialsFilter(django_filters.FilterSet):
     min_price = django_filters.NumberFilter(field_name='price',lookup_expr='gte', label='Min Prices')
     max_price = django_filters.NumberFilter(field_name='price',lookup_expr='lte',label='Max Prices')
 
-    category = django_filters.ChoiceFilter(choices=CATEGORY_CHOICES,label='All Qualities')
+    quality_category = django_filters.ChoiceFilter(choices=QUALITY_CHOICES,lookup_expr='icontains',label='All Qualities')
+    categories = django_filters.ChoiceFilter(choices=MATERIAL_CATEGORY_CHOICES,field_name='categories__name',lookup_expr='iexact',label='All Categories')
 
-    review = django_filters.ChoiceFilter(choices = RATING_CHOICES,label= 'Product Rating')
+    review = django_filters.ChoiceFilter(choices = RATING_CHOICES,label= 'Material Rating')
 
 
     class Meta:

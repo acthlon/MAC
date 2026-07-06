@@ -26,3 +26,6 @@ styles
 
 # Celery Beat schedule files
 celerybeat-schedule.*
+
+
+README.md

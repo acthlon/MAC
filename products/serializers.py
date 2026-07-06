@@ -1,8 +1,7 @@
 from rest_framework import serializers
 from products.models import Products
 from django.contrib.sites.shortcuts import get_current_site
-from django.urls import reverse 
-from core.constants import CATEGORY_CHOICES
+from rest_framework.reverse import reverse
 
 class ProductSerializer(serializers.ModelSerializer):
 
@@ -15,10 +14,9 @@ class ProductSerializer(serializers.ModelSerializer):
     def get_item_detail_url(self,obj):
 
         request = self.context.get('request')
-        url = reverse('product-details', kwargs={'slug':obj.slug, 'pk':obj.id})
-        site_domain = get_current_site(request).domain
-        final_url = f"http://{site_domain}:8000/{url}"
-        return final_url
+        url = reverse('product_details', kwargs={'slug':obj.slug, 'pk':obj.id}, request=request)
+        
+        return url
     
 
     def validate(self,data):
@@ -99,7 +97,7 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         
         model = Products
-        fields = ('name','description','price','image','slug','discount','stock','item_detail_url','category','is_active')     
+        fields = ('name','description','price','image','slug','discount',"get_percent_disount",'stock','item_detail_url','quality_category','is_active','categories')     
 
 
 
@@ -109,8 +107,8 @@ class ProductDetailSerializer(ProductSerializer):
 
     def get_similar_products(self,product_obj):
         try:    
-            similar_products = product_obj.get_similar_products()
-            serialized_similar_products = ProductSerializer(similar_products,many=True) 
+            similar_products = product_obj.get_similar_products
+            serialized_similar_products = ProductSerializer(similar_products, many=True, context=self.context) 
             return serialized_similar_products.data
         
         except Exception as e:
@@ -119,4 +117,4 @@ class ProductDetailSerializer(ProductSerializer):
     class Meta:
     
         model = Products
-        fields = ('id','name','description','price','image','slug','discount','stock','similar_products','category') 
+        fields = ('id','name','description','price','image','slug','discount',"get_percent_disount",'stock','quality_category','categories','similar_products') 

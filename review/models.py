@@ -23,14 +23,21 @@ class Reviews(models.Model):
     content_object = GenericForeignKey('content_type','object_id')
 
 
+
+
+    @property
     def get_item_name(self):
         if self.content_object:
             return self.content_object.name    
 
+
+    @property
     def get_total_customers(self):
         profile_numbers = CustomUser.objects.count() 
         return profile_numbers
     
+    
+    @property
     def get_item_average_rating(self):
 
             average_rating_for_item = Reviews.objects.filter(object_id = self.object_id, content_type=self.content_type).aggregate(Avg('rating'))
@@ -38,12 +45,14 @@ class Reviews(models.Model):
 
             return item_avg_rating
                      
+    @property
     def get_total_average_rating(self):
          
         average_rating = Reviews.objects.all().aggregate(Avg('rating'))
         total_avg_rating = round(average_rating.get('rating__avg',0),2)
         return total_avg_rating
 
+    @property
     def get_review_count(self):    
          total_count = Reviews.objects.count()
          return total_count
@@ -53,7 +62,7 @@ class Reviews(models.Model):
         ordering = ['-created_at']  
 
     def __str__(self):
-        return f'Review for {self.content_object.name} by {self.profile.user.username}'
+        return f'Review for {self.content_object.name} by {self.user.username}'
 
     
 

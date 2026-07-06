@@ -249,7 +249,7 @@ AUTHENTICATION_BACKENDS = (
 
 SITE_ID = 7  # Django Allauth requires a Site object, and this is the default site ID.
 
-# SITE_URL = "localhost:8000"
+SITE_URL = config("WEBSITE_DOMAIN","localhost:8000")
 
 LOGIN_REDIRECT_URL = '/'  # Redirect to homepage after login
 LOGOUT_REDIRECT_URL = '/'  # Redirect to homepage after logout

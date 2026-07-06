@@ -19,6 +19,7 @@ from django.contrib import admin
 from django.urls import path,include
 from django.conf.urls.static import static
 from django.conf import settings
+from core.views import HomePageAPIView 
 # from rest_framework_simplejwt.views import TokenObtainPairView,TokenRefreshView
 
 urlpatterns = [
@@ -32,7 +33,7 @@ urlpatterns = [
     path('order/',include('order.urls')),
     path('checkout/', include('order.urls')),
     path('payments/',include('payments.urls')),
-    # path('email/',include('notifications/urls'))
+    path("",include("core.urls")),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root= settings.MEDIA_ROOT)
