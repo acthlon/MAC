@@ -35,18 +35,16 @@ class generated_image_path():
         random_name = uuid.uuid4().hex[:6]
         
         
-        if hasattr(instance,'variant') and hasattr(instance.variant.product,'slug'):
-            
-            slug = instance.variant.product.slug
-            path = f'products/images/{slug}/{instance.variant.get_color_display()}/{random_name}.{extension}'
-            return path
+        if hasattr(instance, 'variant'):
+            if hasattr(instance.variant, 'product') and hasattr(instance.variant.product, 'slug'):
+                slug = instance.variant.product.slug
+                path = f'products/images/{slug}/{instance.variant.get_color_display()}/{random_name}.{extension}'
+                return path
 
-
-        elif hasattr(instance,'variant') and hasattr(instance.variant.material,'slug'):
-            
-            slug = instance.variant.material.slug
-            path = f'materials/images/{slug}/{instance.variant.get_color_display()}/{random_name}.{extension}'
-            return path
+            elif hasattr(instance.variant, 'material') and hasattr(instance.variant.material, 'slug'):
+                slug = instance.variant.material.slug
+                path = f'materials/images/{slug}/{instance.variant.get_color_display()}/{random_name}.{extension}'
+                return path
                     
         
         return path
@@ -100,7 +98,6 @@ class CatalogBaseModel(TimeStampModel):
     quality_category = models.CharField(max_length=30,choices= QUALITY_CHOICES,null=True,blank=True)
 
         
-        
     class Meta:
         abstract = True 
 
@@ -113,7 +110,7 @@ class CatalogBaseModel(TimeStampModel):
     @property
     def total_stock(self):
         from django.db.models import Sum
-        total = self.variants.aggregate(Sum('stock'))['stock__sum']
+        total = self.variant.aggregate(Sum('stock'))['stock__sum']
         return total if total else 0
 
 
@@ -153,7 +150,7 @@ class Banner(models.Model):
     
     title = models.CharField(max_length=200)
     subtitle = models.CharField(max_length=300, blank=True, null=True)
-    # discription = models.TextField(max_length=500, blank=True, null=True)
+    discription = models.TextField(max_length=500, blank=True, null=True)
     image = models.ImageField(upload_to='banners/images', null=True,blank=True)
     is_active = models.BooleanField(default=True)
     display_order = models.PositiveIntegerField(default=0)

@@ -9,6 +9,7 @@ from review.models import Reviews
 from core.models import Category,VariantBaseModel
 from django.db.models import Sum
 from decimal import Decimal
+from django.contrib.contenttypes.models import ContentType
 
 
 image_path = generated_image_path()

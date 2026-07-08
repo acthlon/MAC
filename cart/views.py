@@ -32,8 +32,45 @@ class CartView(APIView):
         except Cart.DoesNotExist:
             return Response('Cart Does not exist')
 
-        random_products = Products.objects.filter(is_active=True)[:4]
-        random_materials = Materials.objects.filter(is_active=True)[:4]
+        random_products_qs = Products.objects.filter(is_active=True)[:4]
+        random_materials_qs = Materials.objects.filter(is_active=True)[:4]
+        
+        random_products = []
+        random_materials = []
+        for item_k in list(random_products_qs) + list(random_materials_qs):
+            
+            model_name = None
+            item = None
+            
+            if item_k.model_name == 'products':
+                model_name = item_k.model_name
+                item = item_k
+            
+            elif item_k.model_name == 'materials':
+                model_name = item_k.model_name
+                item = item_k
+                
+            # item_model = item.model_name
+            # item = item if item_model == 'products' else item
+            
+            item_variant = item.variant.filter(is_active=True).first()
+            variant_image_obj = item_variant.images.filter(is_primary=True).first() if item_variant else None
+            
+            
+            item_data = {
+                    'id' : item.id,
+                    'image' : request.build_absolute_uri(variant_image_obj.image.url) if variant_image_obj and variant_image_obj.image else None,
+                    'name' : item.name,
+                    'price' : item.discounted_price,
+                    'discount' : item.discount,
+                    'percent_discount': getattr(item,'get_percent_discount',0),
+                    'review_count': getattr(item.reviews, 'get_review_count',0),
+                    'average_rating' : getattr(item,'get_item_average_rating',0),
+                    }
+        
+            random_materials.append(item_data) if model_name == 'materials' else random_products.append(item_data)
+            
+            
         
         data = {
                 
@@ -45,10 +82,10 @@ class CartView(APIView):
                  
             'cart_items' : [{
                 'id' : item.id,
-                'image' : request.build_absolute_uri(item.content_object.images.filter(is_primary=True)),
-                'name': item.content_object.product.name,
+                'image' : request.build_absolute_uri(item.content_object.images.filter(is_primary=True).first().image.url) if item.content_object and item.content_object.images.filter(is_primary=True).exists() else None,
+                'name': item.content_object.product.name if item.content_type.model == 'productvariant' else item.content_object.material.name, 
                 'color' : item.content_object.color,
-                'size' : item.content_object.size,
+                'size' : item.content_object.size if item.content_type.model == 'productvariant' else None,
                 'price' : item.unit_price,
                 'total': item.sub_total,
                 'quantity': item.quantity,
@@ -56,30 +93,8 @@ class CartView(APIView):
                 'percent_discount': item.percent_discount
             } for item in cart.items.all()],
 
-            'random_products' : [
-                {
-                'id' : pdt.id,
-                'image' : request.build_absolute_uri(pdt.variant.filter(is_active=True).first().images.filter(is_primary=True)),
-                'name' : pdt.name,
-                'price' : pdt.discounted_price,
-                'discount' : pdt.discount,
-                'percent_discount': getattr(pdt,'get_percent_discount',0),
-                'review_count': getattr(pdt.reviews, 'get_review_count',0),
-                'average_rating' : getattr(pdt,'get_item_average_rating',0),
-            } for pdt in random_products],
-            
-            
-            'random_materials' : [
-                {
-                'id' : mtl.id,
-                'image' : request.build_absolute_uri(mtl.variant.filter(is_active=True).first().images.filter(is_primary=True)),
-                'name' : mtl.name,
-                'price' : mtl.discounted_price,
-                'discount' : mtl.discount, 
-                'percent_discount': getattr(mtl,'get_percent_discount',0),
-                'review_count': getattr(mtl.reviews, 'get_review_count',0),
-                'average_rating' : getattr(mtl,'get_item_average_rating',0)
-            } for mtl in random_materials]
+            'random_products' : random_products,
+            'random_materials' : random_materials,
         }
         
 
@@ -139,8 +154,11 @@ class AddToCartView(APIView):
             #         object_id = item.id,
             #         defaults={'quantity':quantity,'unit_price': item.final_price ,'discount_amount':item.product.discount}
             #     )
+            
+            
 
             # SHORTER METHOD O WRITE THE ABOVE DRY(Don't Repeat yourself) 
+            
             
             cart,cart_status = Cart.objects.get_or_create(user=request.user)
             
@@ -165,19 +183,22 @@ class AddToCartView(APIView):
             content_type = ContentType.objects.get_for_model(ModelClass)
             
             
+            # Fetch Prices and Discount
+            discount = item.product.discount if is_product else item.material.discount
+
             cart, cart_status = Cart.objects.get_or_create(user=request.user)
             
             cart_item, created = CartItem.objects.get_or_create(
                 cart=cart,
                 content_type=content_type,
                 object_id=item.id,
-                defaults={'quantity': quantity, 'unit_price': item.final_price}
+                defaults={'quantity': quantity, 'unit_price': item.final_price, 'discount_amount': discount}
             )
-
+            
             if not created:
-                cart_item.unit_price = item.price
-                cart_item.quantity += Decimal(str(quantity))
-                cart_item.discount_amount *= cart_item.quantity 
+                cart_item.unit_price = item.final_price
+                cart_item.discount_amount = discount
+                cart_item.quantity += quantity
                 cart_item.save()
 
 

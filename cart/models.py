@@ -9,6 +9,9 @@ import uuid
 from decimal import Decimal
 from django.db.models import Sum
 
+
+
+
 class Cart(TimeStampModel):
 
 
@@ -46,17 +49,20 @@ class Cart(TimeStampModel):
         
         for item in self.items.all():
             variant = item.content_object 
+            live_price = Decimal('0.00')
+            discount = Decimal('0.00')
+            
             
             if not item:
                 continue
             
-            if item.content_type.model == 'products':    
+            if item.content_type.model == 'productvariant':    
                 live_price = variant.final_price
-                discount = variant.product.discounted_price
+                discount = variant.product.discount
             
-            if item.content_type.model == 'materials':    
+            elif item.content_type.model == 'materialvariant':    
                 live_price = variant.final_price
-                discount = variant.material.discounted_price
+                discount = variant.material.discount
                 
             if item.unit_price != live_price or item.discount_amount != discount:
                 item.unit_price = live_price
@@ -88,16 +94,16 @@ class CartItem(TimeStampModel):
     quantity = models.PositiveIntegerField(default=1)
     unit_price = models.DecimalField(max_digits=12, decimal_places=2)
     sub_total = models.DecimalField(max_digits=12, decimal_places=2)
-    discount_amount =models.DecimalField(max_digits=12,decimal_places=2, default=0.00)
+    discount_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
 
 
     @property
     def calculate_item_total(self):
             
-            unit_price = self.unit_price
-            discount_amount = self.discount_amount
-            quantity = self.quantity
-            sub_total = (unit_price - discount_amount) * quantity
+            unit_price = Decimal(str(self.unit_price or 0))
+            discount_amount = Decimal(str(self.discount_amount or 0))
+            quantity = Decimal(str(self.quantity or 1))
+            sub_total = (unit_price - discount_amount) * quantity if unit_price > discount_amount else Decimal(0.00)
             
             return sub_total.quantize(Decimal('0.00'))
     

@@ -40,7 +40,8 @@ class ReviewSerializer(serializers.ModelSerializer):
         # url = f'{obj.pk}/update/'
         # site_domain = get_current_site(request).domain
         # final_url = f"http://{site_domain}:8000/review/{url}"
-        final_url = reverse('review_update',request=request)
+        final_url = reverse('review_update', request=request, kwargs={'pk': obj.pk})
+        
         return final_url
             
 

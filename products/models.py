@@ -8,6 +8,7 @@ from review.models import Reviews
 from django.utils.text import slugify
 from core.models import Category,VariantBaseModel
 from decimal import Decimal
+from django.contrib.contenttypes.models import ContentType
 
 
 
@@ -39,7 +40,7 @@ class Products(CatalogBaseModel):
     @property
     def get_similar_products(self):    
         
-        similar_products = Products.objects.filter(categories=self.categories).exclude(pk=self.id)
+        similar_products = Products.objects.filter(categories=self.categories).exclude(pk=self.id)[:10]
         return similar_products
     
   

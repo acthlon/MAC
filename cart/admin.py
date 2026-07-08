@@ -1,8 +1,8 @@
 from django.contrib import admin
 from cart.models import Cart,CartItem
 from django.contrib.contenttypes.models import ContentType
-from products.models import Products
-from materials.models import Materials
+from products.models import ProductVariant
+from materials.models import MaterialVariant
 
 
 class CartAdmin(admin.ModelAdmin):
@@ -14,7 +14,14 @@ class CartItemAdmin(admin.ModelAdmin):
 
     
     def item_name(self,obj):
-        name = obj.content_object.name
+        
+        name = None
+        if obj.content_type.model == 'productvariant':
+            name = obj.content_object.product.name
+            
+        elif obj.content_type.model == 'materialvariant':
+            name = obj.content_object.material.name
+            
         return name
     
     item_name.short_description = 'Item Name'    
@@ -25,7 +32,7 @@ class CartItemAdmin(admin.ModelAdmin):
          
         if db_field.name == 'content_type':
             
-            allowed_models = ContentType.objects.get_for_models(Products,Materials)
+            allowed_models = ContentType.objects.get_for_models(ProductVariant,MaterialVariant)
             
             kwargs['queryset'] = ContentType.objects.filter(pk__in = [ct.id for ct in allowed_models.values()])
 

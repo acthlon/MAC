@@ -11,8 +11,10 @@ from rest_framework import generics
 from django_filters.rest_framework.backends import DjangoFilterBackend
 from rest_framework.filters import SearchFilter,OrderingFilter
 from core.permissions import IsAdminOrReadOnly
-from core.constants import FABRIC_CARE_INSTRUCTIONS,PRODUCT_SIZE_CHOICES
+from core.constants import FABRIC_CARE_INSTRUCTIONS,PRODUCT_SIZE_CHOICES,COLOR_CHOICES
 from rest_framework.reverse import reverse
+
+
 
 class ProductsListView(generics.ListAPIView):
     
@@ -38,23 +40,6 @@ class ProductsListView(generics.ListAPIView):
     search_fields = ['name','description']
     ordering_fields = ['price','quality_category']
 
-        
-
-           
-class ProductDetailView(APIView):
-
-
-    permission_classes = [AllowAny,]
-    
-    def get(self,request,pk,slug):
-
-        try:
-            product = Products.objects.get(pk=pk,slug=slug)
-        except Products.DoesNotExist:
-            return Response('Product does not exist')
-            
-        serializer = ProductDetailSerializer(product, context = {'request':request})
-        return Response(serializer.data)
     
 
 class ProductCreateView(APIView):
@@ -165,7 +150,7 @@ class ProductDetailView(APIView):
         variants = [
                 {   
                     'id' : var.id,
-                    'size' : var.size,
+                    'size_code' : var.size,
                     'size': var.get_size_display() if var.size else None,
                     'stock' : var.stock,
                     'stock_status': stock_status,
@@ -200,8 +185,9 @@ class ProductDetailView(APIView):
                 grouped_variant_sizes[color_key] = []
                 
             grouped_variant_sizes[color_key].append({
-                            'size':variant.size,
-                            'stock':variant.stock
+                            'size_code': variant.get('size_code'),
+                            'size': variant.get('size'),
+                            'stock': variant.get('stock'),
                             })
 
 
@@ -214,6 +200,7 @@ class ProductDetailView(APIView):
         ]
 
         
+        specification = None 
         if spec:
             
             specification = {
@@ -224,12 +211,13 @@ class ProductDetailView(APIView):
             }
             
         
+        fabric_care = None
         if spec and spec.material_type:
             fabric_care = FABRIC_CARE_INSTRUCTIONS.get(spec.material_type,'Dry clean only.')
 
         if user.is_authenticated:
             
-            user_review = user.user_review.filter(object_id=pk,verified_purchase=True).first()
+            user_review = user.user_reviews.filter(object_id=pk,verified_purchase=True).first()
 
                 
         reviews_qs = product.reviews.select_related('user').all()
@@ -254,8 +242,8 @@ class ProductDetailView(APIView):
                         'model_name' : product.model_name,
                         'slug': product.slug,
                         'pk' : product.id,
-                    }, 
-                    request=request)
+                    },
+                    request=request)if user_review else None
                 } 
         
         reviews_data = [action_urls] + [
@@ -284,7 +272,7 @@ class ProductDetailView(APIView):
                 'id' : pdt.id,
                 'name' : pdt.name,
                 'price' : float(pdt.price),   # we are using float because the price is stored as decimal in the D.B and json doesn't understand decimal so it will convert the value to string,
-                'image': request.build_absolute_uri(first_image_obj.image.url),
+                'image': request.build_absolute_uri(first_image_obj.image.url) if first_image_obj and first_image_obj.image else None,
                 'avg_rating' : pdt.average_rating,
                 'review_count' : pdt.review_count, 
                 'link': reverse('product_details', request=request, kwargs={'slug': pdt.slug, 'pk': pdt.id}),
