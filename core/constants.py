@@ -1,3 +1,6 @@
+MAX_FILE_SIZE = 5 * 1024 * 1024  #5MB 
+
+
 PRODUCT_CATEGORY_CHOICES = [
     ('DRESS', 'Dress'),
     ('GOWN', 'Gown'),
@@ -8,6 +11,9 @@ PRODUCT_CATEGORY_CHOICES = [
     ('TWO_PIECE', 'Two Piece Set'),
     ('ACCESSORY', 'Accessory'),
 ]
+
+
+
 
 MATERIAL_CATEGORY_CHOICES = [
     ('ANK', 'Ankara'),
@@ -27,6 +33,8 @@ MATERIAL_CATEGORY_CHOICES = [
     ('LAC', 'Lace'),
     ('SEN', 'Senator Cashmere'),
 ]
+
+
 
 
 
@@ -58,6 +66,8 @@ PRODUCT_SIZE_CHOICES = [
 ]
 
 
+
+
 COLOR_CHOICES = [
     ('BLK', 'Black'),
     ('WHT', 'White'),
@@ -73,6 +83,8 @@ COLOR_CHOICES = [
     ('PRP', 'Purple'),
     ('GRY', 'Grey'),
 ]
+
+
 
 
 

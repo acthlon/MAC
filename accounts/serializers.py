@@ -5,12 +5,14 @@ from accounts.utils.passwordvalidate import validate_password_strength
 from django.core.exceptions import ValidationError
 from phonenumbers import PhoneNumber
 from django.db import transaction
+from core.constants import MAX_FILE_SIZE
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
 
 
     password = serializers.CharField(write_only=True, min_length= 9)
+    confirm_password = serializers.CharField(write_only=True,min_length=9)
     username= serializers.CharField(read_only=True)
 
 
@@ -19,20 +21,14 @@ class CustomUserSerializer(serializers.ModelSerializer):
         request_method = self.context['request'].method
 
         if request_method == 'POST':
-
-            if 'confirm_password' in data:
-
-                password = data.get('password')
-                confirm_password = data.get('confirm_password')
-                
-                if password != confirm_password:
-                    raise ValidationError('The passwords must match')
-                validate_password_strength(password)
             
-
-            if 'password' in data:
-                password = data.get('password')
-
+            password = data.get('password')
+            confirm_password = data.get('confirm_password')
+            
+            if password != confirm_password:
+                raise ValidationError('The passwords must match')
+            
+            if password:
                 if not validate_password_strength(password):
                     raise serializers.ValidationError("Password doesn't meet the requirements")
         return data        
@@ -40,28 +36,22 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self,validated_data):
+        validated_data.pop('confirm_password',None) # we removed confirm_password because we don't need it for creating the user we only needed to validate password
         password = validated_data.pop("password")
         user = CustomUser.objects.create_user(**validated_data)
-        user.set_password(password)
-        user.save()
+        # user.set_password(password)  i don't need this anymore, create_user function will create the user and hash the password automatically and save too 
+        # user.save()
         return user
     
    
     class Meta:
         model = CustomUser
-        fields = ("password","email","phone","first_name","last_name","username","gender")
+        fields = ("password","confirm_password","email","phone","first_name","last_name","username","gender")
         
 
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
-
-
-    user = CustomUserSerializer()
-
-    def get_phone(self,obj):
-        return obj.phone_number()    
-    
             
     class Meta:
         model = CustomUser
@@ -85,9 +75,8 @@ class UpdateUserProfileSerializer(serializers.ModelSerializer):
             if 'profile_image' in data:
                 profile_image = data.get('profile_image')
 
-                if profile_image and profile_image.size > 5 * 1024 * 1024:
+                if profile_image and profile_image.size > MAX_FILE_SIZE:
                     raise serializers.ValidationError({'profile_image': 'Profile Image must not exceed 5MB'})
-                
         return data
      
      

@@ -1,4 +1,3 @@
-import uuid
 from django.shortcuts import render,redirect
 from rest_framework.response import Response 
 from rest_framework.views import APIView
@@ -8,22 +7,10 @@ from django.contrib.auth import authenticate,login
 from rest_framework_simplejwt.tokens import RefreshToken 
 from django.contrib.auth.tokens import default_token_generator
 from django.shortcuts import get_object_or_404
-from django.contrib.sites.shortcuts import get_current_site
-from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-from django.template.loader import render_to_string
 from accounts.serializers import CustomUserSerializer,UserProfileSerializer,UpdateUserProfileSerializer,UpdatePasswordSerializer
-from django.urls import reverse
 from rest_framework_simplejwt.exceptions import TokenError 
-from sendgrid.helpers.mail import Mail
-from sendgrid import SendGridAPIClient
 from rest_framework.permissions import IsAuthenticated,AllowAny
-from decouple import config
-from django.utils import timezone
-from django.utils.encoding import force_bytes 
-from core.permissions import IsOwnerOrReadOnly
 from accounts.tasks import send_registration_email_task,send_password_reset_email_task
-
-
 
 
 
@@ -37,20 +24,18 @@ class RegistrationView(APIView):
         serializer = CustomUserSerializer(data=request.data,context={'request':request})
         # try:
 
-        if serializer.is_valid():
-            user = serializer.save()
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
             
-            # the email verification aspect
-            # parameters needed
+        # the email verification aspect
+        # parameters needed
 
-            send_registration_email_task.delay(user.id)
-            
-
-            return Response({'message':f'registration was successful, check your e-mail for verification'}, status=status.HTTP_201_CREATED)
-
+        send_registration_email_task.delay(user.id)
         
-        
-        return Response(serializer.errors, status = status.HTTP_400_BAD_REQUEST)
+
+        return Response({'message':f'registration was successful, check your e-mail for verification'}, status=status.HTTP_201_CREATED)
+
+
 
     
 
@@ -62,12 +47,6 @@ class VerifyEmailView(APIView):
     def get(self,request,user_id,verification_token):
         try:
 
-            # decoded_bytes = urlsafe_base64_decode(user_id)
-
-            # decoded_uuid_str = decoded_bytes.decode('utf-8')
-
-            # decoded_uuid = uuid.UUID(decoded_uuid_str) 
-
             user = get_object_or_404(CustomUser,pk=user_id)
 
             if default_token_generator.check_token(user,verification_token):
@@ -75,89 +54,66 @@ class VerifyEmailView(APIView):
                 user.is_active = True
                 user.save(update_fields=['is_active'])     
 
-
                 return Response({'messsage':'verification was successful, your account is now active and you can proceed to login'}, status=status.HTTP_200_OK)
 
             else:
                 return Response({'message':'invalid or expired token'}, status = status.HTTP_400_BAD_REQUEST)
 
-
         except Exception as e:
             return Response({'message':str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
-
 
 class PasswordResetRequestView(APIView):
 
     permission_classes = [AllowAny,]
 
     def post(self,request):
-
+        
+        email= request.data.get('email')
         try:
-
-            email= request.data.get('email')
             user = CustomUser.objects.get(email=email)
             resend_email = request.query_params.get('resend_email',None)
 
-            if user is not None: 
+            if user is not None and resend_email == None: 
+                send_password_reset_email_task.delay(user.id,email)
+
+                return Response({'message': f'password reset link has been sent to your email'}, status=status.HTTP_200_OK)
+
+        except CustomUser.DoesNotExist:    
+            return Response({'message': 'User with this email does not exist.'}, status=status.HTTP_404_NOT_FOUND)                    
             
-                if resend_email == None:
-                    try:
-                        send_password_reset_email_task.delay(user.id,email)
-                    except Exception as e:
-                        return Response({'message': str(e)},status=status.HTTP_400_BAD_REQUEST)
-                    
-
-                    return Response({'message': f'password reset link has been sent to your email'}, status=status.HTTP_200_OK)
-
-        except Exception as e:    
-            return Response({'message':str(e)} , status=status.HTTP_404_NOT_FOUND)                    
             
     def get(self,request):
 
         resend_email = request.query_params.get('resend_email',None)
-        user = CustomUser.objects.get(email=resend_email)
         
         try:
-
+            user = CustomUser.objects.get(email=resend_email)
             if resend_email == user.email:
-                email=resend_email
-
-                send_password_reset_email_task.delay(user.id,email)
+                send_password_reset_email_task.delay(user.id,resend_email)
                 
+                return Response({'message': 'a new reset link has been sent to your e-mail'}, status=status.HTTP_200_OK)                 
 
-                return Response({'message': 'a new reset link has been sent to your e-mail'})                 
-
-                
-        except Exception as e:
-            return Response({'message':str(e)} , status=status.HTTP_404_NOT_FOUND)
+        except CustomUser.DoesNotExist:
+            return Response({'message': 'User with this email does not exist.'}, status=status.HTTP_404_NOT_FOUND)
         
 
-
-
-
 class PasswordResetConfirmView(APIView):
-
 
     permission_classes = [AllowAny,]
 
     def post(self,request,user_id,password_reset_token):
 
         try:
-            # decode_uuid = urlsafe_base64_decode(user_id)
-
-            # decoded_uuid_str = decode_uuid.decode('utf-8')
-
-            # user_uuid = uuid.UUID(decoded_uuid_str) 
-
             user = CustomUser.objects.get(pk=user_id)
-
-            serializer = CustomUserSerializer(data=request.data)
 
             if default_token_generator.check_token(user,password_reset_token):
 
                 new_password = request.data.get('password') 
-                confirm_password = request.data.get('confirm password')
+                confirm_password = request.data.get('confirm_password')
+
+                if not new_password or not confirm_password:
+                    return Response({'message': 'Both password fields are required.'}, status=status.HTTP_400_BAD_REQUEST)
 
                 if new_password == confirm_password:
                     user.set_password(new_password)
@@ -174,8 +130,6 @@ class PasswordResetConfirmView(APIView):
 
 
 class LoginView(APIView):
-
-
     permission_classes = [AllowAny,]
 
     def post(self,request):
@@ -196,12 +150,11 @@ class LoginView(APIView):
                 }, status=status.HTTP_200_OK)
             
             else:
-                return Response({'message':'invalid credentials, user with this email does not exist, proceed to signup'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'message':'Invalid credentials, Please enter the correct email and password for a staff account'}, status=status.HTTP_400_BAD_REQUEST)
             
         except Exception as e:    
             print(f'{user.email}')
             return Response({'message':str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
 
 
 class RefreshTokenView(APIView):
@@ -233,7 +186,6 @@ class LogoutView(APIView):
     def post(self,request):
 
         try:
-
             refresh_token = request.data.get('refresh_token')
 
             if refresh_token:
@@ -251,14 +203,11 @@ class LogoutView(APIView):
             return Response({'messsage':'invalid token'}, status=status.HTTP_400_BAD_REQUEST)    
 
 
-
-
 class UserProfileView(APIView):
-    
 
     permission_classes = [IsAuthenticated,]
 
-    def get(self,request):
+    def get(self,request,pk):
 
         user = request.user
         profile = user
@@ -268,26 +217,40 @@ class UserProfileView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-    def patch(self,request):
+    # def patch(self,request,pk):
         
-        try:
+    #     try:
             
+    #         user = request.user
+
+    #         serializer = UpdateUserProfileSerializer(profile,data = request.data, partial=True, context = {'request':request})
+            
+    #         if serializer.is_valid():
+
+    #             serializer.save()
+    #             return Response({'status':'success',
+    #                              'message':'Profile Updated successfully',
+    #                              'data':serializer.data})
+    #         else:
+    #             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    #     except Exception as e:
+    #         return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)    
+
+     # ABOVE IS OLDER VERSION, USE THE SHORTED VERSION BELOW
+     
+    def patch(self,request,pk):
+
             user = request.user
-            profile = user
-            print(profile)
-            serializer = UpdateUserProfileSerializer(profile,data = request.data, partial=True, context = {'request':request})
+            serializer = UpdateUserProfileSerializer(user,data = request.data, partial=True, context = {'request':request})
             
-            if serializer.is_valid():
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response({
+                            'message':'Profile Updated successfully',
+                            'data':serializer.data}, status=status.HTTP_200_OK)
 
-                serializer.save()
-                return Response({'status':'success',
-                                 'message':'Profile Updated successfully',
-                                 'data':serializer.data})
-            else:
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        except Exception as e:
-            return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)    
 
 
 class UpdatePasswordView(APIView):
@@ -296,14 +259,11 @@ class UpdatePasswordView(APIView):
     
     def patch(self,request,*args,**kwargs):
         
-        try:
-            user = request.user
-            serializer = UpdatePasswordSerializer(user,data=request.data,context={'request':request})
+        user = request.user
+        serializer = UpdatePasswordSerializer(user,data=request.data,context={'request':request},partial=True)
+        
+        serializer.is_valid(raise_exception=True) # using raise_exeption, serializer will auto. handle error and return 400 Bad Request
+        
+        serializer.save()
             
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-                
-            return Response(serializer.data,status=status.HTTP_200_OK)
-            
-        except Exception as e:
-            return Response({'message':str(e)})
+        return Response({'message': 'Password updated successfully!'}, status=status.HTTP_200_OK)

@@ -15,7 +15,7 @@ class generated_image_path():
     def __call__(self,instance,filename):
 
         extension = filename.split('.')[-1]
-        path = f'images/profile/{instance.user.username}.{extension}'
+        path = f'images/profile/{instance.username}.{extension}'
         return path
 
 image_path = generated_image_path()    
