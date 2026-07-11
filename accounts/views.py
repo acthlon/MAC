@@ -240,7 +240,9 @@ class LogoutView(APIView):
                 token = RefreshToken(refresh_token)
 # cache
                 token.blacklist()
-
+                # NOTE: BLACKLISTING THE REFRESH TOKEN DOESN'T MEAN THE USER IS SIGNED OUT COMPLETELY, 
+                # THE ACCESS TOKEN IS STILL ACTIVE.
+                # STORE THE ACCESS TOKEN CACHE WITH ITS TTL, THEN WRITE A MIDDLEWARE TO CHECK IF THE ACCESS TOKEN IS IN THE CACHE, IF IT IS, DENY ACCESS.    
                 return Response({'message':'Logout successful'},status=status.HTTP_200_OK)
             
             else:

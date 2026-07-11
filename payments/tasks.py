@@ -30,7 +30,7 @@ def send_refund_confirmation_email(self,refund_id,user_id):
         refund_request= RefundRequest.objects.get(id=refund_id, user=user_id)
         site_url = get_current_site('request')
         site_domain = Site.objects.get_current().domain
-        site_url = f'http://{site_domain}:8000/'
+        site_url = f'http://{site_domain}:8000/' # NOTE: THIS WILL BREAK WHEN YOU MOVE TO PROD, `https` uses `443` or `80`, `http` mostly use `8000`, check the environment you are when handling this 
         
         subject = f"Refund Processed Successfully - Order #{refund_request.order.id}"
             
@@ -43,7 +43,20 @@ def send_refund_confirmation_email(self,refund_id,user_id):
             'site_url': site_url,
         }
         
+        # NOTE: DO
+        """
+        REFUND_REQUEST_TEMPLATES = {
+            "UNDER_REVIEW": "email/refund/refund-review.html",
+            "APPROVED": "email/refund/refund-approved.html",
+            .....
 
+        }
+        then
+        
+        refund_request_status = refund_request.status 
+        html_message = render_to_string(REFUND_REQUEST_TEMPLATES.get("refund_request_status"), context=context)
+        
+        """
 
         if refund_request.status == 'UNDER_REVIEW':
             html_message = render_to_string('email/refund/refund-review.html',context=context)

@@ -1,6 +1,10 @@
 from django.urls import path,include
 from accounts.views import RegistrationView,LoginView,VerifyEmailView,PasswordResetRequestView,PasswordResetConfirmView,LogoutView,RefreshTokenView,UserProfileView,UpdatePasswordView
 
+# NOTE: ENDPOINT SAMPLE
+# path('update-profile/<uuid:pk>/',UserProfileView.as_view(),name='profile_update'), profile_update NOT profile-update
+# path('token/refresh/',RefreshTokenView.as_view(),name="regenerate_access_token"), regenerate_access_token NOT regenerate-access-token
+
 
 urlpatterns = [
     path('register/',RegistrationView.as_view(),name = 'register'),

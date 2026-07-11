@@ -13,7 +13,24 @@ class MaterialSerializer(serializers.ModelSerializer):
 
 
     def get_item_detail_url(self,obj):
-
+        # NOTE: THIS IMPLEMENTATION WORKS FINE BECAUSE YOU ARE TESTING LOCALLY IN PROD 
+        # OR IN A DEPLOYED YOU GO DEY CHASE BUGS, 
+        # YOU CAN ADJUST THE IMPLEMENTATION TO KNOW IF YOU ARE IN PROD OR DEV.
+        # LIKE THIS
+        
+        """
+        from django.conf import settings 
+        if settings.DEBUG: (MEANS YOU ARE LIKELY TESTING LOCALLY)
+            request = self.context.get('request')
+            url = reverse('material-details', kwargs={'slug':obj.slug, 'pk':obj.id})
+            site_domain = get_current_site(request).domain
+            final_url = f"http://{site_domain}:8000/{url}"
+        else:
+            # Handle production environment
+            pass
+        """
+        
+  
         request = self.context.get('request')
         url = reverse('material-details', kwargs={'slug':obj.slug, 'pk':obj.id})
         site_domain = get_current_site(request).domain
@@ -66,7 +83,7 @@ class MaterialSerializer(serializers.ModelSerializer):
         user = request.user
 
         material = Materials.objects.create(**validated_data,user=user)
-        material.save()             
+        material.save() # NOTE: THIS WILL CAUSE DUPLICATE
         return material
 
 

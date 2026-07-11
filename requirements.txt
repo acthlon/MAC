@@ -47,3 +47,8 @@ urllib3==2.6.2
 vine==5.1.0
 wcwidth==0.6.0
 Werkzeug==3.1.4
+
+# NOTE: INSTALL `isort` package, run 
+"""
+isort `file_name.py`, then black `file_name.py`, to see Magic
+"""

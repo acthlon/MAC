@@ -77,7 +77,8 @@ class IsAdminOrIsOwner(permissions.BasePermission):
     def has_permission(self,request,view):
         if request.method in permissions.SAFE_METHODS:
             return True
-        
+        # NOTE: I assume you are fine with using `user.is_staff`` as the Admin in this project,
+        # `user.is_superuser` is better when working with Admin
         return request.user and request.user.is_staff
 
     def has_object_permission(self,request,view,obj):

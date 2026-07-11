@@ -66,6 +66,8 @@ class ReviewCreateView(APIView):
                 return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)  
             
         except Exception as e:
+            # NOTE: STOP RETURNING THINGS LIKE `{'message':str(e)}`, just say {'message':"Error occurred try again"},
+            # You should only log the exact error `str(e)`, don't return them.
             return Response({'message':str(e)}, status=status.HTTP_400_BAD_REQUEST)    
         
 

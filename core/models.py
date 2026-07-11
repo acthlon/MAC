@@ -13,7 +13,10 @@ class generated_image_path():
         extension = filename.split('.')[-1]
         image_name = f'{instance.slug}'
         path = f'images/{image_name}.{extension}'
-
+        # NOTE: Do 
+        """
+        path = f'images/{instance.id}/{image_name}'
+        """
         return path
 
 
@@ -24,7 +27,7 @@ class TimeStampModel(models.Model):
 
     created_at = models.DateTimeField(auto_now_add = True)
     updatred_at = models.DateTimeField(auto_now = True)
-
+    # `updatred_at`
     class Meta:
         abstract = True
 

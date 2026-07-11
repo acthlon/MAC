@@ -11,12 +11,14 @@ from decimal import Decimal
 
 class Cart(TimeStampModel):
 
-
+    # NOTE: MAKE USE OF OF RELATED NAME TOO 
+    # user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="carts")
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
     cart_code = models.CharField(max_length=255, unique=True, blank=True)
-    status = models.BooleanField(default='False')    
+    status = models.BooleanField(default='False') # NOTE: WETIN DEY OCCUR FOR HERE?, USE *CHOICES* INSTEAD  
 
 
+    # NOTE: USE THE DECORATOR @property FOR THIS METHOD
     def cart_total(self):
 
         total_cart_price = 0

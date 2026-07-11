@@ -16,14 +16,16 @@ class Payment(models.Model):
     user = models.ForeignKey(CustomUser,on_delete=models.PROTECT,related_name='payments')
     order = models.ForeignKey(Order,on_delete=models.PROTECT, related_name='payments')
     payment_method = models.ForeignKey(PaymentMethod, on_delete=models.PROTECT)
+    # NOTE: FOR THIS PROJECT YOU CAN STORE IN THE NORMAL DENOMINATION, 
+    # FOR STORE LOWER DENOMINATION, IT WILL HELP DURING PRECISION 
     amount = models.DecimalField(max_digits=12,decimal_places=2)
     currency = models.CharField(max_length=4,default='NGN')
     status=models.CharField(choices=PAYMENT_STATUS_CHOICES, max_length=20, default='pending')
-    reference = models.CharField(max_length=100,blank=True,null=True)
+    reference = models.CharField(max_length=100,blank=True,null=True), # NOTE: This should be unique 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    card_brand = models.CharField(max_length=50, blank=True, null=True)
-    card_bin = models.CharField(max_length=6, blank=True, null=True)
+    card_brand = models.CharField(max_length=50, blank=True, null=True), # NOTE: Use choices for `card_brand` 
+    card_bin = models.CharField(max_length=6, blank=True, null=True) # NOTE: NEVER STORE `CARD_PIN`
     card_last4 = models.CharField(max_length=4, blank=True, null=True)
     authorization_code = models.CharField(max_length=100, blank=True, null=True)
     
@@ -32,6 +34,8 @@ class Payment(models.Model):
     @property
     def masked_card(self):
         """Returns something like: 408408******4081"""
+        # NOTE: I DON'T THINK YOU NEED TO MASK THE CARD, JUST STORE THE LAST FOUR DIGITS,
+        # WETIN YOU DEY STORE THE FULL CARD NUMBER, YOU WAN CHOP MY MONEY?
         if self.card_brand and self.card_last4:
             return f"{self.card_brand}******{self.card_last4}"
         return "N/A"

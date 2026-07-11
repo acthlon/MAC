@@ -15,7 +15,7 @@ class Products(CatalogBaseModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4,editable=False) 
     category = models.CharField(max_length=30,choices= CATEGORY_CHOICES)
     stock = models.PositiveIntegerField()
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=True) # NOTE: I suggest you use `status` instead of `is_active`, so you can cover all possible statuses`
     reviews = GenericRelation(Reviews, content_type_field='content_type', object_id_field='object_id')
 
     def get_similar_products(self):

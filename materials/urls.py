@@ -2,6 +2,8 @@ from django.urls import path,include
 from materials.views import MaterialsListView,MaterialDetailsView,MaterialUpdateView,MaterialDeleteView,MaterialCreateView
 
 
+# NOTE: HMMMMMMMMM, THIS NAMING GET AS E BE OOOOO
+
 urlpatterns = [
     path('list/',MaterialsListView.as_view(),name='material_list'),
     path('<slug:slug>/<uuid:pk>/',MaterialDetailsView.as_view(),name = 'material-details'),

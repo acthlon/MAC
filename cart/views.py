@@ -26,6 +26,7 @@ class CartView(APIView):
 
             cart = Cart.objects.get(user=user)
         except Cart.DoesNotExist:
+            # NOTE:  return Response({"message": "Cart Does not exist"})
             return Response('Cart Does not exist')
 
         serializer = CartSerializer(cart, context={'request':request})    
@@ -64,7 +65,7 @@ class AddToCartView(APIView):
 
 
             if material_id:
-                item = Materials.objects.get(pk=material_id)
+                item = Materials.objects.get(pk=material_id) # NOTE: CHECK IF MATERIAL STILL ACTIVE TOO
                 content_type = ContentType.objects.get_for_model(Materials)
 
                 cart_item,created = CartItem.objects.get_or_create(

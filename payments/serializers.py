@@ -18,7 +18,9 @@ class InitiatePaymentSerializer(serializers.Serializer):
 class RefundRequestSerializer(serializers.ModelSerializer):
     
     order_id = serializers.UUIDField(source='order',read_only=True)
-  
+    # NOTE: VALIDATION NEEDED, ONE, `RefundRequest` SHOULDN'T BE MORE THAN ONE
+    # ALSO A RefundRequest MAY BE UNDER_REVIEW TOO, YOU WAN GET DUPLICATE 
+
     def create(self,validated_data):
         
         request = self.context.get('request')

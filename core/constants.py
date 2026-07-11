@@ -1,3 +1,23 @@
+#NOTE: these aren't constants per say, they are choices
+# you can have a file called choices.py or types.py, then do this 
+
+"""
+choices.py or types.py
+from django.db import models
+
+class CategoryChoices(models.TextChoices):
+    REGULAR = "regular",  "Regular"
+    PREMIUM = "premium", "Premium"
+    LUXURY = "luxury", "Luxury"
+
+then
+
+category = models.CharField(choices=CategoryChoices)
+
+"""
+
+
+
 CATEGORY_CHOICES = [('regular','Regular'),
                     ('premium','Premium'),
                      ('luxury','Luxury')]

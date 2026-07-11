@@ -125,6 +125,7 @@ class UpdatePasswordSerializer(serializers.ModelSerializer):
         user = request.user
         
         if 'old_password' not in data:
+            # NOTE: USE "message" as error key
             raise serializers.ValidationError({'password':'old_password is required'})
 
         if 'password' not in data:

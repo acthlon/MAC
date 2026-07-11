@@ -40,7 +40,7 @@ class initializePaymentAPIView(APIView):
         
         user = request.user
         order_id = pk
-        order = get_object_or_404(Order,id=order_id,status='CREATED')
+        order = get_object_or_404(Order,id=order_id,status='CREATED'), # NOTE: Next time do, 
         payment_method = PaymentMethod.objects.get(code=serializer.validated_data['method_code'])
         
         print(order)
@@ -307,7 +307,7 @@ class CreateRefundRequestAPIView(APIView):
     
     def post(self,request,order_id):
         order = get_object_or_404(Order,id=order_id,user=request.user)
-        
+        # NOTE: MOVE THIS TO THE `validate` method in serializer
         if order.delivery_status != 'DELIVERED':
             return Response({"error": "You can only request return for delivered orders"},status=status.HTTP_400_BAD_REQUEST)
         
@@ -341,7 +341,7 @@ class ReturnRequestActionAPIView(APIView):
             updated_request = serializer.save()
             
 
-            
+            # OYA NOW, DEBUGGER
             print('THIS IS WONDERFUL STAGE TOPPPPPP')
             # refund payment processing
             if updated_request.status == 'APPROVED':
@@ -388,6 +388,7 @@ class ReturnRequestActionAPIView(APIView):
 
 
 
+# NOTE: MOVE TO `tasks.py`
 @shared_task(bind=True)
 def process_paystack_refund(self, order_id,refund_id):
     
@@ -422,6 +423,7 @@ def process_paystack_refund(self, order_id,refund_id):
                 refund_request.status = 'COMPLETED'
                 refund_request.save()
                 
+                # OYA DEBUGGER 
                 print('THIS IS WONDERFUL STAGE 33333 PRODUCTS UPDATED SUCCCESSFULLY')
         else:
             print(f"[Refund FAILED] Order {order_id} - Message: {message}")

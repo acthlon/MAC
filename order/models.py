@@ -12,7 +12,24 @@ from django.utils import timezone
 from datetime import timedelta
 
 
+# NOTE: For this project, this is fine
+# Next time, do 
+"""
+from django.db iport models
+class OrderStatusChoices(models.TextChoices):
+    CREATED = "CREATED", "Created"
+    CONFIRMED = "CONFIRMED", "Confirmed"
+    SHIPPED = "SHIPPED", "Shipped"
+    COMPLETED = "COMPLETED", "Completed"
 
+    
+With `OrderStatusChoices`, you can easily perform
+
+get_object_or_404(Order,id=order_id,status=OrderStatusChoices.CREATED)
+
+
+
+"""
 ORDER_STATUS_CHOICES =[
     ('CREATED','Created'),
     ('CONFIRMED','Confirmed'),
@@ -222,7 +239,8 @@ class Order(models.Model):
 
     @property
     def calculate_total_amount(self):
-
+        # NOTE: YOU CAN HAVE A `utils.py` for calculation like this, due to order conditions that may come in
+        # IN brief, move any calculation related stuff, that involves `minus`, and `plus` away from here
         total_amount_sum = self.orderitems.aggregate(
         total_amount=Sum
         (ExpressionWrapper(F('quantity') * F('unit_price') - F('discount_amount'), output_field=DecimalField(max_digits=12, decimal_places=2)))
@@ -280,7 +298,8 @@ class Order(models.Model):
             
             unique_number = str(self.id)[:8].upper()
             tracking_number = f'MAC-{unique_number}'
-        
+            # NOTE: YOU KNOW USER NEED TO SEE TO SEE THERE TRACKING IDS TOO, 
+            # I DON'T THINK THEY UNDERTAND, `1e238aa0-5cab-4dce-81c7-514599dde9e3`, you can mix character, and number, total length maybe between 6-9
             self.tracking_id = tracking_number
             self.save(update_fields = ['tracking_id'])
             print(f'THIS UNIQUE NUMBER IS TO BE PRINTED{unique_number}')

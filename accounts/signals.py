@@ -11,7 +11,10 @@ from accounts.tasks import send_welcome_email_task
 
 @receiver(pre_save,sender=CustomUser)
 def create_username(sender,instance,**kwargs):
-
+    # NOTE: THIS WON'T SCALE, 
+    # BECAUSE PEOPLE CAN HAVE THE SAME FIRST AND LAST NAME, 
+    # BUT FOR THIS PROJECT, IT'S OKAY
+    
     first_name = instance.first_name
     last_name = instance.last_name
 

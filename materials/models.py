@@ -13,12 +13,14 @@ from review.models import Reviews
 
 
 class Materials(CatalogBaseModel):
-
+   # NOTE:  use related_name for the relations
+   # user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="materials")
    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
    id = models.UUIDField(primary_key=True, default=uuid.uuid4,editable=False) 
    category = models.CharField(max_length=30,choices= CATEGORY_CHOICES)
    color = models.CharField(max_length=200)
    stock = models.PositiveIntegerField()
+   # NOTE: `status` field instead of `is_active`, so you can cover all cases
    is_active = models.BooleanField(default=True)
    reviews = GenericRelation(Reviews,content_type_field='content_type',object_id_field='object_id')
 
