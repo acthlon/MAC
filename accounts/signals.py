@@ -26,10 +26,3 @@ def welcome_email_handler(sender,instance,created,**kwargs):
     
     if instance.is_active and not instance.last_login:
         send_welcome_email_task.delay(instance.id)
-
-
-
-# @receiver(post_save,sender=CustomUser)
-# def update_user_profile(sender,instance,**kwargs):
-
-#     instance.userprofile.save()

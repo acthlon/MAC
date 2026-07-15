@@ -1,47 +1,15 @@
-from django.shortcuts import render
+from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 from rest_framework import status
-from review.serializers import ReviewSerializer,ReviewCreateSerializer,ReviewSerializerUpdate
+from review.serializers import ReviewListSerializer,ReviewCreateSerializer,ReviewUpdateSerializer
 from review.models import Reviews 
 from rest_framework.views import APIView
-from materials.models import Materials
-from products.models import Products
 from core.pagination import ReviewPagination
 from django.contrib.contenttypes.models import ContentType
 from rest_framework.permissions import IsAuthenticated,AllowAny
-from core.permissions import IsReviewOwnerOrReadOnly,IsAdminOrReadOnly
+from core.permissions import IsReviewOwnerOrReadOnly
 from rest_framework import generics
-
-
-class ReviewListView(generics.ListAPIView):
-
-    permission_classes = [AllowAny,]
-    perginator_class = ReviewPagination
-    serializer_class = ReviewSerializer
-
-    # without generics apiview you will use this get function belowi
-    # def get(self,request):
-    #     try:
-    #         reviews = Reviews.objects.select_related('user').filter(verified_purchase=True ).order_by('?')[:6]
-    #     except Reviews.DoesNotExist:
-    #         return Response({'message':'Reviews Not Found'})
-        
-    #     serializer = ReviewSerializer(reviews,many=True, context = {'request': request})
-    #     return Response(serializer.data)
-
-    def get_queryset(self):
-
-        user = self.request.user
-
-        if not user.is_staff:
-            queryset = Reviews.objects.select_related('user').filter(verified_purchase = True).order_by('?')[:6]
-
-            return queryset
-        
-        elif user.is_staff:
-            queryset = Reviews.objects.all()
-
-            return queryset
+from rest_framework.reverse import reverse
 
             
 class ReviewCreateView(APIView):
@@ -58,71 +26,73 @@ class ReviewCreateView(APIView):
                 'slug':slug
             })    
             
-            if serializer.is_valid():
-                serializer.save()
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
 
-                return Response(serializer.data,status=status.HTTP_201_CREATED)
-            else:
-                return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)  
+            return Response(serializer.data,status=status.HTTP_201_CREATED) 
             
         except Exception as e:
             return Response({'message':str(e)}, status=status.HTTP_400_BAD_REQUEST)    
+
+
+class ReviewListByItem(generics.ListAPIView):
+    
+    permission_classes = [AllowAny]
+    serializer_class = ReviewListSerializer
+    pagination_class = ReviewPagination
+    
+    def get_queryset(self):
         
-
-class ReviewListByItem(APIView):
-
-# use generic apiview here
-
-    permission_classes = [AllowAny,]
-
-    def get(self,request,pk,model_name,slug):
-
-        try: 
-            content_type = ContentType.objects.get(model = model_name)
+        pk = self.kwargs.get('pk')
+        model_name = self.kwargs.get('model_name')
+        
+        try:
+            content_type = ContentType.objects.get(model= model_name.lower())
         except ContentType.DoesNotExist:
-            return Response({'error': 'Wrong model type'},status=status.HTTP_400_BAD_REQUEST)
-
-        review = Reviews.objects.filter(content_type=content_type, object_id=pk, verified_purchase = 'True').select_related('user').order_by('-created_at')
+            raise NotFound(detail = 'Wrong model type')
         
-        paginator = ReviewPagination()
-        paginated_review = paginator.paginate_queryset(review,request)
+        reviews = Reviews.objects.filter(verified_purchase=True,object_id = pk,content_type = content_type ).select_related('user').only(
+            'comment',
+            'rating',
+            'created_at',
+            'updated_at',
+            'user',
+            'user__profile_image',
+            'user__first_name',
+            'user__last_name',)
 
-        serializer = ReviewSerializer(paginated_review, context = {'request': request}, many=True)
+        return reviews
+    
+    def list(self,request,*args,**kwargs):
+        response = super().list(request,*args,**kwargs)
+        
+        pk = self.kwargs.get('pk')
+        model_name = self.kwargs.get('model_name')
+        slug = self.kwargs.get('slug')
+        
 
-        return paginator.get_paginated_response(serializer.data)
+        link_name = 'material_details' if model_name == 'materials' else 'product_details'
+        item_detail_url = reverse(link_name,request=request,kwargs = {
+            'pk' : pk,
+            'slug' : slug, 
+        }) 
+        
+        response.data = {
+            'item_detail_url' : item_detail_url,
+            **response.data
+        }
+        return response
 
 
-class ReviewDeleteView(APIView):
+
+class ReviewDeleteView(generics.DestroyAPIView):
 
     permission_classes = [IsReviewOwnerOrReadOnly,]
-
-    def delete(self,request,pk):
-        try:
-            review =Reviews.objects.get(id=pk)
-            self.check_object_permissions(self.request,review)    # this line here triggers object level permission
-        except Reviews.DoesNotExist: 
-            return Response({'message':'review not found'})  
-
-        review.delete()
-        return Response({'message':'Review deleted successfully'},status=status.HTTP_204_NO_CONTENT)   
+    queryset = Reviews.objects.all()
 
 
 class ReviewUpdateView(APIView):
     
     permission_classes = [IsReviewOwnerOrReadOnly,]
-
-    def put(self,request,pk):
-
-        try:
-            review = Reviews.objects.get(pk=pk)
-            self.check_object_permissions(self.request,review)
-        except Reviews.DoesNotExist:
-            return Response({'message':'review not found'})  
-            
-        serializer = ReviewSerializerUpdate(review,data=request.data,partial=True,context = {'request':request})
-
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    serializer = ReviewUpdateSerializer
+    queryset = Reviews.objects.all()

@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework.reverse import reverse
-
+from review.models import Reviews
 from materials.models import Materials
 from products.models import Products
 from .models import Banner, Category
@@ -17,6 +17,14 @@ class HomePageAPIView(APIView):
         categories = Category.objects.filter(is_active=True).select_related('target_model').order_by('display_order')
         featured_products = Products.objects.filter(is_active=True, discount__gt = 15000).order_by('-created_at')[:8]
         new_arrivals = Products.objects.filter(is_active=True).order_by('-created_at')[:8]
+        reviews = Reviews.objects.filter(verified_purchase=True).select_related('user').only(
+            'comment',
+            'rating',
+            'user',
+            'user__profile_image',
+            'user__first_name',
+            'user__last_name',
+        )[:8]
 
         # Dynamically generate correct URLs
         product_list_url = reverse('product_list', request=request)
@@ -31,14 +39,20 @@ class HomePageAPIView(APIView):
         
 
         data = {
-            "banners": [
+            
+            'average_rating' : Reviews.get_total_average_rating(),
+            'total_customers' : Reviews.get_total_customers(),
+            'satisfaction_rate' : Reviews.satisfacton_rate(),
+            
+            'hero_actions' :
                 {
                     "button_text_dresses": "Shop Dresses",
                     "button_link_products": product_list_url,
                     "button_text_fabrics": "Shop Fabrics",
                     "button_link_fabrics": material_list_url
-                }
-            ] + [
+                },
+                
+            "banners": [
                 {
                     "id": b.id,
                     "title": b.title,
@@ -91,6 +105,17 @@ class HomePageAPIView(APIView):
                     "slug": getattr(item, 'slug', ''),
                     "link": reverse('product_details',request=request,kwargs={'slug':item.slug,'pk':item.id}) 
                 } for item in new_arrivals
+            ],
+            
+            "reviews" : [
+                {
+                    'comment' : review.comment,
+                    'rating' : review.rating,
+                    'profile_image' : request.build_absolute_uri(review.user.profile_image.url) if review.user.profile_image else None,
+                    'first_name' : f'{review.user.first_name.capitalize()}' if getattr(review.user,'first_name',None) else None,
+                    'last_name' : f'{review.user.last_name[0].upper()}' if getattr(review.user, 'last_name', None) else None,
+                    'date' : review.created_at.strftime('%B %d, %Y')
+                } for review in reviews
             ]
         }
 

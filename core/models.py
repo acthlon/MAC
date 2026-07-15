@@ -9,20 +9,6 @@ from decimal import Decimal
 
 
 
-# @deconstructible
-# class generated_image_path():
-
-#     def __init__(self):
-#         pass
-
-#     def __call__(self,instance,filename):
-
-#         extension = filename.split('.')[-1]
-#         image_name = f'{instance.slug}'
-#         path = f'images/{image_name}.{extension}'
-
-#         return path
-
 @deconstructible
 class generated_image_path():
 
@@ -72,10 +58,6 @@ class generated_video_path():
             path = f'materials/videos/{slug}/{random_name}.{extension}'
             
             return path
-
-
-
-# image_path = generated_image_path()
 
 
 
@@ -150,7 +132,7 @@ class Banner(models.Model):
     
     title = models.CharField(max_length=200)
     subtitle = models.CharField(max_length=300, blank=True, null=True)
-    discription = models.TextField(max_length=500, blank=True, null=True)
+    description = models.TextField(max_length=500, blank=True, null=True)
     image = models.ImageField(upload_to='banners/images', null=True,blank=True)
     is_active = models.BooleanField(default=True)
     display_order = models.PositiveIntegerField(default=0)
