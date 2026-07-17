@@ -91,8 +91,8 @@ class ReviewDeleteView(generics.DestroyAPIView):
     queryset = Reviews.objects.all()
 
 
-class ReviewUpdateView(APIView):
+class ReviewUpdateView(generics.UpdateAPIView):
     
     permission_classes = [IsReviewOwnerOrReadOnly,]
-    serializer = ReviewUpdateSerializer
+    serializer_class = ReviewUpdateSerializer
     queryset = Reviews.objects.all()

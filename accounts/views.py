@@ -1,7 +1,7 @@
 from django.shortcuts import render,redirect
 from rest_framework.response import Response 
 from rest_framework.views import APIView
-from rest_framework import status
+from rest_framework import status,generics
 from accounts.models import CustomUser
 from django.contrib.auth import authenticate,login
 from rest_framework_simplejwt.tokens import RefreshToken 
@@ -22,7 +22,6 @@ class RegistrationView(APIView):
     def post(self,request):
 
         serializer = CustomUserSerializer(data=request.data,context={'request':request})
-        # try:
 
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
@@ -32,11 +31,7 @@ class RegistrationView(APIView):
 
         send_registration_email_task.delay(user.id)
         
-
         return Response({'message':f'registration was successful, check your e-mail for verification'}, status=status.HTTP_201_CREATED)
-
-
-
     
 
 class VerifyEmailView(APIView):
@@ -150,10 +145,9 @@ class LoginView(APIView):
                 }, status=status.HTTP_200_OK)
             
             else:
-                return Response({'message':'Invalid credentials, Please enter the correct email and password for a staff account'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'message':'Invalid credentials, Please enter the correct email and password'}, status=status.HTTP_400_BAD_REQUEST)
             
         except Exception as e:    
-            print(f'{user.email}')
             return Response({'message':str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -163,7 +157,6 @@ class RefreshTokenView(APIView):
 
     def post(self,request):
         refresh_token = request.data.get('refresh_token')
-        print(refresh_token)
         
         try:
             if not refresh_token:
@@ -203,67 +196,30 @@ class LogoutView(APIView):
             return Response({'messsage':'invalid token'}, status=status.HTTP_400_BAD_REQUEST)    
 
 
-class UserProfileView(APIView):
+class UserProfileView(generics.RetrieveUpdateAPIView):
 
     permission_classes = [IsAuthenticated,]
 
-    def get(self,request,pk):
+    def get_object(self):
 
-        user = request.user
-        profile = user
-  
-        serializer = UserProfileSerializer(profile)
+        user = self.request.user
+        return user
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    def get_serializer_class(self):
+         
+        if self.request.method in ['PUT','PATCH']:
+            return UpdateUserProfileSerializer
+        return  UserProfileSerializer
 
-
-    # def patch(self,request,pk):
-        
-    #     try:
-            
-    #         user = request.user
-
-    #         serializer = UpdateUserProfileSerializer(profile,data = request.data, partial=True, context = {'request':request})
-            
-    #         if serializer.is_valid():
-
-    #             serializer.save()
-    #             return Response({'status':'success',
-    #                              'message':'Profile Updated successfully',
-    #                              'data':serializer.data})
-    #         else:
-    #             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    #     except Exception as e:
-    #         return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)    
-
-     # ABOVE IS OLDER VERSION, USE THE SHORTED VERSION BELOW
-     
-    def patch(self,request,pk):
-
-            user = request.user
-            serializer = UpdateUserProfileSerializer(user,data = request.data, partial=True, context = {'request':request})
-            
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-            return Response({
-                            'message':'Profile Updated successfully',
-                            'data':serializer.data}, status=status.HTTP_200_OK)
-
-
-
-
-class UpdatePasswordView(APIView):
     
-    permission_classes = [IsAuthenticated,]
+class UpdatePasswordView(generics.UpdateAPIView):
     
-    def patch(self,request,*args,**kwargs):
-        
-        user = request.user
-        serializer = UpdatePasswordSerializer(user,data=request.data,context={'request':request},partial=True)
-        
-        serializer.is_valid(raise_exception=True) # using raise_exeption, serializer will auto. handle error and return 400 Bad Request
-        
-        serializer.save()
-            
-        return Response({'message': 'Password updated successfully!'}, status=status.HTTP_200_OK)
+    permission_classes = [IsAuthenticated]
+    serializer_class = UpdatePasswordSerializer
+    
+    # Forcefully disable PATCH so partial=True can NEVER happen!
+    http_method_names = ['put', 'options'] 
+    
+    def get_object(self):
+        user = self.request.user
+        return user

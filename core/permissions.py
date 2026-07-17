@@ -68,7 +68,7 @@ class IsReviewOwnerOrReadOnly(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
 
-        return request.user == obj.profile.user or request.user.is_staff
+        return request.user == obj.user 
 
 
 
@@ -86,7 +86,3 @@ class IsAdminOrIsOwner(permissions.BasePermission):
             return True
         
         return request.user.is_staff or request.user == obj.user
-
-
-
- 

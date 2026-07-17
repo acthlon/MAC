@@ -16,8 +16,8 @@ def create_username(sender,instance,**kwargs):
     last_name = instance.last_name
 
     if not instance.username:
-        username = f"{first_name}-{last_name}".lower().title()
-
+        username = instance.email.split('@')[0]
+        
         instance.username = username
 
 
