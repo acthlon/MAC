@@ -74,6 +74,7 @@ THIRD_PARTY_APPS = [
     "rest_framework",
     "phonenumber_field",
     "django_filters",
+    "drf_spectacular",
     # thirdparty authentication(e.g google, facebook)
     "django.contrib.sites",
     "allauth",
@@ -188,7 +189,6 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.BasicAuthentication', 
         'rest_framework.authentication.SessionAuthentication',          
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-
     ],
 
     'DEFAULT_PERMISSION_CLASSES':[
@@ -196,6 +196,7 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS':'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 12,
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 
@@ -264,3 +265,10 @@ PAYSTACK_PUBLIC_KEY = config('PAYSTACK_PUBLIC_KEY')
 # celery task setup
 CELERY_BROKER_URL = config('CELERY_BROKER_URL')
 CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND')
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Marvelam API',
+    'DESCRIPTION': 'Official API documentation for the Marvelam E-Commerce Platform.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+}

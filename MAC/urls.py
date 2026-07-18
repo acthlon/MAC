@@ -21,6 +21,7 @@ from django.conf.urls.static import static
 from django.conf import settings
 from core.views import HomePageAPIView 
 # from rest_framework_simplejwt.views import TokenObtainPairView,TokenRefreshView
+from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -34,6 +35,13 @@ urlpatterns = [
     path('checkout/', include('order.urls')),
     path('payments/',include('payments.urls')),
     path("",include("core.urls")),
+       # 1. This generates the raw JSON/YAML file
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    
+    # 2. This creates the beautiful Swagger UI Website
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+        # 3. (Optional) Redoc is just an alternative theme to Swagger
+    path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root= settings.MEDIA_ROOT)
