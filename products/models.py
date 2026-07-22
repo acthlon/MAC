@@ -1,18 +1,17 @@
-from django.db import models
-from core.models import CatalogBaseModel,SpecificationBaseModel,generated_image_path,generated_video_path
-from accounts.models import CustomUser 
 import uuid
-from core.constants import PRODUCT_SIZE_CHOICES
-from django.contrib.contenttypes.fields import GenericRelation
-from review.models import Reviews 
-from django.utils.text import slugify
-from core.models import Category,VariantBaseModel
 from decimal import Decimal
+
+from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.contenttypes.models import ContentType
+from django.db import models
+from django.utils.text import slugify
 
-
-
-
+from accounts.models import CustomUser
+from core.constants import PRODUCT_SIZE_CHOICES
+from core.models import (CatalogBaseModel, Category, SpecificationBaseModel,
+                         VariantBaseModel, generated_image_path,
+                         generated_video_path)
+from review.models import Reviews
 
 image_path = generated_image_path()
 

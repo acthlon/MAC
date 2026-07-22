@@ -1,15 +1,15 @@
-from django.db import models
-from accounts.models import CustomUser
-from materials.models import Materials
-from products.models import Products  
-from core.models import TimeStampModel
-from django.contrib.contenttypes.models import ContentType
-from django.contrib.contenttypes.fields import GenericForeignKey
 import uuid
 from decimal import Decimal
+
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
+from django.db import models
 from django.db.models import Sum
 
-
+from accounts.models import CustomUser
+from core.models import TimeStampModel
+from materials.models import Materials
+from products.models import Products
 
 
 class Cart(TimeStampModel):

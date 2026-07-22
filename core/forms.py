@@ -1,6 +1,8 @@
 from django import forms
+
+from core.constants import MATERIAL_CATEGORY_CHOICES, PRODUCT_CATEGORY_CHOICES
 from core.models import Category
-from core.constants import PRODUCT_CATEGORY_CHOICES, MATERIAL_CATEGORY_CHOICES
+
 
 class CategoryAdminForm(forms.ModelForm):
     

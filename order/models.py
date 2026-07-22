@@ -1,17 +1,17 @@
-from django.db import models
-from django.db.models import Sum,F,ExpressionWrapper,DecimalField
-from cart.models import CartItem
-from django.contrib.contenttypes.models import ContentType
-from django.contrib.contenttypes.fields import GenericForeignKey
 import uuid
-from accounts.models import CustomUser
-from phonenumber_field.modelfields import PhoneNumberField 
-from decimal import Decimal
-from core.constants import PAYMENT_STATUS_CHOICES
-from django.utils import timezone
 from datetime import timedelta
+from decimal import Decimal
 
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
+from django.db import models
+from django.db.models import DecimalField, ExpressionWrapper, F, Sum
+from django.utils import timezone
+from phonenumber_field.modelfields import PhoneNumberField
 
+from accounts.models import CustomUser
+from cart.models import CartItem
+from core.constants import PAYMENT_STATUS_CHOICES
 
 ORDER_STATUS_CHOICES =[
     ('CREATED','Created'),

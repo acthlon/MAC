@@ -1,12 +1,13 @@
-from django.db import models
-from django.utils.deconstruct import deconstructible
-from django.utils.text import slugify
-from core.constants import COLOR_CHOICES,MATERIAL_CATEGORY_CHOICES,QUALITY_CHOICES
-from django.contrib.contenttypes.models import ContentType
 import uuid
 from decimal import Decimal
 
+from django.contrib.contenttypes.models import ContentType
+from django.db import models
+from django.utils.deconstruct import deconstructible
+from django.utils.text import slugify
 
+from core.constants import (COLOR_CHOICES, MATERIAL_CATEGORY_CHOICES,
+                            QUALITY_CHOICES)
 
 
 @deconstructible

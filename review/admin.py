@@ -1,8 +1,8 @@
 from django.contrib import admin
-from review.models import Reviews
+from django.contrib.contenttypes.models import ContentType
+
 from materials.models import Materials
 from products.models import Products
-from django.contrib.contenttypes.models import ContentType
 from review.models import Reviews
 
 

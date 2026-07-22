@@ -1,9 +1,10 @@
 from django.contrib import admin
-from order.models import OrderItem,Order,PaymentMethod,Address,DeliveryMethod
-from materials.models import Materials
-from products.models import Products
 from django.contrib.contenttypes.models import ContentType
 
+from materials.models import Materials
+from order.models import (Address, DeliveryMethod, Order, OrderItem,
+                          PaymentMethod)
+from products.models import Products
 
 
 class OrderAdmin(admin.ModelAdmin):

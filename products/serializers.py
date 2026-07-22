@@ -1,7 +1,9 @@
-from rest_framework import serializers
-from products.models import Products
 from django.contrib.sites.shortcuts import get_current_site
+from rest_framework import serializers
 from rest_framework.reverse import reverse
+
+from products.models import Products
+
 
 class ProductSerializer(serializers.ModelSerializer):
 

@@ -1,6 +1,8 @@
-from django.urls import path,include
-from materials.views import MaterialsListView,MaterialDetailsView,MaterialUpdateView,MaterialDeleteView,MaterialCreateView
+from django.urls import include, path
 
+from materials.views import (MaterialCreateView, MaterialDeleteView,
+                             MaterialDetailsView, MaterialsListView,
+                             MaterialUpdateView)
 
 urlpatterns = [
     path('list/',MaterialsListView.as_view(),name='material_list'),

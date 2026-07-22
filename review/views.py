@@ -1,21 +1,35 @@
-from rest_framework.exceptions import NotFound
-from rest_framework.response import Response
-from rest_framework import status
-from review.serializers import ReviewListSerializer,ReviewCreateSerializer,ReviewUpdateSerializer
-from review.models import Reviews 
-from rest_framework.views import APIView
-from core.pagination import ReviewPagination
 from django.contrib.contenttypes.models import ContentType
-from rest_framework.permissions import IsAuthenticated,AllowAny
-from core.permissions import IsReviewOwnerOrReadOnly
-from rest_framework import generics
+from rest_framework import generics, status
+from rest_framework.exceptions import NotFound
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
 from rest_framework.reverse import reverse
+from rest_framework.views import APIView
 
-            
-class ReviewCreateView(APIView):
+from core.pagination import ReviewPagination
+from core.permissions import IsReviewOwnerOrReadOnly
+from review.models import Reviews
+from review.serializers import (ReviewCreateSerializer, ReviewListSerializer,
+                                ReviewUpdateSerializer)
+
+
+class ReviewCreateView(generics.CreateAPIView):
 
     permission_classes = [IsAuthenticated,]
 
+    def get_serializer_context(self):
+        
+        context = super().get_serializer_context()
+        
+        context.update({
+            'item_id' : self.kwargs.get('pk'),
+            'slug' : self.kwargs.get('slug'),
+            'model_name' : self.kwargs.get('model_name','').lower()
+        })
+        
+        return context
+    
+        
     def post(self,request,pk,model_name,slug):
         
         try:

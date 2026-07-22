@@ -1,5 +1,8 @@
 from django.urls import path
-from order.views import CheckoutPreviewAPIView,AddressView,OrderListView,OrderDetailsView,CheckoutPreviewAPIView,CreateOrderFromCartView,CreateOrderFromCartView
+
+from order.views import (AddressView, CheckoutPreviewAPIView,
+                         CreateOrderFromCartView, OrderDetailsView,
+                         OrderListView)
 
 urlpatterns = [
     path('preview/',CheckoutPreviewAPIView.as_view(), name='cart_preview'),

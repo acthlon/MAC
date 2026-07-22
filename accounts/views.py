@@ -1,17 +1,20 @@
-from django.shortcuts import render,redirect
-from rest_framework.response import Response 
-from rest_framework.views import APIView
-from rest_framework import status,generics
-from accounts.models import CustomUser
-from django.contrib.auth import authenticate,login
-from rest_framework_simplejwt.tokens import RefreshToken 
+from django.contrib.auth import authenticate, login
 from django.contrib.auth.tokens import default_token_generator
-from django.shortcuts import get_object_or_404
-from accounts.serializers import CustomUserSerializer,UserProfileSerializer,UpdateUserProfileSerializer,UpdatePasswordSerializer
-from rest_framework_simplejwt.exceptions import TokenError 
-from rest_framework.permissions import IsAuthenticated,AllowAny
-from accounts.tasks import send_registration_email_task,send_password_reset_email_task
+from django.shortcuts import get_object_or_404, redirect, render
+from rest_framework import generics, status
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.tokens import RefreshToken
 
+from accounts.models import CustomUser
+from accounts.serializers import (CustomUserSerializer,
+                                  UpdatePasswordSerializer,
+                                  UpdateUserProfileSerializer,
+                                  UserProfileSerializer)
+from accounts.tasks import (send_password_reset_email_task,
+                            send_registration_email_task)
 
 
 class RegistrationView(APIView):

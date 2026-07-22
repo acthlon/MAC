@@ -1,8 +1,9 @@
 from django.contrib import admin
-from cart.models import Cart,CartItem
 from django.contrib.contenttypes.models import ContentType
-from products.models import ProductVariant
+
+from cart.models import Cart, CartItem
 from materials.models import MaterialVariant
+from products.models import ProductVariant
 
 
 class CartAdmin(admin.ModelAdmin):

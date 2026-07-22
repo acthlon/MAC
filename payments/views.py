@@ -1,29 +1,27 @@
-from django.shortcuts import render
-from rest_framework.permissions import IsAuthenticated 
-from rest_framework.views import APIView
-from order.models import Order,PaymentMethod
-from django.shortcuts import get_object_or_404
-from payments.serializers import InitiatePaymentSerializer,RefundRequestSerializer,RefundRequestUpdateSerializer
-from rest_framework.response import Response
-from rest_framework import status
+import hashlib
+import hmac
+import json
+
+from celery import shared_task
+from django.conf import settings
+from django.contrib.sites.shortcuts import get_current_site
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404, render
+from django.urls import reverse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 from paystackapi.refund import Refund
 from paystackapi.transaction import Transaction
-from django.conf import settings
-from payments.models import Payment,RefundRequest
-from django.urls import reverse
-from django.contrib.sites.shortcuts import get_current_site
-from django.views.decorators.csrf import csrf_exempt
-import json
-import hmac
-import hashlib
-import json
-from django.views.decorators.http import require_POST
-from django.http import HttpResponse
-from celery import shared_task
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-
-
-
+from order.models import Order, PaymentMethod
+from payments.models import Payment, RefundRequest
+from payments.serializers import (InitiatePaymentSerializer,
+                                  RefundRequestSerializer,
+                                  RefundRequestUpdateSerializer)
 
 
 class initializePaymentAPIView(APIView):

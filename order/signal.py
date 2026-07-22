@@ -1,10 +1,9 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from order.tasks import send_order_confirmation_email_task,send_order_status_update_email_task
+
 from order.models import Order
-
-
-
+from order.tasks import (send_order_confirmation_email_task,
+                         send_order_status_update_email_task)
 
 
 @receiver(post_save,sender=Order)

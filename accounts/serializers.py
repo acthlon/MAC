@@ -1,9 +1,9 @@
+from django.core.exceptions import ValidationError
 from rest_framework import serializers
+
 from accounts.models import CustomUser
 from accounts.utils.passwordvalidate import validate_password_strength
-from django.core.exceptions import ValidationError
 from core.constants import MAX_FILE_SIZE
-
 
 
 class CustomUserSerializer(serializers.ModelSerializer):

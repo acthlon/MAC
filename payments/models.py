@@ -1,13 +1,10 @@
-from django.db import models
 import uuid
+
+from django.db import models
+
 from accounts.models import CustomUser
-from order.models import Order,PaymentMethod
-
-from core.constants import PAYMENT_STATUS_CHOICES,REFUND_STATUS_CHOICES
-
-
-
-
+from core.constants import PAYMENT_STATUS_CHOICES, REFUND_STATUS_CHOICES
+from order.models import Order, PaymentMethod
 
 
 class Payment(models.Model):

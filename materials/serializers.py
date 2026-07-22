@@ -1,8 +1,8 @@
-from rest_framework import serializers
-from materials.models import Materials,MaterialVariant
-from rest_framework.reverse import reverse
 from django.contrib.sites.shortcuts import get_current_site
+from rest_framework import serializers
+from rest_framework.reverse import reverse
 
+from materials.models import Materials, MaterialVariant
 
 
 class MaterialSerializer(serializers.ModelSerializer):

@@ -1,10 +1,11 @@
-from rest_framework import serializers
-from review.models  import Reviews
-from materials.models import Materials
-from products.models import Products
 from django.contrib.contenttypes.models import ContentType
-from order.models import OrderItem
 from django.shortcuts import get_object_or_404
+from rest_framework import serializers
+
+from materials.models import Materials
+from order.models import OrderItem
+from products.models import Products
+from review.models import Reviews
 
 
 class ReviewListSerializer(serializers.ModelSerializer):
@@ -49,7 +50,6 @@ class ReviewCreateSerializer(serializers.ModelSerializer):
 
 
         model_class = Materials if model_name == 'materials' else Products
-        item = get_object_or_404(model_class, id=item_id) if model_class else None
         content_type = ContentType.objects.get_for_model(model_class)
                 
         already_reviewed = Reviews.objects.filter(
@@ -60,8 +60,6 @@ class ReviewCreateSerializer(serializers.ModelSerializer):
 
         if already_reviewed:
             raise serializers.ValidationError('You have already created a review for this item.')
-        
-        
 
         content_type = ContentType.objects.get_for_model(model_class)
 
@@ -76,6 +74,7 @@ class ReviewCreateSerializer(serializers.ModelSerializer):
         
         data['verified_purchase'] = True
 
+        self.context['content_type'] = content_type
         return data
 
     def create(self,validated_data):
@@ -83,15 +82,8 @@ class ReviewCreateSerializer(serializers.ModelSerializer):
         user = self.context.get('request').user
         item_id = self.context.get('item_id')
         model_name = self.context.get('model_name')
+        content_type = self.context.get('content_type')
 
-
-        model_class = Materials if model_name == 'materials' else Products
-
-        try:
-            content_type = ContentType.objects.get_for_model(model_class)
-        except Exception as e:
-            raise serializers.ValidationError('Unsupported model')     
-        
         review = Reviews.objects.create(**validated_data, content_type = content_type,object_id = item_id,
         user = user) 
 

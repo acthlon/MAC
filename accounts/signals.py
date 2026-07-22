@@ -1,12 +1,8 @@
-from django.db.models.signals import pre_save,post_save
-from accounts.models import CustomUser
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
+
+from accounts.models import CustomUser
 from accounts.tasks import send_welcome_email_task
-
-
-
-
-
 
 
 @receiver(pre_save,sender=CustomUser)

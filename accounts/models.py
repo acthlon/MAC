@@ -1,9 +1,9 @@
-from django.db import models
-from django.contrib.auth.models import AbstractUser
-from phonenumber_field.modelfields import PhoneNumberField
-from django.utils.deconstruct import deconstructible
 import uuid
-from django.contrib.auth.models import BaseUserManager
+
+from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.db import models
+from django.utils.deconstruct import deconstructible
+from phonenumber_field.modelfields import PhoneNumberField
 
 
 @deconstructible

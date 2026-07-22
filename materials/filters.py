@@ -1,7 +1,8 @@
 import django_filters
-from materials.models import Materials
-from core.constants import MATERIAL_CATEGORY_CHOICES,RATING_CHOICES,QUALITY_CHOICES
 
+from core.constants import (MATERIAL_CATEGORY_CHOICES, QUALITY_CHOICES,
+                            RATING_CHOICES)
+from materials.models import Materials
 
 
 class MaterialsFilter(django_filters.FilterSet):

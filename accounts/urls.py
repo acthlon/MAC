@@ -1,6 +1,9 @@
-from django.urls import path,include
-from accounts.views import RegistrationView,LoginView,VerifyEmailView,PasswordResetRequestView,PasswordResetConfirmView,LogoutView,RefreshTokenView,UserProfileView,UpdatePasswordView
+from django.urls import include, path
 
+from accounts.views import (LoginView, LogoutView, PasswordResetConfirmView,
+                            PasswordResetRequestView, RefreshTokenView,
+                            RegistrationView, UpdatePasswordView,
+                            UserProfileView, VerifyEmailView)
 
 urlpatterns = [
     path('register/',RegistrationView.as_view(),name = 'register'),

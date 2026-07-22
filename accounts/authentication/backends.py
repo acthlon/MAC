@@ -1,4 +1,5 @@
 from django.contrib.auth.backends import BaseBackend
+
 from accounts.models import CustomUser
 
 

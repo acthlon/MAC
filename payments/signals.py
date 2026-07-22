@@ -1,10 +1,8 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from payments.tasks import send_refund_confirmation_email
+
 from payments.models import RefundRequest
-
-
-        
+from payments.tasks import send_refund_confirmation_email
 
 
 @receiver(post_save,sender=RefundRequest)

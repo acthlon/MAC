@@ -1,6 +1,8 @@
 from django.urls import path
-from payments.views import initializePaymentAPIView,PaymentCallbackAPIView,CreateRefundRequestAPIView,ReturnRequestActionAPIView,paystack_webhook
 
+from payments.views import (CreateRefundRequestAPIView, PaymentCallbackAPIView,
+                            ReturnRequestActionAPIView,
+                            initializePaymentAPIView, paystack_webhook)
 
 urlpatterns = [
     path('<uuid:pk>/initialize/',initializePaymentAPIView.as_view(),name='initialize_payment'),

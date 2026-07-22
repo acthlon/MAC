@@ -1,6 +1,9 @@
-from rest_framework import serializers
-from order.models import Address ,Order,OrderItem,PaymentMethod,DeliveryMethod,PAYMENT_METHOD_CHOICES
 from django.shortcuts import get_object_or_404
+from rest_framework import serializers
+
+from order.models import (PAYMENT_METHOD_CHOICES, Address, DeliveryMethod,
+                          Order, OrderItem, PaymentMethod)
+
 
 class AddressSerializer(serializers.ModelSerializer):
 

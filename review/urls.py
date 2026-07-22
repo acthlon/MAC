@@ -1,6 +1,7 @@
 from django.urls import path
-from review.views import ReviewCreateView,ReviewListByItem,ReviewDeleteView,ReviewUpdateView
 
+from review.views import (ReviewCreateView, ReviewDeleteView, ReviewListByItem,
+                          ReviewUpdateView)
 
 urlpatterns = [
     path('<str:model_name>/<slug:slug>/<uuid:pk>/create/',ReviewCreateView.as_view(), name='review_create'),

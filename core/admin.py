@@ -1,8 +1,7 @@
 from django.contrib import admin
-from core.models import Category,Banner
+
 from core.forms import CategoryAdminForm
-
-
+from core.models import Banner, Category
 
 
 @admin.register(Category)
@@ -19,7 +18,9 @@ class CategoryAdmin(admin.ModelAdmin):
         formfield = super().formfield_for_foreignkey(db_field, request, **kwargs)
         if db_field.name == 'target_model' and formfield:
             import json
-            from core.constants import PRODUCT_CATEGORY_CHOICES, MATERIAL_CATEGORY_CHOICES
+
+            from core.constants import (MATERIAL_CATEGORY_CHOICES,
+                                        PRODUCT_CATEGORY_CHOICES)
             product_choices_json = json.dumps([{"value": val, "label": lbl} for val, lbl in PRODUCT_CATEGORY_CHOICES])
             material_choices_json = json.dumps([{"value": val, "label": lbl} for val, lbl in MATERIAL_CATEGORY_CHOICES])
             formfield.widget.attrs.update({

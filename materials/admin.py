@@ -1,5 +1,7 @@
 from django.contrib import admin
-from materials.models import Materials,MaterialSpecification,MaterialImages, MaterialVideo,MaterialVariant
+
+from materials.models import (MaterialImages, Materials, MaterialSpecification,
+                              MaterialVariant, MaterialVideo)
 
 
 class MaterialImageInline(admin.TabularInline):

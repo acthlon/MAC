@@ -1,19 +1,19 @@
 from django.shortcuts import render
+from django_filters.rest_framework.backends import DjangoFilterBackend
+from rest_framework import generics, status
+from rest_framework.filters import OrderingFilter, SearchFilter
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.reverse import reverse
 from rest_framework.views import APIView
-from products.serializers import ProductSerializer,ProductDetailSerializer
+
+from core.constants import (COLOR_CHOICES, FABRIC_CARE_INSTRUCTIONS,
+                            PRODUCT_SIZE_CHOICES)
+from core.pagination import CatalogPagination
+from core.permissions import IsAdminOrReadOnly
 from products.filters import ProductFilter
 from products.models import Products
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated,AllowAny 
-from rest_framework import status
-from core.pagination import CatalogPagination
-from rest_framework import generics
-from django_filters.rest_framework.backends import DjangoFilterBackend
-from rest_framework.filters import SearchFilter,OrderingFilter
-from core.permissions import IsAdminOrReadOnly
-from core.constants import FABRIC_CARE_INSTRUCTIONS,PRODUCT_SIZE_CHOICES,COLOR_CHOICES
-from rest_framework.reverse import reverse
-
+from products.serializers import ProductDetailSerializer, ProductSerializer
 
 
 class ProductsListView(generics.ListAPIView):

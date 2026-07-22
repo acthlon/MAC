@@ -1,17 +1,13 @@
-from django.template.loader import render_to_string 
-from django.core.mail import send_mail
-from django.conf import settings
 from celery import shared_task
-from accounts.models import CustomUser
-from django.shortcuts import get_object_or_404
+from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
+from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
 from django.urls import reverse
-from django.conf import settings
 from django.utils.html import strip_tags
 
-
-
+from accounts.models import CustomUser
 
 
 @shared_task(bind=True,max_retries=3, default_retry_delay=60)

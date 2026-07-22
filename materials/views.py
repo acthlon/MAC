@@ -1,19 +1,16 @@
 from django.shortcuts import render
-from rest_framework import generics
-from materials.models import Materials
-from rest_framework.response import Response
-from materials.models import Materials
-from materials.serializers import MaterialSerializer,MaterialDetailSerializer
-from rest_framework import status
-from rest_framework.views import APIView 
-from  materials.filters import MaterialsFilter
-from rest_framework.permissions import IsAuthenticated,AllowAny 
-from core.pagination import CatalogPagination
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import SearchFilter,OrderingFilter
-from core.permissions import IsAdminOrReadOnly 
+from rest_framework import generics, status
+from rest_framework.filters import OrderingFilter, SearchFilter
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-
+from core.pagination import CatalogPagination
+from core.permissions import IsAdminOrReadOnly
+from materials.filters import MaterialsFilter
+from materials.models import Materials
+from materials.serializers import MaterialDetailSerializer, MaterialSerializer
 
 
 class MaterialsListView(generics.ListAPIView):

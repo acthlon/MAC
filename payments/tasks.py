@@ -1,25 +1,21 @@
-from django.template.loader import render_to_string 
-from django.core.mail import send_mail
-from decouple import config 
-from rest_framework.response import Response
-from rest_framework import status
-from django.conf import settings
 from celery import shared_task
-from django.contrib.sites.models import Site
-from accounts.models import CustomUser
-from django.shortcuts import get_object_or_404
+from decouple import config
+from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
+from django.contrib.sites.models import Site
 from django.contrib.sites.shortcuts import get_current_site
-from django.utils.http import urlsafe_base64_encode
+from django.core.mail import send_mail
+from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
 from django.urls import reverse
-from django.conf import settings
+from django.utils.html import strip_tags
+from django.utils.http import urlsafe_base64_encode
+from rest_framework import status
+from rest_framework.response import Response
+
+from accounts.models import CustomUser
 from order.models import Order
 from payments.models import RefundRequest
-from django.utils.html import strip_tags
-
-
-
 
 
 @shared_task(bind=True,max_retries=3, default_retry_delay=60)

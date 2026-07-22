@@ -1,7 +1,9 @@
 import django_filters
 from rest_framework import filters
+
+from core.constants import (PRODUCT_CATEGORY_CHOICES, PRODUCT_SIZE_CHOICES,
+                            QUALITY_CHOICES, RATING_CHOICES)
 from products.models import Products
-from core.constants import QUALITY_CHOICES,RATING_CHOICES,PRODUCT_CATEGORY_CHOICES,PRODUCT_SIZE_CHOICES
 
 
 class ProductFilter(django_filters.FilterSet):
@@ -15,7 +17,7 @@ class ProductFilter(django_filters.FilterSet):
     quality_category = django_filters.ChoiceFilter(choices=QUALITY_CHOICES,lookup_expr='iexact',label='All Quality Category')
     categories = django_filters.ChoiceFilter(choices=PRODUCT_CATEGORY_CHOICES,lookup_expr='iexact',field_name='categories__name',label='All Category')
 
-    reviews = django_filters.ChoiceFilter(choices = RATING_CHOICES,label= 'Product Rating', lookup_expr='iexact')
+    reviews = django_filters.ChoiceFilter(choices = RATING_CHOICES,label= 'Product Rating', field_name='reviews__rating',lookup_expr='iexact')
     
     sizes = django_filters.ChoiceFilter(choices=PRODUCT_SIZE_CHOICES,lookup_expr='iexact', field_name='variant__size', label='Size')
 

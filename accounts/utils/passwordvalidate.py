@@ -1,5 +1,7 @@
 import re
+
 from django.core.exceptions import ValidationError
+
 
 def validate_password_strength(password):
 
