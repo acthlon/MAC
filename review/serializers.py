@@ -1,7 +1,5 @@
 from django.contrib.contenttypes.models import ContentType
-from django.shortcuts import get_object_or_404
 from rest_framework import serializers
-
 from materials.models import Materials
 from order.models import OrderItem
 from products.models import Products
@@ -36,7 +34,7 @@ class ReviewListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Reviews
         fields = ['first_name','last_name','profile_image','comment','rating','created_at','updated_at','item_average_rating']
-        read_only_fields = fields
+        read_only_fields = ['verified_purchase']
 
 
 class ReviewCreateSerializer(serializers.ModelSerializer):
@@ -61,7 +59,6 @@ class ReviewCreateSerializer(serializers.ModelSerializer):
         if already_reviewed:
             raise serializers.ValidationError('You have already created a review for this item.')
 
-        content_type = ContentType.objects.get_for_model(model_class)
 
         has_permission = OrderItem.objects.filter(
             order__user = user,
@@ -81,14 +78,12 @@ class ReviewCreateSerializer(serializers.ModelSerializer):
 
         user = self.context.get('request').user
         item_id = self.context.get('item_id')
-        model_name = self.context.get('model_name')
         content_type = self.context.get('content_type')
 
         review = Reviews.objects.create(**validated_data, content_type = content_type,object_id = item_id,
         user = user) 
 
         return review
-        
         
     class Meta:
         model = Reviews
@@ -100,3 +95,4 @@ class ReviewUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Reviews
         fields = ('comment','rating','verified_purchase')
+        read_only_fields = ['verified_purchase']

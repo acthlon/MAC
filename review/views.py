@@ -9,13 +9,13 @@ from rest_framework.views import APIView
 from core.pagination import ReviewPagination
 from core.permissions import IsReviewOwnerOrReadOnly
 from review.models import Reviews
-from review.serializers import (ReviewCreateSerializer, ReviewListSerializer,
-                                ReviewUpdateSerializer)
+from review.serializers import (ReviewCreateSerializer, ReviewListSerializer,ReviewUpdateSerializer)
 
 
 class ReviewCreateView(generics.CreateAPIView):
 
     permission_classes = [IsAuthenticated,]
+    serializer_class = ReviewCreateSerializer
 
     def get_serializer_context(self):
         
@@ -30,25 +30,6 @@ class ReviewCreateView(generics.CreateAPIView):
         return context
     
         
-    def post(self,request,pk,model_name,slug):
-        
-        try:
-            serializer = ReviewCreateSerializer(data = request.data, context={
-                'request':request,
-                'item_id':pk,
-                'model_name':model_name.lower(),
-                'slug':slug
-            })    
-            
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-
-            return Response(serializer.data,status=status.HTTP_201_CREATED) 
-            
-        except Exception as e:
-            return Response({'message':str(e)}, status=status.HTTP_400_BAD_REQUEST)    
-
-
 class ReviewListByItem(generics.ListAPIView):
     
     permission_classes = [AllowAny]
@@ -74,7 +55,6 @@ class ReviewListByItem(generics.ListAPIView):
             'user__profile_image',
             'user__first_name',
             'user__last_name',)
-
         return reviews
     
     def list(self,request,*args,**kwargs):

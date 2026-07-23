@@ -23,7 +23,7 @@ class Products(CatalogBaseModel):
 
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='user_product')
     id = models.UUIDField(primary_key=True, default=uuid.uuid4,editable=False) 
-    is_active = models.BooleanField(default=True)
+    status = models.BooleanField(default=True)
     reviews = GenericRelation(Reviews, content_type_field='content_type', object_id_field='object_id')
     
     categories = models.ForeignKey(
@@ -56,11 +56,7 @@ class Products(CatalogBaseModel):
                 slug = f"{orig_slug}-{counter}"
                 counter += 1
             self.slug = slug
-            
-        # if not self.slug:
-        #     self.slug = slugify(self.name)
-        # elif self.slug:
-        #     self.slug = slugify(self.name)
+
         super().save(*args,**kwargs)
 
 
@@ -85,9 +81,7 @@ class ProductVariant(VariantBaseModel):
         
         price = self.product.price + self.price_adjustment
         total_price = price - self.product.discount
-        
-        # return round(total_price,2)
-        # for rounding DecimalFields, use below nstead of the above
+
         return total_price.quantize(Decimal('0.00'))
 
     @property

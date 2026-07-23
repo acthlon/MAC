@@ -18,7 +18,7 @@ class ProductVariantInline(admin.TabularInline):
 
 @admin.register(Products)
 class ProductsAdmin(admin.ModelAdmin):
-    list_display = ('name', 'categories', 'quality_category', 'description', 'price', 'slug', 'discount', 'is_active')
+    list_display = ('name', 'categories', 'quality_category', 'description', 'price', 'slug', 'discount', 'status')
     search_fields = ('name', 'categories__name')
     inlines = [ProductVariantInline, ProductVideoInline]
 

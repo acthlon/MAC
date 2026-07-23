@@ -13,7 +13,9 @@ from core.pagination import CatalogPagination
 from core.permissions import IsAdminOrReadOnly
 from products.filters import ProductFilter
 from products.models import Products
-from products.serializers import ProductDetailSerializer, ProductSerializer
+from products.serializers import ProductSerializer
+from django.shortcuts import get_object_or_404
+
 
 
 class ProductsListView(generics.ListAPIView):
@@ -42,73 +44,47 @@ class ProductsListView(generics.ListAPIView):
 
     
 
-class ProductCreateView(APIView):
+class ProductCreateView(generics.CreateAPIView):
 
     permission_classes = [IsAdminOrReadOnly]
-
-    def post(self,request):
-
-        serializer = ProductSerializer(data= request.data, context = {'request':request})
-
-        try:
-            if serializer.is_valid():
-                serializer.save()
-
-                return Response(serializer.data,status=status.HTTP_201_CREATED) 
-            else:
-                return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
-            
-        except Exception as e:
-            return Response({'message':str(e)}, status=status.HTTP_400_BAD_REQUEST)     
+    serializer_class = ProductSerializer
+    
+    def get_serializer_context(self):
+        
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
 
 
-
-class ProductDeleteView(APIView):
+class ProductDeleteView(generics.DestroyAPIView):
 
     permission_classes = [IsAdminOrReadOnly]
+    queryset = Products.objects.all()
 
-    def delete(self,request,pk,slug):
-
-        try:
-
-            product = Products.objects.get(pk=pk,slug=slug)
-        except Products.DoesNotExist:
-            return Response({'message':'Product does not exist'})  
-
-        product.delete()
-        return Response({'message':'Product deleted successfully'}, status=status.HTTP_204_NO_CONTENT)  
-
+    def get_object(self):
+        
+        queryset = self.get_queryset()
+        pk = self.kwargs.get('pk')
+        slug = self.kwargs.get('slug')
+        
+        product = get_object_or_404(queryset,pk=pk,slug=slug)
+        return product
 
 
-class ProductUpdateView(APIView):
+class ProductUpdateView(generics.UpdateAPIView):
 
     permission_classes = [IsAdminOrReadOnly]
+    serializer_class = ProductSerializer
+    queryset = Products.objects.all()
 
-    def put(self,request,pk,slug):
-
-        try:                                    
-           product = Products.objects.get(pk=pk,slug=slug)
-        except Products.DoesNotExist:
-            return Response('Product not found')  
+    def get_object(self):
         
-        serializer = ProductSerializer(product, data=request.data, context = {'request': request},partial=True)
+        queryset = self.get_queryset()
+        pk = self.kwargs.get('pk')
+        slug = self.kwargs.get('slug')
 
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
-        
-        
-
-
-
-
-
-
-
+        product = get_object_or_404(queryset,pk=pk,slug=slug)
+        return product
 
 
 class ProductDetailView(APIView):

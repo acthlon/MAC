@@ -1,13 +1,13 @@
 from django.contrib.sites.shortcuts import get_current_site
 from rest_framework import serializers
 from rest_framework.reverse import reverse
-
+from core.constants import MAX_FILE_SIZE
+from core.constants import (COLOR_CHOICES, FABRIC_CARE_INSTRUCTIONS,
+                            PRODUCT_SIZE_CHOICES)
 from products.models import Products
 
 
 class ProductSerializer(serializers.ModelSerializer):
-
-
 
     item_detail_url = serializers.SerializerMethodField()
     slug = serializers.SlugField(read_only=True)
@@ -19,7 +19,6 @@ class ProductSerializer(serializers.ModelSerializer):
         url = reverse('product_details', kwargs={'slug':obj.slug, 'pk':obj.id}, request=request)
         
         return url
-    
 
     def validate(self,data):
         
@@ -27,54 +26,23 @@ class ProductSerializer(serializers.ModelSerializer):
 
         if request_method in ['PUT','PATCH','POST']:
 
-            if 'name' in data:
-                name = data.get('name').strip()
+            if 'price' in data and data.get('price') <= 0:
+                raise serializers.ValidationError('Price must be greater than 0')
 
-                if name.replace('?','').isalpha():
-                    raise serializers.ValidationError(f'Name should contain only alphabet')
-
-            if 'description' in data:
-                description = data.get('description').strip()
-
-                if description.replace('?','').isalpha():
-                    raise serializers.ValidationError(f'description should contain only alphabet {print(description)}')
-
-            if 'price' in data:
-                price = data.get('price')
-
-                if price <= 0:
-                    raise serializers.ValidationError('Price must be greater than 0')
-
-
-            if 'discount' in data:
-                discount = data.get('discount')
-
-                if not discount <= 0:
-                    raise serializers.ValidationError('Discount must be greater than 0')
+            if 'discount' in data and data.get('discount') < 0: 
+                raise serializers.ValidationError('Discount cannot be negative')
 
             if 'image' in data:
                 image = data.get('image')
 
-                if image and image.size > 5 * 1024 * 1024:
+                if image and image.size > MAX_FILE_SIZE:
                     raise serializers.ValidationError('Image size must be less than 5MB.')  
                 
-            if 'stock' in data:
-                stock = data.get('stock')
-                if not stock >= 1:
-                    raise serializers.ValidationError('stock must be greater than zero')  
+            if 'stock' in data and data.get('stock') < 0:
+                    raise serializers.ValidationError('stock cannot be negative')  
 
         return data
 
-
-    def update(self,instance,validated_data):
-        
-        for field,value in validated_data.items():
-            if hasattr(instance,field):
-                setattr(instance,field,value)
-                instance.save()
-
-        return instance         
-    
 
     def create(self,validated_data):
 
@@ -82,24 +50,12 @@ class ProductSerializer(serializers.ModelSerializer):
         user = request.user
 
         product = Products.objects.create(**validated_data, user=user)
-        product.save()
         return product
     
-
-    def update(self,instance,validated_data):
-        
-        for field,value in validated_data.items():
-            if hasattr(instance,field):
-                setattr(instance,field,value)
-        
-        instance.save()
-        return instance    
-
-
     class Meta:
         
         model = Products
-        fields = ('name','description','price','slug','discount',"get_percent_disount",'item_detail_url','quality_category','is_active','categories')     
+        fields = ('name','description','price','slug','discount',"get_percent_disount",'item_detail_url','quality_category','status','categories')     
 
 
 
@@ -115,6 +71,7 @@ class ProductDetailSerializer(ProductSerializer):
         
         except Exception as e:
             raise serializers.ValidationError({'error': str(e)}) 
+    
     
     class Meta:
     
