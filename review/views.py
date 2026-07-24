@@ -9,7 +9,8 @@ from rest_framework.views import APIView
 from core.pagination import ReviewPagination
 from core.permissions import IsReviewOwnerOrReadOnly
 from review.models import Reviews
-from review.serializers import (ReviewCreateSerializer, ReviewListSerializer,ReviewUpdateSerializer)
+from review.serializers import (ReviewCreateSerializer, ReviewListSerializer,
+                                ReviewUpdateSerializer)
 
 
 class ReviewCreateView(generics.CreateAPIView):
