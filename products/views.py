@@ -1,108 +1,101 @@
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework.backends import DjangoFilterBackend
-from rest_framework import generics, status
+from rest_framework import generics
 from rest_framework.filters import OrderingFilter, SearchFilter
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.reverse import reverse
-from rest_framework.views import APIView
+from rest_framework.permissions import AllowAny
 
+from core.choices import Status
 from core.pagination import CatalogPagination
 from core.permissions import IsAdminOrReadOnly
 from products.filters import ProductFilter
 from products.models import Products
-from products.serializers import ProductDetailSerializer, ProductSerializer
+from products.serializers import (
+    ProductDetailSerializer,
+    ProductListSerializer,
+    ProductSerializer,
+)
 
 
 class ProductsListView(generics.ListAPIView):
-    
-    
-    permission_classes = [AllowAny,]
+    permission_classes = [
+        AllowAny,
+    ]
+
+    paginator_class = CatalogPagination
+    serializer_class = ProductListSerializer
+
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = ProductFilter
+    search_fields = ["name", "description"]
+    ordering_fields = ["price", "quality_category"]
 
     def get_queryset(self):
 
-        if self.request.user.is_staff:
-            queryset = Products.objects.all()
+        user = self.request.user
+        if user.is_staff:
+            queryset = Products.objects.select_related("categories").defer(
+                "categories__image", "categories__icon"
+            )
             return queryset
-        
-        elif not self.request.user.is_staff:
-            queryset = Products.objects.filter(status = True)
+
+        elif not user.is_staff or not user.is_superuser:
+            queryset = (
+                Products.objects.filter(status=Status.ACTIVE)
+                .select_related("categories")
+                .defer("categories__image", "categories__icon")
+            )
             return queryset
 
-    paginator_class = CatalogPagination
-    serializer_class = ProductSerializer
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, *args, **kwargs)
 
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+        from utils.core.core import CategoryUtils  # isort: skip
 
-    filterset_class = ProductFilter
-    search_fields = ['name','description']
-    ordering_fields = ['price','quality_category']
+        categories = CategoryUtils.get_all_product_categories(self)
 
-    
+        response.data["all_product_categories"] = categories
+
+        return response
+
 
 class ProductCreateView(generics.CreateAPIView):
-
     permission_classes = [IsAdminOrReadOnly]
     serializer_class = ProductSerializer
-    
+
     def get_serializer_context(self):
-        
+
         context = super().get_serializer_context()
-        context['request'] = self.request
+        context["request"] = self.request
         return context
 
 
-class ProductDeleteView(generics.DestroyAPIView):
-
-    permission_classes = [IsAdminOrReadOnly]
-    queryset = Products.objects.all()
-
-    def get_object(self):
-        
-        queryset = self.get_queryset()
-        pk = self.kwargs.get('pk')
-        slug = self.kwargs.get('slug')
-        
-        product = get_object_or_404(queryset,pk=pk,slug=slug)
-        return product
-
-
-class ProductUpdateView(generics.UpdateAPIView):
-
+class ProductUpdateDeleteView(generics.UpdateAPIView, generics.DestroyAPIView):
     permission_classes = [IsAdminOrReadOnly]
     serializer_class = ProductSerializer
-    queryset = Products.objects.all()
+
+    http_method_names = ["patch", "delete", "options"]
 
     def get_object(self):
-        
-        queryset = self.get_queryset()
-        pk = self.kwargs.get('pk')
-        slug = self.kwargs.get('slug')
 
-        product = get_object_or_404(queryset,pk=pk,slug=slug)
+        pk = self.kwargs.get("pk")
+        product = get_object_or_404(Products, pk=pk)
         return product
-
 
 
 class ProductDetailsView(generics.RetrieveAPIView):
-    
-    permission_classes = [AllowAny,]
+    permission_classes = [
+        AllowAny,
+    ]
     serializer_class = ProductDetailSerializer
-    
-    def get_queryset(self):
-        products = Products.objects.prefetch_related(
-            'variant',
-            'videos',
-            'reviews'
-        ).select_related(
-            'product_spec',
-            'categories')
-        return products
 
     def get_object(self):
-        queryset = self.get_queryset()
-        pk = self.kwargs.get('pk')
-        slug = self.kwargs.get('slug')
-        
-        product = get_object_or_404(queryset,pk=pk,slug=slug)
+
+        pk = self.kwargs.get("pk")
+        queryset = (
+            Products.objects.filter(status="ACTIVE")
+            .prefetch_related("variants", "videos", "reviews")
+            .select_related("specification", "categories")
+        )
+
+        product = get_object_or_404(queryset, pk=pk)
         return product

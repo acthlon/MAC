@@ -7,21 +7,18 @@ from phonenumber_field.modelfields import PhoneNumberField
 
 
 @deconstructible
-class generated_image_path():
-
+class generated_image_path:
     def __init__(self):
         pass
 
-    def __call__(self,instance,filename):
+    def __call__(self, instance, filename):
 
-        extension = filename.split('.')[-1]
-        path = f'images/profile/{instance.username}.{extension}'
+        extension = filename.split(".")[-1]
+        path = f"images/profile/{instance.username}.{extension}"
         return path
 
-image_path = generated_image_path()    
 
-
-
+image_path = generated_image_path()
 
 
 class CustomUserManager(BaseUserManager):
@@ -37,43 +34,37 @@ class CustomUserManager(BaseUserManager):
         return user
 
     def create_superuser(self, email, password=None, **extra_fields):
-        extra_fields.setdefault('is_staff', True)
-        extra_fields.setdefault('is_superuser', True)
-        extra_fields.setdefault('is_active', True)  
+        extra_fields.setdefault("is_staff", True)
+        extra_fields.setdefault("is_superuser", True)
+        extra_fields.setdefault("is_active", True)
 
-        if extra_fields.get('is_staff') is not True:
-            raise ValueError('Superuser must have is_staff=True.')
-        if extra_fields.get('is_superuser') is not True:
-            raise ValueError('Superuser must have is_superuser=True.')
+        if extra_fields.get("is_staff") is not True:
+            raise ValueError("Superuser must have is_staff=True.")
+        if extra_fields.get("is_superuser") is not True:
+            raise ValueError("Superuser must have is_superuser=True.")
 
         return self.create_user(email, password, **extra_fields)
 
 
-
 class CustomUser(AbstractUser):
- 
     MALE = "Male"
     FEMALE = "Female"
     OTHERS = "Others"
 
-    GENDER_CATEGORY = [
-        (MALE,"Male"),
-        (FEMALE,"Female"),
-        (OTHERS,"Others")
-    ] 
+    GENDER_CATEGORY = [(MALE, "Male"), (FEMALE, "Female"), (OTHERS, "Others")]
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     phone = PhoneNumberField()
-    is_active= models.BooleanField(default=False)
+    is_active = models.BooleanField(default=False)
     gender = models.CharField(choices=GENDER_CATEGORY)
-    email = models.EmailField(max_length = 500,unique=True)
-    
+    email = models.EmailField(max_length=500, unique=True)
+
     # Profile fields
-    
-    country = models.CharField(max_length = 500, null=True, blank=True)
-    state = models.CharField(max_length = 200, null=True, blank=True)
+
+    country = models.CharField(max_length=500, null=True, blank=True)
+    state = models.CharField(max_length=200, null=True, blank=True)
     city = models.CharField(max_length=500, null=True, blank=True)
-    address = models.TextField(max_length = 1000, null=True, blank=True)
-    profile_image = models.ImageField(upload_to=image_path, null = True, blank=True)
+    address = models.TextField(max_length=1000, null=True, blank=True)
+    profile_image = models.ImageField(upload_to=image_path, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -82,14 +73,12 @@ class CustomUser(AbstractUser):
 
     objects = CustomUserManager()
 
-
     def phone_number(self):
         return str(self.phone)
-    
 
     class Meta:
-        verbose_name_plural = 'Users'    
-        ordering = ['-created_at']    
+        verbose_name_plural = "Users"
+        ordering = ["-created_at"]
 
     def __str__(self):
         return f"{self.username}"

@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("products", "0008_remove_products_image_alter_products_user_and_more"),
     ]

@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("order", "0008_alter_order_delivery_status_alter_order_status"),
         ("payments", "0003_payment_authorization_code_payment_card_bin_and_more"),

@@ -6,7 +6,6 @@ import accounts.models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("accounts", "0004_auto_20260501_0131"),
     ]

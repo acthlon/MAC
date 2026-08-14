@@ -7,7 +7,6 @@ import core.models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("materials", "0006_remove_materials_category"),
     ]

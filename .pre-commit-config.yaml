@@ -1,5 +1,9 @@
 repos:
-  - repo: https://github.com/PyCQA/isort
-    rev: 5.13.2  # The latest version of isort
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.3
     hooks:
-      - id: isort
+      # Automatically fix auto-fixable issues without blocking commits on minor warnings
+      - id: ruff
+        args: [--fix, --exit-zero]
+      # Format code layout (replaces Black)
+      - id: ruff-format

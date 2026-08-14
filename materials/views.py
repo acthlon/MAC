@@ -1,114 +1,106 @@
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import generics, status
+from rest_framework import generics
 from rest_framework.filters import OrderingFilter, SearchFilter
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.views import APIView
+from rest_framework.permissions import AllowAny
 
+from core.choices import Status
 from core.pagination import CatalogPagination
 from core.permissions import IsAdminOrReadOnly
 from materials.filters import MaterialsFilter
 from materials.models import Materials
-from materials.serializers import MaterialDetailSerializer, MaterialSerializer
+from materials.serializers import (
+    MaterialDetailSerializer,
+    MaterialListSerializer,
+    MaterialSerializer,
+)
 
 
 class MaterialsListView(generics.ListAPIView):
-    
-    permission_classes = [AllowAny,]
+    permission_classes = [
+        AllowAny,
+    ]
+
+    serializer_class = MaterialListSerializer
+    paginator_class = CatalogPagination
+
+    filter_backends = (DjangoFilterBackend, SearchFilter, OrderingFilter)
+
+    filterset_class = MaterialsFilter
+    search_fields = ("name", "description")
+    ordering_fields = ("price", "quality_category")
 
     def get_queryset(self):
 
         user = self.request.user
-
         if user.is_staff:
-            queryset =  Materials.objects.select_related('categories').defer('categories__image','categories__icon')     
+            queryset = Materials.objects.select_related("categories").defer(
+                "categories__image", "categories__icon"
+            )
             return queryset
-        
-        elif not user.is_staff:
-            queryset =  Materials.objects.filter(is_active=True)
+        else:
+            queryset = (
+                Materials.objects.filter(status=Status.ACTIVE)
+                .select_related("categories")
+                .defer("categories__icon")
+            )
             return queryset
-        
-    serializer_class = MaterialSerializer 
-    paginator_class = CatalogPagination 
 
-    filter_backends = (DjangoFilterBackend,SearchFilter,OrderingFilter)
+    def list(self, request, *args, **kwargs):
+        from utils.core.core import CategoryUtils
 
-    filterset_class = MaterialsFilter    
-    search_fields = ('name','description')
-    ordering_fields = ('price','quality_category')
+        response = super().list(request, *args, **kwargs)
 
+        categories = CategoryUtils.get_all_material_categories(self)
 
+        response.data["all_material_categories"] = categories
 
-
-            
-class MaterialCreateView(APIView):    
+        return response
 
 
-    permission_classes = [IsAdminOrReadOnly,]
+class MaterialCreateView(generics.CreateAPIView):
+    permission_classes = [
+        IsAdminOrReadOnly,
+    ]
+    serializer_class = MaterialSerializer
 
-    def post(self,request):
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
 
-        try:
-            serializer = MaterialSerializer(data=request.data,context={'request':request})
-            
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data,status=status.HTTP_200_OK)
-            else:
-                
-                return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({'message': str(e)},status=status.HTTP_400_BAD_REQUEST)
-        
-        
-class MaterialDetailsView(APIView):
-    
-    permission_classes = [AllowAny,]
-
-    def get(self,request,pk,slug):
-
-        try:
-            material = Materials.objects.get(pk=pk,slug=slug)
-
-        except Materials.DoesNotExist:
-            return Response({'message':'material not found'},status=status.HTTP_400_BAD_REQUEST)
-        
-        serializer = MaterialDetailSerializer(material)
-        return Response(serializer.data)
+        request = self.request
+        context["request"] = request
+        return context
 
 
-class MaterialUpdateView(APIView):
+class MaterialUpdateDeleteView(generics.UpdateAPIView, generics.DestroyAPIView):
+    permission_classes = [
+        IsAdminOrReadOnly,
+    ]
+    serializer_class = MaterialSerializer
+
+    http_method_names = ["patch", "delete", "options"]
+
+    def get_object(self):
+        pk = self.kwargs.get("pk")
+
+        material = get_object_or_404(Materials, pk=pk)
+        return material
 
 
-    permission_classes = [IsAdminOrReadOnly,]
+class MaterialDetailView(generics.RetrieveAPIView):
+    permission_classes = [
+        AllowAny,
+    ]
+    serializer_class = MaterialDetailSerializer
 
-    def patch(self,request,pk,slug):
-        try:
-            material = Materials.objects.get(pk=pk,slug=slug)
+    def get_object(self):
 
-        except Materials.DoesNotExist():
-            return Response({'message':'material does not exist'},status=status.HTTP_400_BAD_REQUEST)    
-    
-        serializer = MaterialSerializer(material, data = request.data, context = {'request': request},partial=True)
+        pk = self.kwargs.get("pk")
+        queryset = (
+            Materials.objects.filter(status=Status.ACTIVE)
+            .prefetch_related("videos", "variants", "reviews")
+            .select_related("specifications", "categories")
+        )
 
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        
-        return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
-
-
-class MaterialDeleteView(APIView):
-
-    permission_classes = [IsAdminOrReadOnly,]
-    
-    def delete(self,request,pk,slug):
-        try:
-            material = Materials.objects.get(pk=pk,slug=slug)
-        except Materials.DoesNotExist:
-            return Response({'message':'material not found'})
-
-        material.delete()
-        return Response({'message':'material deleted successfully'},status=status.HTTP_204_NO_CONTENT)         
-    
+        material = get_object_or_404(queryset, pk=pk)
+        return material

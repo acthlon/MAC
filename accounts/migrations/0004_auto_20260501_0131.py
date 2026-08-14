@@ -4,8 +4,8 @@ from django.db import migrations
 
 
 def move_profile_data_to_user(apps, schema_editor):
-    CustomUser = apps.get_model('accounts', 'CustomUser')
-    UserProfile = apps.get_model('accounts', 'UserProfile')
+    CustomUser = apps.get_model("accounts", "CustomUser")
+    UserProfile = apps.get_model("accounts", "UserProfile")
 
     for profile in UserProfile.objects.all():
         user = profile.user
@@ -16,16 +16,15 @@ def move_profile_data_to_user(apps, schema_editor):
         user.profile_image = profile.profile_image
         user.save()
 
+
 def reverse_move(apps, schema_editor):
     # Optional: You can leave this empty or implement reverse logic
     pass
 
-class Migration(migrations.Migration):
 
+class Migration(migrations.Migration):
     dependencies = [
         ("accounts", "0003_alter_userprofile_profile_image"),
     ]
 
-    operations = [
-        migrations.RunPython(move_profile_data_to_user, reverse_move)
-    ]
+    operations = [migrations.RunPython(move_profile_data_to_user, reverse_move)]

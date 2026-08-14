@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("core", "0003_alter_banner_image"),
         ("materials", "0004_rename_updatred_at_materials_updated_at_and_more"),

@@ -7,7 +7,6 @@ import core.models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("products", "0009_remove_productspecification_product_and_more"),
     ]

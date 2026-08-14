@@ -1,114 +1,432 @@
-from django.contrib.sites.shortcuts import get_current_site
+import datetime
+
+from django.db import transaction
+from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.reverse import reverse
 
-from materials.models import Materials, MaterialVariant
+from core.choices import MAX_FILE_SIZE
+from core.models import Category
+from materials.models import (
+    MaterialImages,
+    Materials,
+    MaterialSpecification,
+    MaterialVariant,
+    MaterialVideo,
+)
+
+
+class MaterialSpecificationSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
+    material_type_display = serializers.CharField(
+        source="get_material_type_display", read_only=True
+    )
+
+    class Meta:
+        model = MaterialSpecification
+        fields = (
+            "id",
+            "width",
+            "width",
+            "thread_count",
+            "weight",
+            "pattern",
+            "material_type",
+            "material_type_display",
+            "key_features",
+        )
+        read_only_fields = ("id",)
+
+
+class MaterialImageSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
+
+    def validate_image(self, value):
+        if value and value.size > MAX_FILE_SIZE:
+            raise serializers.ValidationError("Image size must be less than 5MB.")
+        return value
+
+    class Meta:
+        model = MaterialImages
+        fields = ("id", "image", "display_order", "is_primary")
+
+
+class MaterialVariantSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
+    color_display = serializers.CharField(source="get_color_display", read_only=True)
+    stock_status = serializers.CharField(read_only=True, source="get_stock_status")
+    final_price = serializers.ReadOnlyField(
+        source="calculate_material_variant_final_price"
+    )
+    images = MaterialImageSerializer(many=True, required=False)
+
+    def validate(self, data):
+        if "price_adjustment" in data and data.get("price_adjustment") is not None:
+            if data["price_adjustment"] < 0:
+                raise serializers.ValidationError(
+                    {"price_adjustment": "Price adjustment cannot be negative."}
+                )
+        if data.get("stock") is not None and data.get("stock") < 0:
+            raise serializers.ValidationError({"stock": "Stock cannot be negative."})
+        return data
+
+    class Meta:
+        model = MaterialVariant
+        fields = (
+            "id",
+            "color",
+            "color_display",
+            "stock",
+            "stock_status",
+            "sku",
+            "price_adjustment",
+            "final_price",
+            "status",
+            "images",
+        )
+        read_only_fields = ("sku",)
+
+
+class MaterialVideoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MaterialVideo
+        fields = (
+            "id",
+            "video",
+            "thumbnail",
+            "display_order",
+        )
+
+
+class MaterialCategoriesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ("name", "status")
 
 
 class MaterialSerializer(serializers.ModelSerializer):
-
-
-    item_detail_url = serializers.SerializerMethodField()
+    variants = MaterialVariantSerializer(many=True, required=False)
+    videos = MaterialVideoSerializer(many=True, required=False)
+    item_detail_url = serializers.SerializerMethodField(read_only=True)
     slug = serializers.SlugField(read_only=True)
+    percent_discount = serializers.ReadOnlyField(source="calculate_percent_discount")
+    categories = MaterialCategoriesSerializer()
 
-
-    def get_item_detail_url(self,obj):
-
-        request = self.context.get('request')
-        url = reverse('material_details',kwargs={'slug':obj.slug, 'pk':obj.id},request=request)
+    def get_item_detail_url(self, obj):
+        request = self.context.get("request")
+        url = reverse(
+            "material_details", kwargs={"slug": obj.slug, "pk": obj.id}, request=request
+        )
         return url
-        
-    
 
-    def validate(self,data):
-        
-        request_method = self.context['request'].method
+    def validate(self, data):
+        request = self.context.get("request")
+        request_method = request.method if request else None
 
-        if request_method in ['PUT','PATCH','POST']:
+        if request_method in ["PUT", "PATCH", "POST"]:
+            if "price" in data and data.get("price") <= 0:
+                raise serializers.ValidationError(
+                    {"price": "Price must be greater than 0"}
+                )
 
-            if 'name' in data:
-                name = data.get('name').strip()
+            if (
+                "discount" in data
+                and data.get("discount") is not None
+                and data.get("discount") < 0
+            ):
+                raise serializers.ValidationError(
+                    {"discount": "Discount cannot be negative"}
+                )
 
-                if name.replace('?','').isalpha():
-                    raise serializers.ValidationError(f'Name should contain only alphabet')
-
-            if 'description' in data:
-                description = data.get('description').strip()
-
-                if description.replace('?','').isalpha():
-                    raise serializers.ValidationError(f'description should contain only alphabet {print(description)}')
-
-            if 'price' in data:
-                price = data.get('price')
-
-                if price <= 0:
-                    raise serializers.ValidationError('Price must be greater than 0')
-
-
-            if 'discount' in data:
-                discount = data.get('discount')
-
-                if discount <= 0:
-                    raise serializers.ValidationError('Discount must be greater than 0')
-
-            if 'image' in data:
-                image = data.get('image')
-
-                if image and image.size > 5 * 1024 * 1024:
-                    raise serializers.ValidationError('Image size must be less than 5MB.')  
         return data
 
+    @transaction.atomic
+    def create(self, validated_data):
+        request = self.context.get("request")
+        user = request.user if request and hasattr(request, "user") else None
 
-    def create(self,validated_data):
+        specification_data = validated_data.pop("specification", None)
+        variants_data = validated_data.pop("variants", [])
+        videos_data = validated_data.pop("videos", [])
 
-        request = self.context.get('request')
-        user = request.user
+        material = Materials.objects.create(**validated_data, user=user)
 
-        material = Materials.objects.create(**validated_data,user=user)
-        material.save()             
+        if specification_data:
+            MaterialSpecification.objects.create(
+                material=material, **specification_data
+            )
+
+        for video_data in videos_data:
+            MaterialVideo.objects.create(material=material, **video_data)
+
+        for variant_data in variants_data:
+            images_data = variant_data.pop("images", [])
+            variant = MaterialVariant.objects.create(material=material, **variant_data)
+            for img_data in images_data:
+                MaterialImages.objects.create(variant=variant, **img_data)
+
         return material
 
+    @transaction.atomic
+    def update(self, instance, validated_data):
 
+        specification_data = validated_data.pop("specification", None)
+        variants_data = validated_data.pop("variants", None)
+        videos_data = validated_data.pop("videos", None)
 
-    def update(self,instance,validated_data):
-        
-        for field,value in validated_data.items():
-            if hasattr(instance,field):
-                setattr(instance,field,value)
-        
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
         instance.save()
-        return instance     
+
+        if specification_data is not None:
+            MaterialSpecification.objects.update_or_create(
+                material=instance, defaults=specification_data
+            )
+
+        if videos_data is not None:
+            for video_data in videos_data:
+                video_id = video_data.pop("id", None)
+
+                if video_id:
+                    video_obj = MaterialVideo.objects.get(
+                        id=video_id, material=instance
+                    )
+
+                    for field, value in video_data.items():
+                        if hasattr(video_obj, field):
+                            setattr(video_obj, field, value)
+                            video_obj.save(update_fields=[field])
+                        else:
+                            raise serializers.ValidationError(
+                                {"message": "Field does not exist"}
+                            )
+                else:
+                    MaterialVideo.objects.create(material=instance, **video_data)
+
+        if variants_data is not None:
+            for variant_data in variants_data:
+                variant_id = variant_data.pop("id", None)
+                images_data = variant_data.pop("images", [])
+
+                if variant_id:
+                    MaterialVariant.objects.filter(
+                        id=variant_id, material=instance
+                    ).update(**variant_data)
+                    variant = MaterialVariant.objects.get(
+                        id=variant_id, material=instance
+                    )
+                    variant.save()
+                else:
+                    variant = MaterialVariant.objects.create(
+                        material=instance, **variant_data
+                    )
+
+                for img_data in images_data:
+                    img_data_id = img_data.pop("id", None)
+
+                    if img_data_id:
+                        img_obj = MaterialImages.objects.get(
+                            id=img_data_id, variant=variant
+                        )
+
+                        if img_obj:
+                            for field, value in img_data.items():
+                                if hasattr(img_obj, field):
+                                    setattr(img_obj, field, value)
+                                    img_obj.save(fields=[field])
+                                else:
+                                    raise serializers.ValidationError(
+                                        {"message": "Fields does not exist"}
+                                    )
+                    else:
+                        MaterialImages.objects.create(variant=variant, **img_data)
+
+        return instance
 
     class Meta:
         model = Materials
-        fields = ('id','name','description','price','quality_category','slug','discount',"get_percent_disount",'item_detail_url','is_active',"categories",)
+        fields = (
+            "id",
+            "name",
+            "description",
+            "price",
+            "slug",
+            "discount",
+            "percent_discount",
+            "item_detail_url",
+            "quality_category",
+            "status",
+            "categories",
+            "variants",
+            "videos",
+        )
 
+
+class MaterialInfoSerializer(serializers.ModelSerializer):
+    discounted_price = serializers.DecimalField(
+        source="calculate_discounted_price",
+        max_digits=10,
+        decimal_places=2,
+        read_only=True,
+        required=False,
+    )
+    total_stock = serializers.IntegerField(
+        source="calculate_total_stock", read_only=True, required=False
+    )
+    percent_discount = serializers.ReadOnlyField(
+        source="calculate_percent_disount", required=False
+    )
+    is_new_arrival = serializers.SerializerMethodField(read_only=True, required=False)
+    average_rating = serializers.ReadOnlyField(
+        source="calculate_average_rating", required=False
+    )
+    review_count = serializers.IntegerField(
+        source="calculate_review_count", read_only=True, required=False
+    )
+    category = serializers.CharField(
+        source="categories.name", read_only=True, required=False
+    )
+
+    def get_is_new_arrival(self, obj):
+        # 1. Figure out what the date was exactly 7 days ago
+        seven_days_ago = timezone.now() - datetime.timedelta(days=7)
+        is_new = obj.created_at >= seven_days_ago
+        return is_new
+
+    class Meta:
+        model = Materials
+        fields = (
+            "id",
+            "name",
+            "slug",
+            "description",
+            "price",
+            "discount",
+            "discounted_price",
+            "total_stock",
+            "percent_discount",
+            "quality_category",
+            "category",
+            "is_new_arrival",
+            "average_rating",
+            "review_count",
+        )
+
+
+class MaterialCardSerializer(serializers.ModelSerializer):
+    pry_image = serializers.ImageField(source="get_pry_image", read_only=True)
+    avg_rating = serializers.ReadOnlyField(
+        source="calculate_average_rating", required=False
+    )
+    review_count = serializers.IntegerField(
+        source="calculate_review_count", read_only=True, required=False
+    )
+    material_detail_url = serializers.SerializerMethodField(
+        read_only=True, required=False
+    )
+
+    def get_material_detail_url(self, obj):
+        request = self.context.get("request")
+        url = reverse(
+            "material_details", kwargs={"slug": obj.slug, "pk": obj.id}, request=request
+        )
+        return url
+
+    class Meta:
+        model = Materials
+        fields = (
+            "id",
+            "name",
+            "price",
+            "pry_image",
+            "avg_rating",
+            "review_count",
+            "material_detail_url",
+        )
+
+
+class MaterialListSerializer(MaterialCardSerializer):
+    class Meta(MaterialCardSerializer.Meta):
+        fields = MaterialCardSerializer.Meta.fields
 
 
 class MaterialDetailSerializer(serializers.ModelSerializer):
+    material_info = serializers.SerializerMethodField()
+    variant_details = serializers.SerializerMethodField()
+    videos = MaterialVideoSerializer(many=True, read_only=True)
+    details = serializers.SerializerMethodField()
+    fabric_care = serializers.SerializerMethodField()
+    reviews_data = serializers.SerializerMethodField()
+    similar_materials = MaterialCardSerializer(
+        source="get_similar_materials", many=True
+    )
 
+    def get_material_info(self, obj):
 
-    similar_material = serializers.SerializerMethodField()
+        material = MaterialInfoSerializer(obj, context=self.context).data
+        return material
 
-    def get_similar_material(self,material_obj):
+    def get_variant_details(self, obj):
 
-        try:
-            similar_material = material_obj.get_similar_material
-            serialized_similar_material = MaterialSerializer(similar_material, many=True, context=self.context)
-            return serialized_similar_material.data
-        
-        except Exception as e:
-            raise serializers.ValidationError({'error': str(e)}) 
+        request = self.context.get("request")
+        variant_list = []
+        for var in obj.variants.all():
+            variant_details = MaterialVariantSerializer(var, context=self.context).data
+
+            variant_list.append(variant_details)
+        return variant_list
+
+    def get_details(self, obj):
+        from utils.materials.material import MaterialDetailSerializerUtils  # isort: skip
+
+        return MaterialDetailSerializerUtils.get_details(obj)
+
+    def get_fabric_care(self, obj):
+        from utils.materials.material import MaterialDetailSerializerUtils  # isort: skip
+
+        return MaterialDetailSerializerUtils.get_fabric_care(obj)
+
+    def get_reviews_data(self, obj):
+        from utils.materials.material import MaterialDetailSerializerUtils  # isort: skip
+        from review.serializers import MaterialDetailReviewSerializer  # isort: skip
+
+        request = self.context.get("request")
+        user = request.user
+        user_review = None
+
+        if user and user.is_authenticated:
+            user_review = user.user_reviews.filter(
+                object_id=obj.pk, verified_purchase=True
+            ).first()
+
+        action_urls = MaterialDetailSerializerUtils.get_reviews_urls(
+            obj, user_review, request
+        )
+
+        reviews_qs = (
+            obj.reviews.filter(verified_purchase=True).select_related("user").all()
+        )
+        reviews_qs_serialized = MaterialDetailReviewSerializer(
+            reviews_qs, many=True
+        ).data
+        reviews_list = {"review": reviews_qs_serialized}
+
+        reviews = {
+            "action_url": action_urls,
+            "average_rating": obj.calculate_average_rating,
+            "review_count": obj.calculate_review_count,
+            "items": reviews_list,
+        }
+        return reviews
 
     class Meta:
         model = Materials
-        fields = ('id','name','description','price','image','quality_category','color','slug','stock','discount',"get_percent_disount",'similar_material',"categories",)        
-        
-        
-        
-class MaterialVariantSerializer(serializers.ModelSerializer):
-    
-    
-    class Meta:
-        model = MaterialVariant
-        fields = ('stock','sku','color','price_adjustment',)
+        fields = (
+            "material_info",
+            "reviews_data",
+            "variant_details",
+            "videos",
+            "details",
+            "fabric_care",
+            "similar_materials",
+        )

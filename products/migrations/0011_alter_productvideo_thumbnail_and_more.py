@@ -6,7 +6,6 @@ import core.models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("products", "0010_productspecification_productvariant_productimages_and_more"),
     ]

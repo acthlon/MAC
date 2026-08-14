@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("materials", "0007_materialimages_materialspecification_materialvideo"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),

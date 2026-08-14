@@ -7,7 +7,6 @@ import core.models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("materials", "0008_remove_materialspecification_material_and_more"),
     ]

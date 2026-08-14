@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("products", "0011_alter_productvideo_thumbnail_and_more"),
     ]

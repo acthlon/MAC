@@ -11,10 +11,10 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 import os
-import sys
+from datetime import timedelta
 from pathlib import Path
 
-from decouple import config
+from decouple import Csv, config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -27,24 +27,19 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config("SECRET_KEY")
 
 
-
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config("DEBUG", cast=bool)
 
-ALLOWED_HOSTS = ["127.0.0.1","localhost","*"]
-
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", cast=Csv())
 
 
 # NGROK URL
 # settings.py
 
 # For development only — add ngrok domains here
-CSRF_TRUSTED_ORIGINS = [
-    "https://*.ngrok-free.dev",       # ← allow all ngrok free domains
-]
 
 
-
+CSRF_TRUSTED_ORIGINS = config("CSRF_TRUSTED_ORIGINS", cast=Csv())
 
 # Application definition
 
@@ -55,7 +50,6 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    
 ]
 
 LOCAL_APPS = [
@@ -68,8 +62,8 @@ LOCAL_APPS = [
     "core",
     "products",
     "order",
-    'payments',
-    'notifications',
+    "payments",
+    "notifications",
 ]
 
 THIRD_PARTY_APPS = [
@@ -84,11 +78,9 @@ THIRD_PARTY_APPS = [
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google",
     "allauth.socialaccount.providers.facebook",
-
 ]
 
 INSTALLED_APPS += LOCAL_APPS + THIRD_PARTY_APPS
-
 
 
 MIDDLEWARE = [
@@ -99,7 +91,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "allauth.account.middleware.AccountMiddleware"
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 ROOT_URLCONF = "MAC.urls"
@@ -107,7 +99,7 @@ ROOT_URLCONF = "MAC.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR/'templates'],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -167,48 +159,36 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+
+
+AUTH_USER_MODEL = "accounts.CustomUser"
 
 
 STATIC_URL = "static/"
-
-
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR,'media')
-
-
-AUTH_USER_MODEL = 'accounts.CustomUser'
-
-
-
-STATIC_URL = 'static/'
-STATICFILES_DIRS = [BASE_DIR/'static']
-
+STATICFILES_DIRS = [BASE_DIR / "static"]
 
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES':[
-        'rest_framework.authentication.BasicAuthentication', 
-        'rest_framework.authentication.SessionAuthentication',          
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.BasicAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
-
-    'DEFAULT_PERMISSION_CLASSES':[
-        'rest_framework.permissions.IsAuthenticated'
-    ],
-    'DEFAULT_PAGINATION_CLASS':'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 12,
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 12,
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 
-
-from datetime import timedelta
-
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=7),
-    'REFRESH_TOKEN_LIFETIME' : timedelta(days=7),
-    'BLACKLIST_AFTER_ROTATION': True, # Enable token blacklisting 
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=7),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "BLACKLIST_AFTER_ROTATION": True,  # Enable token blacklisting
 }
 
 
@@ -224,53 +204,53 @@ SIMPLE_JWT = {
 # dynamic e-mail configuration
 
 
-EMAIL_BACKEND = config('EMAIL_BACKEND')
-EMAIL_HOST = config('EMAIL_HOST')
-EMAIL_PORT = config('EMAIL_PORT')
-EMAIL_USE_TLS = config('EMAIL_USE_TLS')
-EMAIL_HOST_USER = config('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
-DEFAULT_FROM_EMAIL= config('DEFAULT_FROM_EMAIL')
+EMAIL_BACKEND = config("EMAIL_BACKEND")
+EMAIL_HOST = config("EMAIL_HOST")
+EMAIL_PORT = config("EMAIL_PORT")
+EMAIL_USE_TLS = config("EMAIL_USE_TLS")
+EMAIL_HOST_USER = config("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
+DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL")
 
 
 # OAuth2 settings for Google and Facebook
 
-SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = config('SOCIAL_AUTH_GOOGLE_OAUTH2_KEY')
-SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = config('SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET')
+# NOTE:
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = config("SOCIAL_AUTH_GOOGLE_OAUTH2_KEY")
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = config("SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET")
 
-SOCIAL_AUTH_FACEBOOK_KEY = config('SOCIAL_AUTH_FACEBOOK_KEY')
-SOCIAL_AUTH_FACEBOOK_SECRET = config('SOCIAL_AUTH_FACEBOOK_SECRET')
 
+SOCIAL_AUTH_FACEBOOK_KEY = config("SOCIAL_AUTH_FACEBOOK_KEY")
+SOCIAL_AUTH_FACEBOOK_SECRET = config("SOCIAL_AUTH_FACEBOOK_SECRET")
 
 
 AUTHENTICATION_BACKENDS = (
-    'accounts.authentication.backends.EmailClassBackend', # custom backend for regular Django authentication
-    'django.contrib.auth.backends.ModelBackend',  # Default backend for regular Django authentication
-    'allauth.account.auth_backends.AuthenticationBackend',  # Allauth backend for social logins
+    "accounts.authentication.backends.EmailClassBackend",  # custom backend for regular Django authentication
+    "django.contrib.auth.backends.ModelBackend",  # Default backend for regular Django authentication
+    "allauth.account.auth_backends.AuthenticationBackend",  # Allauth backend for social logins
 )
 
 
 SITE_ID = 7  # Django Allauth requires a Site object, and this is the default site ID.
 
-SITE_URL = config("WEBSITE_DOMAIN","localhost:8000")
+SITE_URL = config("WEBSITE_DOMAIN", "localhost:8000")
 
-LOGIN_REDIRECT_URL = '/'  # Redirect to homepage after login
-LOGOUT_REDIRECT_URL = '/'  # Redirect to homepage after logout
-
+LOGIN_REDIRECT_URL = "/"  # Redirect to homepage after login
+LOGOUT_REDIRECT_URL = "/"  # Redirect to homepage after logout
 
 
 # payment settings
 
-PAYSTACK_SECRET_KEY = config('PAYSTACK_SECRET_KEY')
-PAYSTACK_PUBLIC_KEY = config('PAYSTACK_PUBLIC_KEY')
+PAYSTACK_SECRET_KEY = config("PAYSTACK_SECRET_KEY")
+PAYSTACK_PUBLIC_KEY = config("PAYSTACK_PUBLIC_KEY")
 
 # celery task setup
-CELERY_BROKER_URL = config('CELERY_BROKER_URL')
-CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND')
+CELERY_BROKER_URL = config("CELERY_BROKER_URL")
+CELERY_RESULT_BACKEND = config("CELERY_RESULT_BACKEND")
 
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'Marvelam API',
-    'DESCRIPTION': 'Official API documentation for the Marvelam E-Commerce Platform.',
-    'VERSION': '1.0.0',
-    'SERVE_INCLUDE_SCHEMA': False,
+    "TITLE": "Marvelam API",
+    "DESCRIPTION": "Official API documentation for the Marvelam E-Commerce Platform.",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
 }
