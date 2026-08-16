@@ -132,13 +132,12 @@ class ProductDetailSerializerUtils:
                 if request
                 else None
             ),
-            "review_update_url": (
-                reverse("review_update", kwargs={"pk": user_review.id}, request=request)
-                if user_review and request
-                else None
-            ),
-            "review_delete_url": (
-                reverse("review_delete", kwargs={"pk": user_review.id}, request=request)
+            "review_update_delete_url": (
+                reverse(
+                    "review_update_delete",
+                    kwargs={"pk": user_review.id},
+                    request=request,
+                )
                 if user_review and request
                 else None
             ),

@@ -36,7 +36,7 @@ class Products(CatalogBaseModel):
         null=True,
         blank=True,
         limit_choices_to={"target_model__model": "products"},
-        related_name="product_categories",
+        related_name="products",
     )
 
     @property

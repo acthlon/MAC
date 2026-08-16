@@ -12,7 +12,7 @@ from materials.models import Materials
 from materials.serializers import (
     MaterialDetailSerializer,
     MaterialListSerializer,
-    MaterialSerializer,
+    MaterialWriteSerializer,
 )
 
 
@@ -62,7 +62,7 @@ class MaterialCreateView(generics.CreateAPIView):
     permission_classes = [
         IsAdminOrReadOnly,
     ]
-    serializer_class = MaterialSerializer
+    serializer_class = MaterialWriteSerializer
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -76,7 +76,7 @@ class MaterialUpdateDeleteView(generics.UpdateAPIView, generics.DestroyAPIView):
     permission_classes = [
         IsAdminOrReadOnly,
     ]
-    serializer_class = MaterialSerializer
+    serializer_class = MaterialWriteSerializer
 
     http_method_names = ["patch", "delete", "options"]
 

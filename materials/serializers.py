@@ -14,6 +14,7 @@ from materials.models import (
     MaterialVariant,
     MaterialVideo,
 )
+from review.serializers import ItemReviewSerializer
 
 
 class MaterialSpecificationSerializer(serializers.ModelSerializer):
@@ -104,7 +105,7 @@ class MaterialCategoriesSerializer(serializers.ModelSerializer):
         fields = ("name", "status")
 
 
-class MaterialSerializer(serializers.ModelSerializer):
+class MaterialWriteSerializer(serializers.ModelSerializer):
     variants = MaterialVariantSerializer(many=True, required=False)
     videos = MaterialVideoSerializer(many=True, required=False)
     item_detail_url = serializers.SerializerMethodField(read_only=True)
@@ -388,27 +389,24 @@ class MaterialDetailSerializer(serializers.ModelSerializer):
 
     def get_reviews_data(self, obj):
         from utils.materials.material import MaterialDetailSerializerUtils  # isort: skip
-        from review.serializers import MaterialDetailReviewSerializer  # isort: skip
 
         request = self.context.get("request")
         user = request.user
         user_review = None
 
         if user and user.is_authenticated:
-            user_review = user.user_reviews.filter(
-                object_id=obj.pk, verified_purchase=True
+            user_review = user.reviews.filter(
+                object_id=obj.pk, purchase_verified=True
             ).first()
 
         action_urls = MaterialDetailSerializerUtils.get_reviews_urls(
             obj, user_review, request
         )
 
-        reviews_qs = (
-            obj.reviews.filter(verified_purchase=True).select_related("user").all()
-        )
-        reviews_qs_serialized = MaterialDetailReviewSerializer(
-            reviews_qs, many=True
-        ).data
+        reviews_qs = obj.reviews.filter(purchase_verified=True).select_related("user")[
+            :3
+        ]
+        reviews_qs_serialized = ItemReviewSerializer(reviews_qs, many=True).data
         reviews_list = {"review": reviews_qs_serialized}
 
         reviews = {

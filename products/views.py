@@ -12,7 +12,7 @@ from products.models import Products
 from products.serializers import (
     ProductDetailSerializer,
     ProductListSerializer,
-    ProductSerializer,
+    ProductWriteSerializer,
 )
 
 
@@ -60,7 +60,7 @@ class ProductsListView(generics.ListAPIView):
 
 class ProductCreateView(generics.CreateAPIView):
     permission_classes = [IsAdminOrReadOnly]
-    serializer_class = ProductSerializer
+    serializer_class = ProductWriteSerializer
 
     def get_serializer_context(self):
 
@@ -71,7 +71,7 @@ class ProductCreateView(generics.CreateAPIView):
 
 class ProductUpdateDeleteView(generics.UpdateAPIView, generics.DestroyAPIView):
     permission_classes = [IsAdminOrReadOnly]
-    serializer_class = ProductSerializer
+    serializer_class = ProductWriteSerializer
 
     http_method_names = ["patch", "delete", "options"]
 

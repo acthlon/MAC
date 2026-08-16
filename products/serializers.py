@@ -14,7 +14,7 @@ from products.models import (
     ProductVariant,
     ProductVideo,
 )
-from review.serializers import ProductDetailReviewSerializer
+from review.serializers import ItemReviewSerializer
 
 
 class ProductSpecificationSerializer(serializers.ModelSerializer):
@@ -105,7 +105,7 @@ class ProductCategoriesSerializer(serializers.ModelSerializer):
         fields = ("name", "status")
 
 
-class ProductSerializer(serializers.ModelSerializer):
+class ProductWriteSerializer(serializers.ModelSerializer):
     specification = ProductSpecificationSerializer(required=False)
     variants = ProductVariantSerializer(many=True, required=False)
     videos = ProductVideoSerializer(many=True, required=False)
@@ -406,20 +406,18 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         user_review = None
 
         if user and user.is_authenticated:
-            user_review = user.user_reviews.filter(
-                object_id=obj.pk, verified_purchase=True
+            user_review = user.reviews.filter(
+                object_id=obj.pk, purchase_verified=True
             ).first()
 
         action_urls = ProductDetailSerializerUtils.get_reviews_urls(
             obj, user_review, request
         )
 
-        reviews_qs = (
-            obj.reviews.filter(verified_purchase=True).select_related("user").all()
-        )
-        reviews_qs_serialized = ProductDetailReviewSerializer(
-            reviews_qs, many=True
-        ).data
+        reviews_qs = obj.reviews.filter(purchase_verified=True).select_related("user")[
+            :3
+        ]
+        reviews_qs_serialized = ItemReviewSerializer(reviews_qs, many=True).data
         reviews_list = {"review": reviews_qs_serialized}
 
         reviews = {

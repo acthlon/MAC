@@ -136,7 +136,7 @@ class Banner(models.Model):
     subtitle = models.CharField(max_length=300, blank=True, null=True)
     description = models.TextField(max_length=500, blank=True, null=True)
     image = models.ImageField(upload_to="banners/images", null=True, blank=True)
-    status = models.BooleanField(choices=Status.choices)
+    status = models.CharField(choices=Status.choices)
     display_order = models.PositiveIntegerField(default=0)
 
     class Meta:

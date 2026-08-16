@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="banner",
             name="status",
-            field=models.BooleanField(
+            field=models.CharField(
                 choices=[("ACTIVE", "Active"), ("INACTIVE", "Inactive")]
             ),
         ),
@@ -24,7 +24,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="category",
             name="status",
-            field=models.BooleanField(
+            field=models.CharField(
                 choices=[("ACTIVE", "Active"), ("INACTIVE", "Inactive")]
             ),
         ),

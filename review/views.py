@@ -6,20 +6,20 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.reverse import reverse
 
 from core.pagination import ReviewPagination
-from core.permissions import IsReviewOwnerOrReadOnly
+from core.permissions import IsOwnerOrReadOnly
 from review.models import Reviews
 from review.serializers import (
-    ReviewCreateSerializer,
     ReviewListSerializer,
-    ReviewUpdateSerializer,
+    ReviewWriteSerializer,
 )
+from utils.reviews.review import ReviewUtils
 
 
 class ReviewCreateView(generics.CreateAPIView):
     permission_classes = [
         IsAuthenticated,
     ]
-    serializer_class = ReviewCreateSerializer
+    serializer_class = ReviewWriteSerializer
 
     def get_serializer_context(self):
 
@@ -53,7 +53,7 @@ class ReviewListByItem(generics.ListAPIView):
 
         reviews = (
             Reviews.objects.filter(
-                verified_purchase=True, object_id=pk, content_type=content_type
+                purchase_verified=True, object_id=pk, content_type=content_type
             )
             .select_related("user")
             .only(
@@ -88,35 +88,31 @@ class ReviewListByItem(generics.ListAPIView):
                 "slug": slug,
             },
         )
+        try:
+            content_type = ContentType.objects.get(model=model_name)
+            item_average_rating = ReviewUtils.calculate_item_average_rating(
+                pk, content_type
+            )
 
-        response.data = {"item_detail_url": item_detail_url, **response.data}
+        except ContentType.DoesNotExist:
+            item_average_rating = 0.0
+
+        response.data = {
+            "item_detail_url": item_detail_url,
+            "item_average_rating": item_average_rating,
+            **response.data,
+        }
         return response
 
 
-class ReviewDeleteView(generics.DestroyAPIView):
+class ReviewUpdateDeleteView(generics.UpdateAPIView, generics.DestroyAPIView):
     permission_classes = [
-        IsReviewOwnerOrReadOnly,
+        IsOwnerOrReadOnly,
     ]
-    serializer_class = ReviewUpdateSerializer
+    serializer_class = ReviewWriteSerializer
 
     def get_object(self):
 
         pk = self.kwargs.get("pk")
         review = get_object_or_404(Reviews, pk=pk)
         return review
-
-
-class ReviewUpdateView(generics.UpdateAPIView):
-    permission_classes = [
-        IsReviewOwnerOrReadOnly,
-    ]
-    serializer_class = ReviewUpdateSerializer
-
-    def get_object(self):
-
-        pk = self.kwargs.get("pk")
-        review = get_object_or_404(Reviews, pk=pk)
-        return review
-
-
-# NOTE: Merge these two wogether using one generics

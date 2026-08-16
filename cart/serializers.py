@@ -7,7 +7,7 @@ from rest_framework import serializers
 from cart.models import Cart, CartItem
 from materials.models import MaterialVariant
 from products.models import ProductVariant
-from products.serializers import ProductSerializer
+from products.serializers import ProductWriteSerializer
 
 
 class CartItemSerializer(serializers.ModelSerializer):
@@ -35,7 +35,7 @@ class CartItemSerializer(serializers.ModelSerializer):
             representation.pop("products", None)
 
         elif instance.content_type.model == "productvariant":
-            serialized_product = ProductSerializer(instance.content_object)
+            serialized_product = ProductWriteSerializer(instance.content_object)
             representation["product_variant"] = serialized_product.data
             representation.pop("materials", None)
 

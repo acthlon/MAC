@@ -2,9 +2,8 @@ from django.urls import path
 
 from review.views import (
     ReviewCreateView,
-    ReviewDeleteView,
     ReviewListByItem,
-    ReviewUpdateView,
+    ReviewUpdateDeleteView,
 )
 
 urlpatterns = [
@@ -13,8 +12,11 @@ urlpatterns = [
         ReviewCreateView.as_view(),
         name="review_create",
     ),
-    path("<str:pk>/update/", ReviewUpdateView.as_view(), name="review_update"),
-    path("<str:pk>/delete/", ReviewDeleteView.as_view(), name="review_delete"),
+    path(
+        "<str:pk>/manage/",
+        ReviewUpdateDeleteView.as_view(),
+        name="review_update_delete",
+    ),
     path(
         "<str:model_name>/<slug:slug>/<uuid:pk>/all/",
         ReviewListByItem.as_view(),

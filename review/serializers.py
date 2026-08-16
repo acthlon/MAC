@@ -7,50 +7,50 @@ from products.models import Products
 from review.models import Reviews
 
 
-class ReviewListSerializer(serializers.ModelSerializer):
-    first_name = serializers.SerializerMethodField()
-    last_name = serializers.SerializerMethodField()
-    profile_image = serializers.SerializerMethodField()
-    created_at = serializers.DateTimeField(format="%B %d, %Y")
-    updated_at = serializers.DateTimeField(format="%B %d, %Y")
-    item_average_rating = serializers.SerializerMethodField(
-        read_only=True, required=False
+class ItemReviewSerializer(serializers.ModelSerializer):
+    username = serializers.SerializerMethodField(read_only=True)
+    rating_display = serializers.CharField(source="get_rating_display", read_only=True)
+    date_created = serializers.DateTimeField(
+        source="created_at", read_only=True, format="%B %d %Y"
     )
+    date_updated = serializers.DateTimeField(
+        source="updated_at", read_only=True, format="%B %d %Y"
+    )
+    profile_image = serializers.ImageField(source="user.profile_image")
 
-    def get_item_average_rating(self, obj):
-        return obj.item_average_rating
+    def get_username(self, obj):
 
-    def get_first_name(self, obj):
-        return obj.user.first_name.capitalize() if obj.user.first_name else None
+        username = obj.user.username if obj.user and obj.user.username else "Anonymous"
 
-    def get_last_name(self, obj):
-        return obj.user.last_name[0].upper() if obj.user.last_name else None
-
-    def get_profile_image(self, obj):
-        request = self.context.get("request")
-        if obj.user.profile_image:
-            image = obj.user.profile_image
-            image_url = request.build_absolute_uri(image.url)
-            return image_url if image else None
+        first_two_letters = obj.user.username[:2]
+        last_two_letters = obj.user.username[-2:]
+        combined = f"{first_two_letters}***{last_two_letters}"
+        return combined
 
     class Meta:
         model = Reviews
-        fields = [
-            "first_name",
-            "last_name",
+        fields = (
+            "id",
+            "username",
             "profile_image",
             "comment",
+            "purchase_verified",
             "rating",
-            "created_at",
-            "updated_at",
-            "item_average_rating",
-        ]
-        read_only_fields = ["verified_purchase"]
+            "rating_display",
+            "date_updated",
+            "date_created",
+        )
+        read_only_fields = ("purchase_verified",)
 
 
-class ReviewCreateSerializer(serializers.ModelSerializer):
+class ReviewListSerializer(ItemReviewSerializer):
+    class Meta(ItemReviewSerializer.Meta):
+        model = Reviews
+        fields = ItemReviewSerializer.Meta.fields
+
+
+class ReviewWriteSerializer(serializers.ModelSerializer):
     def validate(self, data):
-
         request = self.context.get("request")
         user = request.user
         item_id = self.context.get("item_id")
@@ -81,7 +81,7 @@ class ReviewCreateSerializer(serializers.ModelSerializer):
                 "You can only make review for an item you have purchased and received"
             )
 
-        data["verified_purchase"] = True
+        data["purchase_verified"] = True
 
         self.context["content_type"] = content_type
         return data
@@ -100,53 +100,5 @@ class ReviewCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Reviews
-        fields = ("comment", "rating", "verified_purchase")
-
-
-class ReviewUpdateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Reviews
-        fields = ("comment", "rating", "verified_purchase")
-        read_only_fields = ["verified_purchase"]
-
-
-class ProductDetailReviewSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(source="user.username", read_only=True)
-    rating_display = serializers.CharField(source="get_rating_display", read_only=True)
-    date = serializers.SerializerMethodField(read_only=True)
-
-    def get_date(self, obj):
-        return obj.created_at.strftime("%B %d, %Y")
-
-    class Meta:
-        model = Reviews
-        fields = (
-            "id",
-            "username",
-            "comment",
-            "verified_purchase",
-            "rating",
-            "rating_display",
-            "date",
-        )
-
-
-class MaterialDetailReviewSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(source="user.username")
-    rating_display = serializers.CharField(source="get_rating_display", read_only=True)
-    date = serializers.SerializerMethodField(read_only=True)
-
-    def get_date(self, obj):
-        return obj.created_at.strftime("%B %d, %Y")
-
-    class Meta:
-        model = Reviews
-        fields = (
-            "id",
-            "username",
-            "comment",
-            "verified_purchase",
-            "rating",
-            "rating_display",
-            "date",
-        )
+        fields = ("comment", "rating", "purchase_verified")
+        read_only_fields = ("purchase_verified",)

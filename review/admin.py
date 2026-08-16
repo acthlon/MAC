@@ -12,7 +12,7 @@ class ReviewAdmin(admin.ModelAdmin):
         "profiles",
         "comment",
         "rating",
-        "verified_purchase",
+        "purchase_verified",
         "content_object",
         "content_type",
     )
