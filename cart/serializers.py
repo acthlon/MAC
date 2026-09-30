@@ -54,7 +54,7 @@ class CartItemWriteSerializer(serializers.ModelSerializer):
         try:
             item = ModelClass.objects.get(id=item_id)
         except ModelClass.DoesNotExist:
-            raise serializers.ValidationError({"message":"Item is absent"})
+            raise serializers.ValidationError({"message": "Item is absent"})
         stock = getattr(item, "stock", 0)
 
         if item and stock < quantity:

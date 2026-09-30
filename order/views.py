@@ -50,8 +50,6 @@ class DeliveryMethodListCreateAPIView(generics.CreateAPIView):
     serializer_class = DeliveryMethodSerializer
 
 
-
-
 class DeliveryMethodManageAPIView(generics.UpdateAPIView, generics.DestroyAPIView):
     permission_classes = [
         IsAdminOrReadOnly,

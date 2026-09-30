@@ -1,4 +1,5 @@
 from functools import partial
+
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.tokens import default_token_generator
 from django.db import transaction
@@ -37,9 +38,7 @@ class RegistrationView(APIView):
         # the email verification aspect
         # parameters needed
 
-        transaction.on_commit(
-            partial(send_registration_email_task.delay, user.id)
-        )
+        transaction.on_commit(partial(send_registration_email_task.delay, user.id))
 
         return Response(
             {
@@ -115,9 +114,7 @@ class PasswordResetRequestView(APIView):
             user = CustomUser.objects.get(email=resend_email)
             if resend_email == user.email:
                 transaction.on_commit(
-                    partial(
-                        send_password_reset_email_task.delay, user.id, resend_email
-                    )
+                    partial(send_password_reset_email_task.delay, user.id, resend_email)
                 )
 
                 return Response(

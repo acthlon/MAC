@@ -5,4 +5,4 @@ class OrderConfig(AppConfig):
     name = "order"
 
     def ready(self):
-        import order.signal  # isort: skip
+        pass  # isort: skip

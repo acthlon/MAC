@@ -62,7 +62,7 @@ class Payment(TimeStampModel):
         choices=PaymentStatus.choices, max_length=20, default=PaymentStatus.PENDING
     )
 
-    failure_reason  = models.CharField(max_length=255,blank=True,null=True)
+    failure_reason = models.CharField(max_length=255, blank=True, null=True)
 
     reference = models.CharField(max_length=100, blank=True, null=True)
     card_brand = models.CharField(max_length=50, blank=True, null=True)
