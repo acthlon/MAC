@@ -2,10 +2,16 @@ from django.db import models
 
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
 
-IS_PRIMARY_CHOICES = (
+BOOLEAN_CHOICES = (
     (True, "True"),
     (False, "False"),
 )
+
+
+class Gender(models.TextChoices):
+    MALE = "MALE", "Male"
+    FEMALE = "FEMALE", "Female"
+    OTHERS = "OTHERS", "Others"
 
 
 class Status(models.TextChoices):
@@ -106,18 +112,61 @@ POOR, FAIR, GOOD, VERY_GOOD, EXCELLENT = (
 )
 
 
+class OrderStatus(models.TextChoices):
+    CREATED = "CREATED", "Created"
+    CONFIRMED = "CONFIRMED", "Confirmed"
+    COMPLETED = "COMPLETED", "Completed"
+    CANCELED = "CANCELED", "Canceled"
+    FAILED = "FAILED", "Failed"
+
+
+class PaymentMethodChoice(models.TextChoices):
+    PAYSTACK = "PAYSTACK", "Paystack"
+    CASH_ON_DELIVERY = "CASH_ON_DELIVERY", "Cash on Delivery"
+
+
+class DeliveryStatus(models.TextChoices):
+    PENDING = "PENDING", "Pending"
+    WAITING_TO_BE_SHIPPED = "WAITING TO BE SHIPPED", "Waiting To Be Shipped"
+    SHIPPED = "SHIPPED", "Shipped"
+    OUT_FOR_DELIVERY = "OUT_FOR_DELIVERY", "Out For Delivery"
+    DELIVERED = "DELIVERED", "Delivered"
+    CANCELED = "CANCELED", "Canceled"
+    RETURNED = "RETURNED", "Returned"
+    FAILED_DELIVERY = "FAILED_DELIVERY", "Failed Delivery"
+
+
+class AddressType(models.TextChoices):
+    HOME = "HOME", "Home"
+    WORK = "WORK", "Work"
+    OTHERS = "OTHERS", "Others"
+
+
+class DeliveryType(models.TextChoices):
+    STANDARD_DELIVERY = "STANDARD_DELIVERY", "Standard Delivery"
+    EXPRESS_DELIVERY = "EXPRESS_DELIVERY", "Express Delivery"
+    PREMIUM_DELIVERY = "PREMIUM_DELIVERY", "Premium Delivery"
+
+
 class PaymentStatus(models.TextChoices):
     PENDING = "PENDING", "Pending"
+    INITIALIZED = "INITIALIZED", "Initialized"
     SUCCESSFUL = "SUCCESSFUL", "Successful"
     FAILED = "FAILED", "Failed"
 
 
-class RefundStatus(models.TextChoices):
+class ReturnStatus(models.TextChoices):
     PENDING = "PENDING", "Pending Review"
     UNDER_REVIEW = "UNDER_REVIEW", "Under Review"
     APPROVED = "APPROVED", "Approved"
     REJECTED = "REJECTED", "Rejected"
-    COMPLETED = "COMPLETED", "Refund Completed"
+    PROCESSING = "PROCESSING", "Processing"
+    COMPLETED = "COMPLETED", "Completed"
+
+
+class RefundMethodChoice(models.TextChoices):
+    PAYSTACK = "PAYSTACK", "Paystack"
+    BANK_TRANSFER = "BANK_TRANSFER", "Bank Transfer"
 
 
 class ActionStatus(models.TextChoices):

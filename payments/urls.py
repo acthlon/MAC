@@ -1,29 +1,53 @@
 from django.urls import path
 
 from payments.views import (
-    CreateRefundRequestAPIView,
+    CreateReturnRequestAPIView,
+    InitializePaymentAPIView,
     PaymentCallbackAPIView,
-    ReturnRequestActionAPIView,
-    initializePaymentAPIView,
+    PaymentCallbackHTMLView,
+    ReturnRequestAdminManageAPIView,
+    ReturnRequestCustomerManageAPIView,
+    ReturnRequestDetailAPIView,
+    ReturnRequestListAPIView,
+    ReturnRequestTrackingAPIView,
     paystack_webhook,
 )
 
 urlpatterns = [
     path(
         "<uuid:pk>/initialize/",
-        initializePaymentAPIView.as_view(),
+        InitializePaymentAPIView.as_view(),
         name="initialize_payment",
     ),
-    path("callback/", PaymentCallbackAPIView.as_view(), name="payment_callback"),
+    path(
+        "callback/api/", PaymentCallbackAPIView.as_view(), name="payment_callback_api"
+    ),
+    path("callback/", PaymentCallbackHTMLView.as_view(), name="payment_callback"),
     path("webhook/paystack/", paystack_webhook, name="paystack_webhook"),
     path(
-        "refund/<uuid:order_id>/create/",
-        CreateRefundRequestAPIView.as_view(),
-        name="create_refund_request",
+        "return/<str:order_number>/create/",
+        CreateReturnRequestAPIView.as_view(),
+        name="create_return_request",
     ),
     path(
-        "refund/<str:return_id>/update/",
-        ReturnRequestActionAPIView.as_view(),
-        name="return_request_action",
+        "return/details/<str:return_number>/",
+        ReturnRequestDetailAPIView.as_view(),
+        name="return_request_details",
+    ),
+    path("return/", ReturnRequestListAPIView.as_view(), name="return_list"),
+    path(
+        "customer/return/<str:return_id>/manage/",
+        ReturnRequestCustomerManageAPIView.as_view(),
+        name="return_manage_customer",
+    ),
+    path(
+        "admin/return/<str:return_id>/manage/",
+        ReturnRequestAdminManageAPIView.as_view(),
+        name="return_manage_admin",
+    ),
+    path(
+        "return/<str:return_number>/<str:tracking_id>/",
+        ReturnRequestTrackingAPIView.as_view(),
+        name="return_tracking",
     ),
 ]

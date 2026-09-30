@@ -1,5 +1,7 @@
+from functools import partial
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.tokens import default_token_generator
+from django.db import transaction
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -35,7 +37,9 @@ class RegistrationView(APIView):
         # the email verification aspect
         # parameters needed
 
-        send_registration_email_task.delay(user.id)
+        transaction.on_commit(
+            partial(send_registration_email_task.delay, user.id)
+        )
 
         return Response(
             {
@@ -88,7 +92,9 @@ class PasswordResetRequestView(APIView):
             resend_email = request.query_params.get("resend_email", None)
 
             if user is not None and resend_email == None:
-                send_password_reset_email_task.delay(user.id, email)
+                transaction.on_commit(
+                    partial(send_password_reset_email_task.delay, user.id, email)
+                )
 
                 return Response(
                     {"message": "password reset link has been sent to your email"},
@@ -108,7 +114,11 @@ class PasswordResetRequestView(APIView):
         try:
             user = CustomUser.objects.get(email=resend_email)
             if resend_email == user.email:
-                send_password_reset_email_task.delay(user.id, resend_email)
+                transaction.on_commit(
+                    partial(
+                        send_password_reset_email_task.delay, user.id, resend_email
+                    )
+                )
 
                 return Response(
                     {"message": "a new reset link has been sent to your e-mail"},

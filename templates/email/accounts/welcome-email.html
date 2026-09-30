@@ -1,147 +1,246 @@
-{% comment %} <!DOCTYPE html>
-<html lang="en">
+{% load static %}
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-    
-    <div>
-        {% if user %}
-        <p>Hi {{ user.username }}, welcome to MAC Store ❤️❤️❤️</p>
-        <p>Thank you for registering with us! Please click the link below to verify your email address and activate your account:</p>
-        <p><a href="{{ verification_url }}">Activate your account</a></p>
-        <p>If you did not sign up for this account, you can ignore this email.</p>
-    {% endif %}  
-    </div>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="x-apple-disable-message-reformatting" />
+  <title>Welcome to Marvelam</title>
+  <!-- Google Fonts for Web-based Email Clients -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
+  <style type="text/css">
+    /* Client-specific Resets */
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-collapse: collapse !important; }
+    img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; display: block; }
+    body { margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #050505; }
 
+    /* Custom Fonts */
+    .font-serif { font-family: 'Cormorant Garamond', Didot, 'Bodoni MT', Georgia, serif !important; }
+    .font-sans { font-family: 'Montserrat', -apple-system, BlinkMacOSystemFont, 'Segoe UI', Roboto, sans-serif !important; }
 
+    /* Hover Effects */
+    .cta-button:hover {
+      background-color: #e5a200 !important;
+      border-color: #e5a200 !important;
+      box-shadow: 0 6px 20px rgba(255, 180, 0, 0.4) !important;
+    }
 
-</body>
-</html> {% endcomment %}
-
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Welcome to [Your Store Name]!</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacOSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      background-color: #f6f9fc;
-      color: #333333;
-      line-height: 1.6;
-    }
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      background-color: #ffffff;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    }
-    .header {
-      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-      color: white;
-      text-align: center;
-      padding: 48px 24px 40px;
-    }
-    .header h1 {
-      margin: 0;
-      font-size: 32px;
-      font-weight: 700;
-    }
-    .content {
-      padding: 40px 32px;
-      text-align: center;
-    }
-    .content h2 {
-      margin-top: 0;
-      color: #1e293b;
-      font-size: 24px;
-    }
-    .button {
-      display: inline-block;
-      margin: 24px 0;
-      padding: 16px 40px;
-      background-color: #6366f1;
-      color: white !important;
-      text-decoration: none;
-      font-weight: 600;
-      font-size: 18px;
-      border-radius: 8px;
-      transition: background-color 0.2s;
-    }
-    .button:hover {
-      background-color: #4f46e5;
-    }
-    .footer {
-      background-color: #f1f5f9;
-      padding: 32px 24px;
-      text-align: center;
-      font-size: 14px;
-      color: #64748b;
-    }
-    .footer a {
-      color: #6366f1;
-      text-decoration: none;
-    }
-    .highlight {
-      color: #6366f1;
-      font-weight: 600;
-    }
+    /* Mobile Responsiveness */
     @media only screen and (max-width: 600px) {
-      .content { padding: 32px 20px; }
-      .header { padding: 40px 20px 32px; }
-      .button { width: 100%; box-sizing: border-box; }
+      .email-wrapper { width: 100% !important; }
+      .email-padding { padding: 28px 20px !important; }
+      .hero-title { font-size: 28px !important; line-height: 34px !important; }
+      .hero-subtitle { font-size: 14px !important; }
+      .body-text { font-size: 15px !important; line-height: 24px !important; }
+      .feature-col { display: block !important; width: 100% !important; margin-bottom: 16px !important; }
+      .cta-button { display: block !important; width: 100% !important; text-align: center !important; box-sizing: border-box !important; }
     }
   </style>
 </head>
-<body>
 
-    {%if user%}
-        <div class="container">
-            <!-- Header -->
-            <div class="header">
-            <h1>Welcome to [Marvelam Apparel & Clothing]!</h1>
-            </div>
+<body style="margin:0;padding:0;background-color:#050505;font-family:'Cormorant Garamond',Didot,'Bodoni MT',Georgia,serif;">
 
-            <!-- Main Content -->
-            <div class="content">
-            <h2>Hello {{ user.username|default:"there" }},welcome to MAC Store ❤️❤️❤️</h2>
+  {% if user %}
+  <!-- Preheader preview text in email clients -->
+  <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;color:#050505;line-height:1px;">
+    Welcome to Marvelam. Experience high-end fashion, luxury ready-to-wear apparel, and bespoke tailored materials. &#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;
+  </div>
 
-            <p>We're thrilled to have you join us!</p>
+  <!-- Main Background Container -->
+  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:#050505;table-layout:fixed;">
+    <tr>
+      <td align="center" style="padding:40px 16px 56px;">
 
-            <p>You’ve just taken the first step into a world of <span class="highlight">quality products</span>, great prices, and fast delivery right here in Nigeria.</p>
+        <!-- Main Email Card -->
+        <table role="presentation" class="email-wrapper" cellpadding="0" cellspacing="0" width="600" style="max-width:600px;width:100%;background-color:#0d0d0d;border:1px solid #1a1a1a;border-radius:4px;overflow:hidden;">
 
-            <p>Explore thousands of items, enjoy exclusive deals, and let us help you find exactly what you need.</p>
+          <!-- ═══════════════════════════════ -->
+          <!-- TOP GOLD ACCENT BAR             -->
+          <!-- ═══════════════════════════════ -->
+          <tr>
+            <td style="background-color:#FFB400;height:4px;font-size:1px;line-height:4px;">&nbsp;</td>
+          </tr>
 
-            <a href="{{ site_url|default:"https://yourstore.com" }}" class="button">
-                Start Shopping Now →
-            </a>
+          <!-- ═══════════════════════════════ -->
+          <!-- HEADER & BRAND LOGO             -->
+          <!-- ═══════════════════════════════ -->
+          <tr>
+            <td align="center" style="padding:44px 40px 32px;background-color:#0a0a0a;border-bottom:1px solid #1a1a1a;">
+              <table role="presentation" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center">
+                    <!-- Brand Monogram Crest -->
+                    <div style="width:54px;height:54px;border-radius:50%;border:1px solid #FFB400;background-color:#141208;line-height:52px;text-align:center;margin-bottom:16px;">
+                      <span class="font-serif" style="font-family:'Cormorant Garamond',Georgia,serif;font-size:24px;font-weight:700;color:#FFB400;letter-spacing:1px;">M</span>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+              <h1 class="font-sans" style="margin:0;font-family:'Montserrat',sans-serif;font-size:14px;font-weight:700;letter-spacing:8px;color:#ffffff;text-transform:uppercase;text-align:center;">
+                M A R V E L A M
+              </h1>
+              <p class="font-sans" style="margin:6px 0 0;font-family:'Montserrat',sans-serif;font-size:9px;font-weight:500;letter-spacing:4px;color:#FFB400;text-transform:uppercase;text-align:center;">
+                BESPOKE APPAREL & FINE MATERIALS
+              </p>
+            </td>
+          </tr>
 
-            <p style="margin-top: 32px; font-size: 15px;">
-                Got questions? Our support team is just a message away.<br>
-                Reply to this email or chat with us anytime.
-            </p>
-            </div>
+          <!-- ═══════════════════════════════ -->
+          <!-- HERO SECTION                    -->
+          <!-- ═══════════════════════════════ -->
+          <tr>
+            <td align="center" class="email-padding" style="padding:48px 44px 36px;background:linear-gradient(180deg, #0d0d0d 0%, #12110c 100%);">
+              
+              <!-- Tagline Badge -->
+              <table role="presentation" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
+                <tr>
+                  <td style="padding:4px 14px;border:1px solid #332b00;background-color:#1a1600;border-radius:20px;">
+                    <span class="font-sans" style="font-family:'Montserrat',sans-serif;font-size:10px;font-weight:600;letter-spacing:2px;color:#FFB400;text-transform:uppercase;">
+                      MEMBERSHIP CONFIRMED
+                    </span>
+                  </td>
+                </tr>
+              </table>
 
-            <!-- Footer -->
-            <div class="footer">
-            <p>Thank you for choosing <strong>[Marvelam Apparel $ Clothing]</strong></p>
-            <p>
-                <a href="{{ site_url|default:"https://yourstore.com" }}">Visit Store</a> •
-                <a href="#">Help Center</a> •
-                <a href="#">Unsubscribe</a>
-            </p>
-            <p>© {{ year|default:"2025" }} [Marvelam Apparel $ Clothing]. All rights reserved.</p>
+              <!-- Main Greeting Header -->
+              <h2 class="hero-title font-serif" style="margin:0 0 16px;font-family:'Cormorant Garamond',Didot,Georgia,serif;font-size:34px;font-weight:600;line-height:40px;color:#ffffff;text-align:center;letter-spacing:0.5px;">
+                Welcome to the World of Marvelam
+              </h2>
+
+              <!-- Subtitle -->
+              <p class="hero-subtitle font-serif" style="margin:0;font-family:'Cormorant Garamond',Georgia,serif;font-size:18px;font-style:italic;color:#aaaaaa;text-align:center;line-height:26px;">
+                Where timeless elegance meets modern sophistication.
+              </p>
+
+              <!-- Gold Divider -->
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin:32px 0 0;">
+                <tr>
+                  <td style="background:linear-gradient(to right, rgba(255,180,0,0), rgba(255,180,0,0.5), rgba(255,180,0,0));height:1px;font-size:1px;">&nbsp;</td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- ═══════════════════════════════ -->
+          <!-- BODY CONTENT                    -->
+          <!-- ═══════════════════════════════ -->
+          <tr>
+            <td class="email-padding" style="padding:36px 44px 40px;background-color:#0d0d0d;">
+              
+              <p class="body-text font-serif" style="margin:0 0 20px;font-family:'Cormorant Garamond',Georgia,serif;font-size:19px;line-height:28px;color:#e5e5e5;">
+                Dear <strong style="color:#ffffff;font-weight:700;">{{ user.first_name|default:user.username|default:"Valued Client" }}</strong>,
+              </p>
+
+              <p class="body-text font-serif" style="margin:0 0 20px;font-family:'Cormorant Garamond',Georgia,serif;font-size:18px;line-height:28px;color:#cccccc;">
+                Thank you for creating your exclusive account with <strong style="color:#FFB400;">Marvelam</strong>. We are delighted to welcome you into our inner circle of distinction.
+              </p>
+
+              <p class="body-text font-serif" style="margin:0 0 32px;font-family:'Cormorant Garamond',Georgia,serif;font-size:18px;line-height:28px;color:#cccccc;">
+                Whether you are seeking custom-crafted tailored apparel, exquisite finished garments, or sourcing the finest raw fabrics and textiles, your journey toward uncompromised style begins here.
+              </p>
+
+              <!-- 3 Feature Pillars -->
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:36px;">
+                <tr>
+                  <td class="feature-col" width="31%" valign="top" style="padding:18px 12px;background-color:#141414;border:1px solid #222222;border-radius:4px;text-align:center;">
+                    <div style="font-size:20px;color:#FFB400;margin-bottom:8px;">✦</div>
+                    <div class="font-sans" style="font-family:'Montserrat',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;color:#ffffff;text-transform:uppercase;margin-bottom:4px;">Ready To Wear</div>
+                    <div class="font-serif" style="font-family:'Cormorant Garamond',serif;font-size:13px;color:#888888;line-height:17px;">Curated apparel for modern luxury</div>
+                  </td>
+                  <td width="3.5%">&nbsp;</td>
+                  <td class="feature-col" width="31%" valign="top" style="padding:18px 12px;background-color:#141414;border:1px solid #222222;border-radius:4px;text-align:center;">
+                    <div style="font-size:20px;color:#FFB400;margin-bottom:8px;">✂</div>
+                    <div class="font-sans" style="font-family:'Montserrat',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;color:#ffffff;text-transform:uppercase;margin-bottom:4px;">Fine Materials</div>
+                    <div class="font-serif" style="font-family:'Cormorant Garamond',serif;font-size:13px;color:#888888;line-height:17px;">Hand-selected premium textiles</div>
+                  </td>
+                  <td width="3.5%">&nbsp;</td>
+                  <td class="feature-col" width="31%" valign="top" style="padding:18px 12px;background-color:#141414;border:1px solid #222222;border-radius:4px;text-align:center;">
+                    <div style="font-size:20px;color:#FFB400;margin-bottom:8px;">👑</div>
+                    <div class="font-sans" style="font-family:'Montserrat',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;color:#ffffff;text-transform:uppercase;margin-bottom:4px;">White Glove</div>
+                    <div class="font-serif" style="font-family:'Cormorant Garamond',serif;font-size:13px;color:#888888;line-height:17px;">Priority support & fast delivery</div>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- CTA BUTTON -->
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:32px;">
+                <tr>
+                  <td align="center">
+                    <a href="{{ site_url|default:'https://marvelam.com' }}" class="cta-button font-sans" style="display:inline-block;padding:18px 42px;background-color:#FFB400;border:1px solid #FFB400;color:#000000 !important;font-family:'Montserrat',sans-serif;font-size:12px;font-weight:700;letter-spacing:3px;text-transform:uppercase;text-decoration:none;border-radius:2px;box-shadow:0 4px 15px rgba(255,180,0,0.25);">
+                      EXPLORE THE CATALOG &rarr;
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p class="body-text font-serif" style="margin:0;font-family:'Cormorant Garamond',Georgia,serif;font-size:16px;font-style:italic;line-height:24px;color:#888888;text-align:center;">
+                Need custom assistance or tailored fitting support? Reply directly to this email and our concierge team will assist you.
+              </p>
+
+            </td>
+          </tr>
+
+          <!-- ═══════════════════════════════ -->
+          <!-- FOOTER                          -->
+          <!-- ═══════════════════════════════ -->
+          <tr>
+            <td align="center" class="email-padding" style="padding:36px 40px;background-color:#070707;border-top:1px solid #1a1a1a;">
+              
+              <!-- Brand Monogram -->
+              <p class="font-sans" style="margin:0 0 12px;font-family:'Montserrat',sans-serif;font-size:10px;font-weight:700;letter-spacing:6px;color:#FFB400;text-transform:uppercase;">
+                M A R V E L A M
+              </p>
+
+              <!-- Footer Navigation Links -->
+              <p class="font-sans" style="margin:0 0 20px;font-family:'Montserrat',sans-serif;font-size:10px;letter-spacing:2px;color:#666666;text-transform:uppercase;">
+                <a href="{{ site_url|default:'https://marvelam.com' }}" style="color:#aaaaaa;text-decoration:none;">OFFICIAL STORE</a> &nbsp;&bull;&nbsp;
+                <a href="{{ site_url|default:'https://marvelam.com' }}/products" style="color:#aaaaaa;text-decoration:none;">PRODUCTS</a> &nbsp;&bull;&nbsp;
+                <a href="{{ site_url|default:'https://marvelam.com' }}/materials" style="color:#aaaaaa;text-decoration:none;">MATERIALS</a> &nbsp;&bull;&nbsp;
+                <a href="{{ site_url|default:'https://marvelam.com' }}/support" style="color:#aaaaaa;text-decoration:none;">CONCIERGE</a>
+              </p>
+
+              <!-- Divider -->
+              <table role="presentation" cellpadding="0" cellspacing="0" width="120" style="margin:0 auto 20px;">
+                <tr>
+                  <td style="background-color:#222222;height:1px;font-size:1px;">&nbsp;</td>
+                </tr>
+              </table>
+
+              <!-- Copyright & Disclaimer -->
+              <p class="font-sans" style="margin:0 0 8px;font-family:'Montserrat',sans-serif;font-size:10px;line-height:16px;color:#555555;">
+                &copy; {{ year|default:"2026" }} Marvelam Apparel & Fine Clothing. All rights reserved.
+              </p>
+              <p class="font-sans" style="margin:0;font-family:'Montserrat',sans-serif;font-size:10px;line-height:16px;color:#444444;">
+                You received this email because you created an account with Marvelam.
+              </p>
+
+            </td>
+          </tr>
+
+        </table>
+        <!-- End Email Card -->
+
+      </td>
+    </tr>
+  </table>
+
+  {% endif %}
+    <p>© {{ year|default:"2025" }} [Marvelam Apparel $ Clothing]. All rights reserved.</p>
             </div>
         </div>
-    {% endif %}
 </body>
 </html>

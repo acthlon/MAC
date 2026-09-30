@@ -4,8 +4,8 @@ from core.choices import Status
 class CategoryUtils:
     @staticmethod
     def get_all_material_categories(view):
-        from core.models import Category
-        from core.serializers import CategorySerializer
+        from core.models import Category  # isort: skip
+        from core.serializers import CategorySerializer  # isort: skip
 
         context = view.get_serializer_context()
         queryset = Category.objects.filter(
@@ -18,8 +18,8 @@ class CategoryUtils:
 
     @staticmethod
     def get_all_product_categories(view):
-        from core.models import Category
-        from core.serializers import CategorySerializer
+        from core.models import Category  # isort: skip
+        from core.serializers import CategorySerializer  # isort: skip
 
         context = view.get_serializer_context()
         queryset = Category.objects.filter(

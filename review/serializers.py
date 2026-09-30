@@ -1,6 +1,7 @@
 from django.contrib.contenttypes.models import ContentType
 from rest_framework import serializers
 
+from core.choices import OrderStatus
 from materials.models import Materials
 from order.models import OrderItem
 from products.models import Products
@@ -72,8 +73,7 @@ class ReviewWriteSerializer(serializers.ModelSerializer):
             order__user=user,
             object_id=item_id,
             content_type=content_type,
-            order__status="COMPLETED",
-            order__is_active=False,
+            order__status=OrderStatus.COMPLETED,
         ).exists()  # NOTE: use choices insgtead of hardcoding COMPLETED here.
 
         if not has_permission:

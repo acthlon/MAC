@@ -7,6 +7,7 @@ from rest_framework.reverse import reverse
 
 from core.choices import MAX_FILE_SIZE
 from core.models import Category
+from core.serializers import BaseCatalogCardSerializer
 from materials.models import (
     MaterialImages,
     Materials,
@@ -56,9 +57,7 @@ class MaterialVariantSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
     color_display = serializers.CharField(source="get_color_display", read_only=True)
     stock_status = serializers.CharField(read_only=True, source="get_stock_status")
-    final_price = serializers.ReadOnlyField(
-        source="calculate_material_variant_final_price"
-    )
+    final_price = serializers.ReadOnlyField(source="calculate_variant_final_price")
     images = MaterialImageSerializer(many=True, required=False)
 
     def validate(self, data):
@@ -314,43 +313,6 @@ class MaterialInfoSerializer(serializers.ModelSerializer):
         )
 
 
-class MaterialCardSerializer(serializers.ModelSerializer):
-    pry_image = serializers.ImageField(source="get_pry_image", read_only=True)
-    avg_rating = serializers.ReadOnlyField(
-        source="calculate_average_rating", required=False
-    )
-    review_count = serializers.IntegerField(
-        source="calculate_review_count", read_only=True, required=False
-    )
-    material_detail_url = serializers.SerializerMethodField(
-        read_only=True, required=False
-    )
-
-    def get_material_detail_url(self, obj):
-        request = self.context.get("request")
-        url = reverse(
-            "material_details", kwargs={"slug": obj.slug, "pk": obj.id}, request=request
-        )
-        return url
-
-    class Meta:
-        model = Materials
-        fields = (
-            "id",
-            "name",
-            "price",
-            "pry_image",
-            "avg_rating",
-            "review_count",
-            "material_detail_url",
-        )
-
-
-class MaterialListSerializer(MaterialCardSerializer):
-    class Meta(MaterialCardSerializer.Meta):
-        fields = MaterialCardSerializer.Meta.fields
-
-
 class MaterialDetailSerializer(serializers.ModelSerializer):
     material_info = serializers.SerializerMethodField()
     variant_details = serializers.SerializerMethodField()
@@ -358,9 +320,15 @@ class MaterialDetailSerializer(serializers.ModelSerializer):
     details = serializers.SerializerMethodField()
     fabric_care = serializers.SerializerMethodField()
     reviews_data = serializers.SerializerMethodField()
-    similar_materials = MaterialCardSerializer(
+    similar_materials = BaseCatalogCardSerializer(
         source="get_similar_materials", many=True
     )
+    add_to_cart_url = serializers.SerializerMethodField(read_only=True)
+
+    def get_add_to_cart_url(self, obj):
+        request = self.context.get("request")
+        url = reverse("add_to_cart", request=request)
+        return url
 
     def get_material_info(self, obj):
 
@@ -420,6 +388,7 @@ class MaterialDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Materials
         fields = (
+            "add_to_cart_url",
             "material_info",
             "reviews_data",
             "variant_details",

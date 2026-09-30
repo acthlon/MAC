@@ -7,7 +7,12 @@ from products.models import ProductVariant
 
 
 class CartAdmin(admin.ModelAdmin):
-    list_display = ("cart_code",)
+    list_display = ("get_cart_code",)
+
+    def get_cart_code(self, obj):
+        return f"{obj.user.username} Cart Code - {obj.cart_code}"
+
+    get_cart_code.short_description = "Cart Code"
 
 
 class CartItemAdmin(admin.ModelAdmin):
@@ -15,14 +20,14 @@ class CartItemAdmin(admin.ModelAdmin):
         "item_name",
         "content_type",
         "quantity",
-        "unit_price",
-        "sub_total",
-        "discount_amount",
     )
 
     def item_name(self, obj):
 
         name = None
+        if not obj.content_object:
+            return "(Item no longer available)"
+
         if obj.content_type.model == "productvariant":
             name = obj.content_object.product.name
 

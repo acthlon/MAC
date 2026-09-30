@@ -1,0 +1,380 @@
+{% load static %}
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="x-apple-disable-message-reformatting" />
+  <title>Marvelam — Order Confirmed</title>
+  <!-- Google Fonts for Web-based Email Clients -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
+  <style type="text/css">
+    /* Client-specific Resets */
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-collapse: collapse !important; }
+    img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; display: block; }
+    body { margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #050505; }
+
+    /* Custom Fonts */
+    .font-serif { font-family: 'Cormorant Garamond', Didot, 'Bodoni MT', Georgia, serif !important; }
+    .font-sans { font-family: 'Montserrat', -apple-system, BlinkMacOSystemFont, 'Segoe UI', Roboto, sans-serif !important; }
+
+    /* Hover Effects */
+    .cta-button:hover {
+      background-color: #e5a200 !important;
+      border-color: #e5a200 !important;
+      box-shadow: 0 6px 20px rgba(255, 180, 0, 0.4) !important;
+    }
+
+    /* Mobile Responsiveness */
+    @media only screen and (max-width: 600px) {
+      .email-wrapper { width: 100% !important; }
+      .email-padding { padding: 24px 18px !important; }
+      .two-col td { display: block !important; width: 100% !important; padding-left: 0 !important; padding-right: 0 !important; padding-bottom: 16px !important; }
+      .hero-title { font-size: 26px !important; line-height: 32px !important; }
+      .timeline-step td { padding: 0 4px !important; }
+      .timeline-label { font-size: 8px !important; }
+      .cta-button { display: block !important; width: 100% !important; text-align: center !important; box-sizing: border-box !important; }
+    }
+  </style>
+</head>
+
+<body style="margin:0;padding:0;background-color:#050505;font-family:'Cormorant Garamond',Didot,'Bodoni MT',Georgia,serif;">
+
+  {% if order and user %}
+  <!-- Preheader preview text -->
+  <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;color:#050505;line-height:1px;">
+    Your Marvelam order #{{ order.tracking_id|default:order.id }} has been confirmed. Thank you for your purchase. &#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;
+  </div>
+
+  <!-- Background Container -->
+  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:#050505;table-layout:fixed;">
+    <tr>
+      <td align="center" style="padding:36px 16px 56px;">
+
+        <!-- Main Email Container -->
+        <table role="presentation" class="email-wrapper" cellpadding="0" cellspacing="0" width="600" style="max-width:600px;width:100%;background-color:#0d0d0d;border:1px solid #1a1a1a;border-radius:4px;overflow:hidden;">
+
+          <!-- ═══════════════════════════════ -->
+          <!-- TOP GOLD ACCENT BAR             -->
+          <!-- ═══════════════════════════════ -->
+          <tr>
+            <td style="background-color:#FFB400;height:4px;font-size:1px;line-height:4px;">&nbsp;</td>
+          </tr>
+
+          <!-- ═══════════════════════════════ -->
+          <!-- HEADER & BRAND LOGO             -->
+          <!-- ═══════════════════════════════ -->
+          <tr>
+            <td align="center" style="padding:40px 40px 28px;background-color:#0a0a0a;border-bottom:1px solid #1a1a1a;">
+              <table role="presentation" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center">
+                    <div style="width:52px;height:52px;border-radius:50%;border:1px solid #FFB400;background-color:#141208;line-height:50px;text-align:center;margin-bottom:14px;">
+                      <span class="font-serif" style="font-family:'Cormorant Garamond',Georgia,serif;font-size:24px;font-weight:700;color:#FFB400;letter-spacing:1px;">M</span>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+              <h1 class="font-sans" style="margin:0;font-family:'Montserrat',sans-serif;font-size:14px;font-weight:700;letter-spacing:8px;color:#ffffff;text-transform:uppercase;text-align:center;">
+                M A R V E L A M
+              </h1>
+              <p class="font-sans" style="margin:6px 0 0;font-family:'Montserrat',sans-serif;font-size:9px;font-weight:500;letter-spacing:4px;color:#FFB400;text-transform:uppercase;text-align:center;">
+                BESPOKE APPAREL & FINE MATERIALS
+              </p>
+            </td>
+          </tr>
+
+          <!-- ═══════════════════════════════ -->
+          <!-- HERO -->
+          <!-- ═══════════════════════════════ -->
+          <tr>
+            <td align="center" class="email-padding" style="padding:44px 40px 32px;background:linear-gradient(180deg, #0d0d0d 0%, #12110c 100%);">
+              <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 20px;">
+                <tr>
+                  <td align="center" valign="middle" width="60" height="60" style="width:60px;height:60px;border-radius:50%;border:2px solid #FFB400;background-color:#141200;text-align:center;vertical-align:middle;">
+                    <span style="font-size:26px;line-height:1;color:#FFB400;">🔔</span>
+                  </td>
+                </tr>
+              </table>
+              <h2 class="hero-title font-serif" style="margin:0 0 10px;font-family:'Cormorant Garamond',Didot,Georgia,serif;font-size:32px;font-weight:600;color:#ffffff;text-align:center;letter-spacing:1px;">
+                New Order Received
+              </h2>
+              <p class="font-serif" style="margin:0;font-family:'Cormorant Garamond',Georgia,serif;font-size:17px;font-style:italic;color:#aaaaaa;text-align:center;line-height:24px;">
+                Order #{{ order.order_number }} requires fulfillment.
+              </p>
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin:28px 0 0;">
+                <tr>
+                  <td style="background-color:#222;height:1px;font-size:1px;">&nbsp;</td>
+                  <td width="10" align="center" valign="middle" style="font-size:8px;color:#FFB400;padding:0 12px;">◆</td>
+                  <td style="background-color:#222;height:1px;font-size:1px;">&nbsp;</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+<!-- ═══════════════════════════════ -->
+          <!-- ORDER META BOX                  -->
+          <!-- ═══════════════════════════════ -->
+          <tr>
+            <td class="email-padding" style="padding:0 40px;background-color:#0d0d0d;">
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border:1px solid #332800;background-color:#141105;border-radius:4px;margin-top:12px;">
+                <tr>
+                  <td style="padding:22px 24px;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" class="two-col">
+                      <tr>
+                        <td valign="top" width="50%" style="padding-bottom:16px;padding-right:12px;">
+                          <p class="font-sans" style="margin:0 0 4px;font-family:'Montserrat',sans-serif;font-size:9px;font-weight:700;letter-spacing:2px;color:#FFB400;text-transform:uppercase;">Tracking ID</p>
+                          <p class="font-sans" style="margin:0;font-family:'Montserrat',sans-serif;font-size:14px;font-weight:600;color:#ffffff;">#{{ order.tracking_id|default:order.id }}</p>
+                        </td>
+                        <td valign="top" width="50%" style="padding-bottom:16px;padding-left:12px;">
+                          <p class="font-sans" style="margin:0 0 4px;font-family:'Montserrat',sans-serif;font-size:9px;font-weight:700;letter-spacing:2px;color:#FFB400;text-transform:uppercase;">Order Date</p>
+                          <p class="font-serif" style="margin:0;font-family:'Cormorant Garamond',Georgia,serif;font-size:16px;color:#e5e5e5;">{{ order.created_at|date:"F d, Y"|default:order.updated_at }}</p>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td valign="top" width="50%" style="padding-right:12px;">
+                          <p class="font-sans" style="margin:0 0 4px;font-family:'Montserrat',sans-serif;font-size:9px;font-weight:700;letter-spacing:2px;color:#FFB400;text-transform:uppercase;">Payment Method</p>
+                          <p class="font-serif" style="margin:0;font-family:'Cormorant Garamond',Georgia,serif;font-size:16px;color:#e5e5e5;">{{ order.payment_method_name|default:order.payment_reference|default:"Paystack Verified" }}</p>
+                        </td>
+                        <td valign="top" width="50%" style="padding-left:12px;">
+                          <p class="font-sans" style="margin:0 0 4px;font-family:'Montserrat',sans-serif;font-size:9px;font-weight:700;letter-spacing:2px;color:#FFB400;text-transform:uppercase;">Delivery Option</p>
+                          <p class="font-serif" style="margin:0;font-family:'Cormorant Garamond',Georgia,serif;font-size:16px;color:#e5e5e5;">{{ order.delivery_method_name|default:"Standard Delivery" }}</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- ═══════════════════════════════ -->
+          <!-- ITEMS ORDERED                   -->
+          <!-- ═══════════════════════════════ -->
+          <tr>
+            <td class="email-padding" style="padding:28px 40px 0;background-color:#0d0d0d;">
+              <p class="font-sans" style="margin:0 0 16px;font-family:'Montserrat',sans-serif;font-size:10px;font-weight:700;letter-spacing:3px;color:#FFB400;text-transform:uppercase;">
+                ITEMS ORDERED ({{ order.total_items|default:1 }})
+              </p>
+
+              {% for orderitem in order.items.all|default:orderitems %} 
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-bottom:1px solid #1f1f1f;padding-bottom:16px;margin-bottom:16px;">
+                <tr>
+                  <td valign="middle" width="52" style="padding-right:16px;">
+                    <div style="width:52px;height:52px;border:1px solid #2e2600;background-color:#141105;border-radius:3px;overflow:hidden;text-align:center;">
+                        {% if orderitem.image %}
+                          <img src="{{ website_url }}{{ orderitem.image.url }}" alt="Item" style="width:100%;height:100%;object-fit:cover;" />
+                        {% else %}
+                          <span style="font-size:22px;line-height:50px;">📦</span>
+                        {% endif %}
+                      </div>
+                  </td>
+                  <td valign="middle">
+                    <p class="font-serif" style="margin:0 0 4px;font-family:'Cormorant Garamond',Georgia,serif;font-size:18px;font-weight:600;color:#ffffff;">
+                      {{ orderitem.catalog_name }}
+                    </p>
+                    <p class="font-sans" style="margin:0;font-family:'Montserrat',sans-serif;font-size:10px;color:#777777;letter-spacing:1px;text-transform:uppercase;">
+                      QTY: {{ orderitem.quantity|default:1 }}
+                    </p>
+                  </td>
+                  <td valign="middle" align="right" style="white-space:nowrap;padding-left:12px;">
+                    <p class="font-sans" style="margin:0;font-family:'Montserrat',sans-serif;font-size:14px;font-weight:700;color:#FFB400;">
+                      ₦{{ orderitem.sub_total|default:order.total_amount|floatformat:"2g" }}
+                    </p>
+                  </td>
+                </tr>
+              </table>
+              {% empty %}
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-bottom:1px solid #1f1f1f;padding-bottom:16px;margin-bottom:16px;">
+                <tr>
+                  <td valign="middle" width="52" style="padding-right:16px;">
+                    <div style="width:52px;height:52px;border:1px solid #2e2600;background-color:#141105;border-radius:3px;overflow:hidden;text-align:center;">
+                        {% if orderitem.image %}
+                          <img src="{{ website_url }}{{ orderitem.image.url }}" alt="Item" style="width:100%;height:100%;object-fit:cover;" />
+                        {% else %}
+                          <span style="font-size:22px;line-height:50px;">📦</span>
+                        {% endif %}
+                      </div>
+                  </td>
+                  <td valign="middle">
+                    <p class="font-serif" style="margin:0 0 4px;font-family:'Cormorant Garamond',Georgia,serif;font-size:18px;font-weight:600;color:#ffffff;">
+                      Custom Bespoke Order Item
+                    </p>
+                    <p class="font-sans" style="margin:0;font-family:'Montserrat',sans-serif;font-size:10px;color:#777777;letter-spacing:1px;text-transform:uppercase;">
+                      QTY: 1
+                    </p>
+                  </td>
+                  <td valign="middle" align="right" style="white-space:nowrap;padding-left:12px;">
+                    <p class="font-sans" style="margin:0;font-family:'Montserrat',sans-serif;font-size:14px;font-weight:700;color:#FFB400;">
+                      ₦{{ order.total_amount|floatformat:"2g" }}
+                    </p>
+                  </td>
+                </tr>
+              </table>
+              {% endfor %}
+            </td>
+          </tr>
+
+          <!-- ═══════════════════════════════ -->
+          <!-- FINANCIAL SUMMARY TABLE         -->
+          <!-- ═══════════════════════════════ -->
+          <tr>
+            <td class="email-padding" style="padding:12px 40px 0;background-color:#0d0d0d;">
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border:1px solid #221c03;background-color:#120e02;border-radius:4px;">
+                <tr>
+                  <td style="padding:20px 24px;">
+
+                    <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                      <tr>
+                        <td style="padding-bottom:10px;">
+                          <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                            <tr>
+                              <td class="font-serif" style="font-family:'Cormorant Garamond',serif;font-size:16px;color:#aaaaaa;">Subtotal</td>
+                              <td align="right" class="font-sans" style="font-family:'Montserrat',sans-serif;font-size:13px;color:#dddddd;">₦{{ order.sub_total_amount|default:order.total_amount }}</td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding-bottom:10px;">
+                          <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                            <tr>
+                              <td class="font-serif" style="font-family:'Cormorant Garamond',serif;font-size:16px;color:#aaaaaa;">Shipping & Handling</td>
+                              <td align="right" class="font-sans" style="font-family:'Montserrat',sans-serif;font-size:13px;color:#dddddd;">₦{{ order.shipping_fee|default:"0.00" }}</td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                      {% if order.total_discount %}
+                      <tr>
+                        <td style="padding-bottom:12px;">
+                          <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                            <tr>
+                              <td class="font-serif" style="font-family:'Cormorant Garamond',serif;font-size:16px;color:#aaaaaa;">Discount</td>
+                              <td align="right" class="font-sans" style="font-family:'Montserrat',sans-serif;font-size:13px;color:#FFB400;">-₦{{ order.total_discount|floatformat:"2g" }}</td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                      {% endif %}
+                      <!-- Total line -->
+                      <tr>
+                        <td style="border-top:1px solid #332800;padding-top:14px;">
+                          <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                            <tr>
+                              <td class="font-sans" style="font-family:'Montserrat',sans-serif;font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#FFB400;">TOTAL AMOUNT PAID</td>
+                              <td align="right" class="font-sans" style="font-family:'Montserrat',sans-serif;font-size:20px;font-weight:700;color:#FFB400;">₦{{ order.total_amount|floatformat:"2g" }}</td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- ═══════════════════════════════ -->
+          <!-- ADDRESSES SECTION               -->
+          <!-- ═══════════════════════════════ -->
+          <tr>
+            <td class="email-padding" style="padding:20px 40px 0;background-color:#0d0d0d;">
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%" class="two-col">
+                <tr>
+                  <!-- Shipping Address -->
+                  <td valign="top" width="50%" style="padding-right:8px;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border:1px solid #1f1f1f;background-color:#121212;border-radius:4px;">
+                      <tr>
+                        <td style="padding:18px !important;">
+                          <p class="font-sans" style="margin:0 0 8px;font-family:'Montserrat',sans-serif;font-size:9px;font-weight:700;letter-spacing:2px;color:#FFB400;text-transform:uppercase;">DELIVERY ADDRESS</p>
+                          <p class="font-serif" style="margin:0;font-family:'Cormorant Garamond',Georgia,serif;font-size:15px;color:#aaaaaa;line-height:1.6;">
+                            <strong style="color:#ffffff;">{{ order.shipping_address_snapshot.first_name|default:user.username }} {{ order.shipping_address_snapshot.last_name }}</strong><br/>
+                            {{ order.shipping_address_snapshot.delivery_address|default:"Specified Delivery Address" }}<br/>
+                            {% if order.shipping_address_snapshot.city %}{{ order.shipping_address_snapshot.city }}, {% endif %}{{ order.shipping_address_snapshot.state|default:"" }}<br/>
+                            {{ order.shipping_address_snapshot.country|default:"Nigeria" }}
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                  <!-- Support Contact -->
+                  <td valign="top" width="50%" style="padding-left:8px;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border:1px solid #1f1f1f;background-color:#121212;border-radius:4px;">
+                      <tr>
+                        <td style="padding:18px !important;">
+                          <p class="font-sans" style="margin:0 0 8px;font-family:'Montserrat',sans-serif;font-size:9px;font-weight:700;letter-spacing:2px;color:#FFB400;text-transform:uppercase;">CONCIERGE HELP</p>
+                          <p class="font-serif" style="margin:0;font-family:'Cormorant Garamond',Georgia,serif;font-size:15px;color:#aaaaaa;line-height:1.6;">
+                            Have special fitting or delivery instructions?<br/>
+                            Contact our client services at:<br/>
+                            <a href="mailto:support@marvelam.com" style="color:#FFB400;text-decoration:none;">support@marvelam.com</a>
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- ═══════════════════════════════ -->
+          <!-- CTA BUTTON                      -->
+          <!-- ═══════════════════════════════ -->
+          <tr>
+            <td align="center" class="email-padding" style="padding:32px 40px 12px;background-color:#0d0d0d;">
+              <a href="{{ site_url|default:'https://marvelam.com' }}/order/{{ order.id }}" class="cta-button font-sans" style="display:inline-block;padding:18px 42px;background-color:#FFB400;border:1px solid #FFB400;color:#000000 !important;font-family:'Montserrat',sans-serif;font-size:12px;font-weight:700;letter-spacing:3px;text-transform:uppercase;text-decoration:none;border-radius:2px;box-shadow:0 4px 15px rgba(255,180,0,0.25);">
+                VIEW IN ADMIN &rarr;
+              </a>
+            </td>
+          </tr>
+
+          <!-- ═══════════════════════════════ -->
+          <!-- FOOTER                          -->
+          <!-- ═══════════════════════════════ -->
+          <tr>
+            <td align="center" class="email-padding" style="padding:36px 40px;background-color:#070707;border-top:1px solid #1a1a1a;margin-top:20px;">
+              
+              <p class="font-sans" style="margin:0 0 10px;font-family:'Montserrat',sans-serif;font-size:10px;font-weight:700;letter-spacing:6px;color:#FFB400;text-transform:uppercase;">
+                M A R V E L A M
+              </p>
+
+              <p class="font-serif" style="margin:0 0 16px;font-family:'Cormorant Garamond',Georgia,serif;font-size:15px;font-style:italic;color:#777777;">
+                Questions regarding your order? Contact <a href="mailto:support@marvelam.com" style="color:#FFB400;text-decoration:none;">support@marvelam.com</a>
+              </p>
+
+              <div style="width:100px;height:1px;background-color:#222222;margin:0 auto 16px;"></div>
+
+              <p class="font-sans" style="margin:0 0 6px;font-family:'Montserrat',sans-serif;font-size:10px;color:#555555;">
+                &copy; {{ year|default:"2026" }} Marvelam Apparel & Fine Clothing. All rights reserved.
+              </p>
+              <p class="font-sans" style="margin:0;font-family:'Montserrat',sans-serif;font-size:9px;color:#444444;">
+                This email was sent to confirm your order #{{ order.tracking_id|default:order.id }}.
+              </p>
+
+            </td>
+          </tr>
+
+        </table>
+        <!-- End Email Container -->
+
+      </td>
+    </tr>
+  </table>
+
+  {% endif %}
+</body>
+</html>

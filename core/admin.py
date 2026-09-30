@@ -16,9 +16,9 @@ class CategoryAdmin(admin.ModelAdmin):
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         formfield = super().formfield_for_foreignkey(db_field, request, **kwargs)
         if db_field.name == "target_model" and formfield:
-            import json
+            import json  # isort: skip
 
-            from core.choices import MaterialCategory, ProductCategory
+            from core.choices import MaterialCategory, ProductCategory  # isort: skip
 
             product_choices_json = json.dumps(
                 [{"value": val, "label": lbl} for val, lbl in ProductCategory.choices]

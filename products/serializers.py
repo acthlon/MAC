@@ -7,6 +7,7 @@ from rest_framework.reverse import reverse
 
 from core.choices import MAX_FILE_SIZE
 from core.models import Category
+from core.serializers import BaseCatalogCardSerializer
 from products.models import (
     ProductImages,
     Products,
@@ -54,9 +55,7 @@ class ProductVariantSerializer(serializers.ModelSerializer):
     size_display = serializers.CharField(source="get_size_display", read_only=True)
     color_display = serializers.CharField(source="get_color_display", read_only=True)
     stock_status = serializers.CharField(read_only=True, source="get_stock_status")
-    final_price = serializers.ReadOnlyField(
-        source="calculate_product_variant_final_price"
-    )
+    final_price = serializers.ReadOnlyField(source="calculate_variant_final_price")
     images = ProductImageSerializer(many=True, required=False)
 
     def validate(self, data):
@@ -156,7 +155,7 @@ class ProductWriteSerializer(serializers.ModelSerializer):
         product = Products.objects.create(**validated_data, user=user)
 
         if spec_data:
-            ProductSpecification.objects.create(product=product, **spec_data)
+            ProductSpecification.objects.create(product=product, user=user, **spec_data)
 
         for video_data in videos_data:
             ProductVideo.objects.create(product=product, **video_data)
@@ -205,7 +204,7 @@ class ProductWriteSerializer(serializers.ModelSerializer):
                             )
 
                 else:
-                    ProductVideo.objects.create(product=instance, **video_data)
+                    ProductVideo.objects.create(product=instance, user=user**video_data)
 
         if variants_data is not None:
             for variant_data in variants_data:
@@ -320,43 +319,6 @@ class ProductInfoSerializer(serializers.ModelSerializer):
         )
 
 
-class ProductCardSerializer(serializers.ModelSerializer):
-    pry_image = serializers.ImageField(source="get_pry_image", read_only=True)
-    avg_rating = serializers.ReadOnlyField(
-        source="calculate_average_rating", required=False
-    )
-    review_count = serializers.IntegerField(
-        source="calculate_review_count", read_only=True, required=False
-    )
-    product_detail_url = serializers.SerializerMethodField(
-        read_only=True, required=False
-    )
-
-    def get_product_detail_url(self, obj):
-        request = self.context.get("request")
-        url = reverse(
-            "product_details", kwargs={"slug": obj.slug, "pk": obj.id}, request=request
-        )
-        return url
-
-    class Meta:
-        model = Products
-        fields = (
-            "id",
-            "name",
-            "price",
-            "pry_image",
-            "avg_rating",
-            "review_count",
-            "product_detail_url",
-        )
-
-
-class ProductListSerializer(ProductCardSerializer):
-    class Meta(ProductCardSerializer.Meta):
-        fields = ProductCardSerializer.Meta.fields
-
-
 class ProductDetailSerializer(serializers.ModelSerializer):
     product_info = serializers.SerializerMethodField()
     variant_details = serializers.SerializerMethodField()
@@ -365,7 +327,15 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     details = serializers.SerializerMethodField()
     fabric_care = serializers.SerializerMethodField()
     reviews_data = serializers.SerializerMethodField()
-    similar_products = ProductCardSerializer(source="get_similar_products", many=True)
+    similar_products = BaseCatalogCardSerializer(
+        source="get_similar_products", many=True
+    )
+    add_to_cart_url = serializers.SerializerMethodField(read_only=True)
+
+    def get_add_to_cart_url(self, obj):
+        request = self.context.get("request")
+        url = reverse("add_to_cart", request=request)
+        return url
 
     def get_product_info(self, obj):
 
@@ -384,17 +354,17 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
     def get_grouped_variant_sizes(self, obj):
         variant_list = self.get_variant_details(obj)
-        from utils.products.product import ProductDetailSerializerUtils
+        from utils.products.product import ProductDetailSerializerUtils  # isort: skip
 
         return ProductDetailSerializerUtils.get_grouped_variant_sizes(variant_list)
 
     def get_details(self, obj):
-        from utils.products.product import ProductDetailSerializerUtils
+        from utils.products.product import ProductDetailSerializerUtils  # isort: skip
 
         return ProductDetailSerializerUtils.get_details(obj)
 
     def get_fabric_care(self, obj):
-        from utils.products.product import ProductDetailSerializerUtils
+        from utils.products.product import ProductDetailSerializerUtils  # isort: skip
 
         return ProductDetailSerializerUtils.get_fabric_care(obj)
 
@@ -431,6 +401,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Products
         fields = (
+            "add_to_cart_url",
             "product_info",
             "variant_details",
             "grouped_variant_sizes",

@@ -1,70 +1,107 @@
 import hashlib
 import hmac
 import json
+from functools import partial
 
-from celery import shared_task
 from django.conf import settings
-from django.contrib.sites.shortcuts import get_current_site
+from django.db import transaction
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
-from django.urls import reverse
+from django.shortcuts import get_object_or_404, render
+from django.utils import timezone
+from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
-from paystackapi.refund import Refund
+from drf_spectacular.utils import extend_schema
 from paystackapi.transaction import Transaction
-from rest_framework import status
+from rest_framework import generics, serializers, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.views import APIView
+from rest_framework.reverse import reverse
 
-from order.models import Order, PaymentMethod
-from payments.models import Payment, RefundRequest
+from core.choices import (
+    OrderStatus,
+    PaymentMethodChoice,
+    PaymentStatus,
+    ReturnStatus,
+)
+from core.permissions import IsAdminOrReadOnly
+from order.models import Order
+from payments.models import Payment, PaymentMethod, ReturnRequest
 from payments.serializers import (
+    InitiatePaymentResponseSerializer,
     InitiatePaymentSerializer,
-    RefundRequestSerializer,
-    RefundRequestUpdateSerializer,
+    PaymentCallbackSerializer,
+    ReturnRequestAdminManageSerializer,
+    ReturnRequestCreateSerializer,
+    ReturnRequestCustomerManageSerializer,
+    ReturnRequestDetailSerializer,
+    ReturnRequestListSerializer,
+    ReturnRequestTrackingSerializer,
+)
+from payments.tasks import (
+    send_admin_stock_shortage_alert_task,
+    send_refund_confirmation_email,
 )
 
 
-class initializePaymentAPIView(APIView):
+class InitializePaymentAPIView(generics.GenericAPIView):
     permission_classes = [
         IsAuthenticated,
     ]
+    serializer_class = InitiatePaymentSerializer
 
+    @extend_schema(
+        request=InitiatePaymentSerializer,
+        responses={200: InitiatePaymentResponseSerializer},
+    )
     def post(self, request, pk):
 
-        serializer = InitiatePaymentSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
         user = request.user
-        order_id = pk
-        order = get_object_or_404(Order, id=order_id, status="CREATED")
-        payment_method = PaymentMethod.objects.get(
-            code=serializer.validated_data["method_code"]
+
+        order = get_object_or_404(Order, id=pk, status=OrderStatus.CREATED, user=user)
+
+        payment_method = get_object_or_404(
+            PaymentMethod, code=serializer.validated_data.get("method_code")
         )
 
-        print(order)
+        existing_payment = Payment.objects.filter(
+            order=order,
+            user=user,
+            status__in=[PaymentStatus.INITIALIZED, PaymentStatus.PENDING],
+        ).first()
+
+        if existing_payment:
+            return Response(
+                {"message": "Payment has been initialized for this order"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if order.payment_method_name != payment_method.code:
+            order.payment_method_name = payment_method.code
+            order.save(update_fields=["payment_method_name"])
 
         payment = Payment.objects.create(
-            user=request.user,
+            user=user,
             order=order,
-            payment_method=payment_method,
+            payment_method_code=payment_method.code,
             amount=order.total_amount,
             currency="NGN",
         )
 
-        if payment.payment_method.code == "PAYSTACK":
+        if payment.payment_method_code == PaymentMethodChoice.PAYSTACK:
             amount_in_kobo = int(order.total_amount * 100)
-            transaction = Transaction(secret_key=settings.PAYSTACK_SECRET_KEY)
+            paystack_tx = Transaction(secret_key=settings.PAYSTACK_SECRET_KEY)
 
-            site_domain = get_current_site(request).domain
+            callback_url = reverse("payment_callback", request=request)
+            customer_email = (order.shipping_address_snapshot or {}).get(
+                "email"
+            ) or user.email
 
-            url = reverse("payment_callback")
-            callback_url = f"http://{site_domain}:8000/{url}"
-
-            response = transaction.initialize(
-                email=user.email,
+            paystack_response = paystack_tx.initialize(
+                email=customer_email,
                 amount=amount_in_kobo,
                 reference=str(payment.id),
                 currency="NGN",
@@ -73,140 +110,132 @@ class initializePaymentAPIView(APIView):
                 label=f"Checkout_{order.id}",
             )
 
-            if response["status"]:
-                order.payment_reference = response["data"]["reference"]
-                payment.reference = response["data"]["reference"]
-                order.save()
-                payment.save()
-                return Response(
-                    {
-                        "authorization_url": response["data"]["authorization_url"],
-                        "reference": response["data"]["reference"],
-                    }
-                )
+            if paystack_response.get("status"):
+                reference = paystack_response.get("data", {}).get("reference")
+
+                with transaction.atomic():
+                    order.payment_reference = reference
+                    payment.reference = reference
+                    payment.status = PaymentStatus.INITIALIZED
+
+                    order.save(update_fields=["payment_reference"])
+                    payment.save(update_fields=["reference", "status"])
+
+                    return Response(
+                        {
+                            "authorization_url": paystack_response.get("data", {}).get(
+                                "authorization_url"
+                            ),
+                            "reference": reference,
+                        },
+                        status=status.HTTP_200_OK,
+                    )
 
             else:
-                payment.status = "FAILED"
+                payment.status = PaymentStatus.FAILED
                 payment.save()
-                return Response({"detail": "Payment initialization failed"}, status=400)
+                return Response(
+                    {"detail": "Payment initialization failed"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
-        elif payment.payment_method == "CASH_ON_dELIVERY":
-            order.status = "CONFIRMED"
-            order.save()
-        return Response(payment, response, status=status.HTTP_200_OK)
+        elif payment.payment_method_code == PaymentMethodChoice.CASH_ON_DELIVERY:
+            with transaction.atomic():
+                order.status = OrderStatus.CONFIRMED
+                order.save()
+                return Response(
+                    {
+                        "message": "Order placed successfully with Cash on Delivery",
+                        "order_id": str(order.id),
+                    },
+                    status=status.HTTP_200_OK,
+                )
 
-
-# class PaymentCallbackAPIView(APIView):
-
-#     permission_classes = [IsAuthenticated,]
-
-#     def get(self, request):
-
-#         reference = request.query_params.get('reference')
-#         payment = get_object_or_404(Payment, reference=reference)
-#         transaction = Transaction(secret_key=settings.PAYSTACK_SECRET_KEY)
-#         response = transaction.verify(reference=reference)
-
-#         if response['status'] and response['data']['status'] == 'success':
-#             # payment.status = 'SUCCESSFUL'
-#             # payment.save()
-#             # payment.order.status = 'CONFIRMED'
-#             # payment.order.save()
-#             return Response({"message": "Payment successful",'response':response},status=status.HTTP_200_OK)
-#         else:
-#             # payment.status = 'FAILED'
-#             # payment.save()
-#             return Response({"message": "Payment failed"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {"error": "Unsupported payment method"}, status=status.HTTP_400_BAD_REQUEST
+        )
 
 
-class PaymentCallbackAPIView(APIView):
+class PaymentCallbackAPIView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = PaymentCallbackSerializer
+
     def get(self, request):
-        reference = request.query_params.get("reference")
-        print("reference")
+        serializer = self.get_serializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        reference = serializer.validated_data.get("reference")
 
-        if reference:
-            payment = get_object_or_404(Payment, reference=reference)
-            print({"payment": payment})
+        payment = get_object_or_404(Payment, reference=reference)
 
-            if payment:
-                if payment.status == "SUCCESSFUL":
-                    # print({'message':'payment-email sent successfully'})
-                    return Response(
-                        {"message": "Payment successful — order confirmed!"}
-                    )
+        if payment.status == PaymentStatus.SUCCESSFUL:
+            return Response(
+                {
+                    "message": "Payment successful — order confirmed!",
+                    "status": payment.status,
+                    "reference": payment.reference,
+                },
+                status=status.HTTP_200_OK,
+            )
+        elif payment.status == PaymentStatus.FAILED:
+            return Response(
+                {
+                    "message": "Payment failed — please try again",
+                    "status": payment.status,
+                    "reference": payment.reference,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        elif payment.status == PaymentStatus.PENDING:
+            return Response(
+                {
+                    "message": "Payment pending — we'll notify you soon",
+                    "status": payment.status,
+                    "reference": payment.reference,
+                },
+                status=status.HTTP_200_OK,
+            )
 
-                elif payment.status == "FAILED":
-                    return Response({"message": "Payment failed — please try again"})
-
-                elif payment.status == "PENDING":
-                    return Response(
-                        {"message": "Payment pending — we'll notify you soon"},
-                    )
-
-        return Response({"message": "Invalid reference"})
-
-
-# @require_POST
-# @csrf_exempt
-# def paystack_webhook(request):
-
-#     request_body = request.body
-#     secret = settings.PAYSTACK_SECRET_KEY.encode()
-
-#     signature = request.headers.get('x-paystack-signature')
-#     if not signature:
-#         return Response(status=400)
-
-#     expected_signature = hmac.new(secret, request_body, hashlib.sha512).hexdigest()
-#     if signature != expected_signature:
-#         return Response(status=400)
-
-#     # Parse event
-#     try:
-#         post_response = json.loads(request_body)
-
-#     except json.JSONDecodeError:
-#         return Response(status=400)
+        return Response(
+            {"message": "Payment status unknown", "status": payment.status},
+            status=status.HTTP_200_OK,
+        )
 
 
-#     if post_response['event'] == 'charge.success':
-#         # print(post_response)
+class PaymentCallbackHTMLView(View):
+    def get(self, request):
+        reference = request.GET.get("reference")
+        payment = get_object_or_404(Payment, reference=reference)
 
-#         reference = post_response['data']['reference']
+        # Default to the database status
+        html_status = str(payment.status).lower()
 
-#         payment = get_object_or_404(Payment, reference=reference)
+        if payment.status in [PaymentStatus.INITIALIZED, PaymentStatus.PENDING]:
+            try:
+                paystack_tx = Transaction(secret_key=settings.PAYSTACK_SECRET_KEY)
+                response = paystack_tx.verify(reference=reference)
 
+                if response and response.get("status"):
+                    paystack_status = response.get("data", {}).get("status")
+                    if paystack_status == "success":
+                        html_status = "successful"
+                    elif paystack_status in ["failed", "abandoned"]:
+                        html_status = "failed"
+                    else:
+                        html_status = "pending"
+            except Exception:
+                pass  # Fallback to displaying the current DB status
 
-#         if payment.status != 'SUCCESSFUL':
-#             # print(payment.status)
-#             payment.status = 'SUCCESSFUL'
-#             payment.save()
+        if html_status == "initialized":
+            html_status = "pending"
 
-#             # send_order_confirmation_email(payment.order,payment.user)
-#             #_task(payment.user)
-
-#             order = payment.order
-
-#             # Deduct stock from all order items
-#             for order_item in order.orderitems.all():
-#                 # print(order_item)
-
-#                 item = order_item.content_object
-#                 # print(item.stock)
-#                 item.stock -= order_item.quantity
-#                 item.save()
-
-
-#             # print(order.status)
-#             # print(order.payment_status)
-#             order.status = 'CONFIRMED'
-#             order.payment_status = 'SUCCESSFUL'
-#             order.payment_reference = payment.reference
-#             order.save(update_fields=['status', 'payment_status', 'payment_reference'])
-#             # print(order)
-
-
-#     return HttpResponse(status=200)
+        context = {
+            "status": html_status,
+            "reference": payment.reference,
+            "order_number": payment.order.order_number
+            if hasattr(payment.order, "order_number")
+            else payment.order.id,
+        }
+        return render(request, "payments/callback.html", context)
 
 
 @require_POST
@@ -219,249 +248,267 @@ def paystack_webhook(request):
     signature = request.headers.get("x-paystack-signature")
 
     if not signature:
-        return Response(status=400)
+        return HttpResponse(status=400)
 
     expected_signature = hmac.new(secret, request_body, hashlib.sha512).hexdigest()
 
     if signature != expected_signature:
-        return Response(status=400)
+        return HttpResponse(status=400)
 
     # Parse the webhook data
     try:
         post_response = json.loads(request_body)
 
-        print(post_response)
-
-        print("post_response")
     except json.JSONDecodeError:
-        return Response(status=400)
+        return HttpResponse(status=400)
 
     # all the aove are stll security check below is the processing of the real handling of successful payment
     if post_response["event"] == "charge.success":
-        print("post_response")
-
         data = post_response["data"]
-        reference = data["reference"]
-
+        reference = data.get("reference")
         authorization = data.get("authorization", {})
 
-        card_brand = authorization.get("brand")  # e.g. "visa", "mastercard"
-        card_bin = authorization.get("bin")  # First 6 digits
-        card_last4 = authorization.get("last4")  # Last 4 digits
-        card_type = authorization.get("card_type")
-        exp_month = authorization.get("exp_month")
-        exp_year = authorization.get("exp_year")
+        card_brand = authorization.get("brand")
+        card_last4 = authorization.get("last4")
         auth_code = authorization.get("authorization_code")
 
-        payment = get_object_or_404(Payment, reference=reference)
+        with transaction.atomic():
+            try:
+                payment = Payment.objects.select_for_update().get(reference=reference)
+            except Payment.DoesNotExist:
+                return HttpResponse(status=200)
 
-        # Prevent processing the same payment multiple times
-        if payment.status != "SUCCESSFUL":
-            # Update payment status
-            payment.status = "SUCCESSFUL"
-            payment.card_brand = card_brand
-            payment.card_bin = card_bin
-            payment.card_last4 = card_last4
-            payment.authorization_code = auth_code
-            payment.save()
+            # Prevent processing the same payment multiple times
+            if payment.status != PaymentStatus.SUCCESSFUL:
+                payment.status = PaymentStatus.SUCCESSFUL
+                payment.processed_at = timezone.now()
+                payment.paid_at = timezone.now()
+                payment.card_brand = card_brand
+                payment.card_last4 = card_last4
+                payment.authorization_code = auth_code
+                payment.save()
 
-            order = payment.order
+                order = payment.order
 
-            # Deduct stock from products
-            for order_item in order.orderitems.all():
-                item = order_item.content_object
-                if item.stock >= order_item.quantity:
-                    item.stock -= order_item.quantity
-                    item.save()
+                stock_shortage = False
+                # Deduct stock from products using row locking
+                for order_item in order.items.select_related("content_type").all():
+                    ModelClass = order_item.content_type.model_class()
 
-            # Update order status - This is the most important part
-            order.status = "CONFIRMED"
-            order.payment_status = "SUCCESSFUL"
-            order.payment_reference = payment.reference
-            order.save(update_fields=["status", "payment_status", "payment_reference"])
+                    # 1. Fetch and lock the specific variant/item row
+                    locked_item = ModelClass.objects.select_for_update().get(
+                        pk=order_item.object_id
+                    )
 
-            print(f"✅ Order #{order.id} has been confirmed successfully.")
+                    # 2. Check stock on the freshly locked object and update
+                    if hasattr(locked_item, "stock"):
+                        if locked_item.stock >= order_item.quantity:
+                            locked_item.stock -= order_item.quantity
+                        else:
+                            stock_shortage = True
+                            locked_item.stock = 0
+
+                        locked_item.save(update_fields=["stock"])
+
+                # Update order status - This is the most important part
+
+                if stock_shortage:
+                    order.admin_notes = (
+                        "STOCK SHORTAGE: Item was out of stock when payment was confirmed. "
+                        "Admin needs to procure item immediately to meet delivery timeframe."
+                    )
+                    transaction.on_commit(
+                        partial(send_admin_stock_shortage_alert_task.delay, order.id)
+                    )
+                order.status = OrderStatus.CONFIRMED
+                order.payment_status = PaymentStatus.SUCCESSFUL
+                order.payment_reference = payment.reference
+                order.save()
+
+    elif post_response["event"] == "charge.failed":
+        data = post_response["data"]
+        reference = data.get("reference")
+        failure_message = (
+            data.get("gateway_response") or data.get("message") or "Payment failed"
+        )
+
+        with transaction.atomic():
+            try:
+                payment = Payment.objects.select_for_update().get(reference=reference)
+                if payment.status != PaymentStatus.FAILED:
+                    payment.status = PaymentStatus.FAILED
+                    payment.failure_reason = failure_message
+                    payment.processed_at = timezone.now()
+
+                    payment.save()
+            except Payment.DoesNotExist:
+                pass
+
+    elif post_response["event"] == "refund.processed":
+        data = post_response["data"]
+
+        # Paystack includes the original transaction reference in the refund data
+        transaction_reference = data.get("transaction", {}).get("reference")
+        if not transaction_reference:
+            transaction_reference = data.get("transaction_reference")
+
+        with transaction.atomic():
+            try:
+                return_request = ReturnRequest.objects.select_for_update().get(
+                    order__payment_reference=transaction_reference,
+                    status__in=[ReturnStatus.APPROVED, ReturnStatus.PROCESSING],
+                )
+
+                return_request.status = ReturnStatus.COMPLETED
+                return_request.completed_at = timezone.now()
+                return_request.save()
+
+                transaction.on_commit(
+                    partial(
+                        send_refund_confirmation_email.delay,
+                        return_request.id,
+                        return_request.user.id,
+                    )
+                )
+
+            except ReturnRequest.DoesNotExist:
+                pass
+
+    elif post_response["event"] == "refund.failed":
+        data = post_response["data"]
+        transaction_reference = data.get("transaction", {}).get(
+            "reference"
+        ) or data.get("transaction_reference")
+
+        with transaction.atomic():
+            try:
+                return_request = ReturnRequest.objects.select_for_update().get(
+                    order__payment_reference=transaction_reference,
+                    status__in=[ReturnStatus.APPROVED, ReturnStatus.PROCESSING],
+                )
+
+                # Log the failure so the Admin can manually check it
+                return_request.admin_notes = f"Paystack automatic refund failed: {data.get('message', 'Unknown error')}"
+                return_request.save()
+            except ReturnRequest.DoesNotExist:
+                pass
 
     return HttpResponse(status=200)
 
 
-class CreateRefundRequestAPIView(APIView):
+class CreateReturnRequestAPIView(generics.CreateAPIView):
     permission_classes = [
         IsAuthenticated,
     ]
+    serializer_class = ReturnRequestCreateSerializer
 
-    def post(self, request, order_id):
-        order = get_object_or_404(Order, id=order_id, user=request.user)
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        request = self.request
+        user = request.user
+        order_number = self.kwargs.get("order_number")
 
-        if order.delivery_status != "DELIVERED":
-            return Response(
-                {"error": "You can only request return for delivered orders"},
-                status=status.HTTP_400_BAD_REQUEST,
+        order = get_object_or_404(Order, order_number=order_number, user=user)
+
+        context["order"] = order
+        return context
+
+
+class ReturnRequestListAPIView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ReturnRequestListSerializer
+
+    def get(self, request, *args, **kwargs):
+
+        user = self.request.user
+
+        single_item_return_request = ReturnRequest.objects.filter(
+            order_item__isnull=False, user=user
+        ).order_by("-created_at")
+        full_order_return_request = (
+            ReturnRequest.objects.filter(order_item__isnull=True, user=user)
+            .prefetch_related("order__items")
+            .order_by("-created_at")
+        )
+
+        data = {
+            "single_item_return_request": single_item_return_request,
+            "full_order_return_request": full_order_return_request,
+        }
+
+        serializer = self.get_serializer(data)
+        return Response(serializer.data)
+
+
+class ReturnRequestDetailAPIView(generics.RetrieveAPIView):
+    permission_classes = [
+        IsAuthenticated,
+    ]
+    serializer_class = ReturnRequestDetailSerializer
+
+    def get_object(self):
+        return_number = self.kwargs.get("return_number")
+        user = self.request.user
+        if user.is_staff:
+            return get_object_or_404(ReturnRequest, return_number=return_number)
+        return get_object_or_404(ReturnRequest, return_number=return_number, user=user)
+
+
+# CUSTOMER
+class ReturnRequestCustomerManageAPIView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ReturnRequestCustomerManageSerializer
+
+    def get_object(self):
+        # Ensure customers can ONLY see/edit/delete their OWN return requests
+        user = self.request.user
+        return_id = self.kwargs.get("return_id")
+
+        return_request = get_object_or_404(ReturnRequest, user=user, id=return_id)
+        return return_request
+
+    def perform_destroy(self, instance):
+        if instance.status != ReturnStatus.PENDING:
+            raise serializers.ValidationError(
+                {
+                    "message": "You cannot cancel/delete a return request that is already processed."
+                }
             )
+        instance.delete()
 
-        if order.return_requests.first() == None:
-            try:
-                serializer = RefundRequestSerializer(
-                    data=request.data, context={"request": request, "order": order}
-                )
 
-                if serializer.is_valid():
-                    serializer.save()
+class ReturnRequestAdminManageAPIView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [
+        IsAdminOrReadOnly,
+    ]
+    serializer_class = ReturnRequestAdminManageSerializer
 
-                    return Response(serializer.data, status=status.HTTP_201_CREATED)
+    http_method_names = ["patch", "delete", "options"]
 
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-            except Exception as e:
-                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    def get_object(self):
 
-        return Response(
-            {"message": "A refund request has been made for this order already"},
-            status=status.HTTP_400_BAD_REQUEST,
+        return_id = self.kwargs.get("return_id")
+        return_request = get_object_or_404(ReturnRequest, id=return_id)
+
+        return return_request
+
+
+class ReturnRequestTrackingAPIView(generics.RetrieveAPIView):
+    permission_classes = [
+        IsAuthenticated,
+    ]
+    serializer_class = ReturnRequestTrackingSerializer
+
+    def get_object(self):
+
+        user = self.request.user
+        return_number = self.kwargs.get("return_number")
+        tracking_id = self.kwargs.get("tracking_id")
+        return_request = get_object_or_404(
+            ReturnRequest,
+            return_number=return_number,
+            user=user,
+            return_tracking_id=tracking_id,
         )
 
-
-class ReturnRequestActionAPIView(APIView):
-    def patch(self, request, return_id):
-
-        refund_request = get_object_or_404(RefundRequest, id=return_id)
-
-        serializer = RefundRequestUpdateSerializer(
-            refund_request,
-            data=request.data,
-            context={"request": request},
-            partial=True,
-        )
-
-        if serializer.is_valid():
-            updated_request = serializer.save()
-
-            print("THIS IS WONDERFUL STAGE TOPPPPPP")
-            # refund payment processing
-            if updated_request.status == "APPROVED":
-                print("THIS IS WONDERFUL STAGE   111111")
-
-                try:
-                    order_id = updated_request.order.id
-
-                    payment_processing = process_paystack_refund.delay(
-                        refund_id=return_id, order_id=order_id
-                    )
-                    print("THIS IS WONDERFUL STAGE   111EXTEA")
-
-                except Exception as e:
-                    return Response(
-                        {"error": str(e)}, status=status.HTTP_400_BAD_REQUEST
-                    )
-
-            return Response(serializer.data, status=status.HTTP_200_OK)
-
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-# NB: if you are using bind=true, then you must use self as an argument in the functin below else you will be having ths error       {"error":"process_paystack_refund() takes 1 positional argument but 2 were given"}
-
-#  i later removed @shared_task from here because i am not sending e-mail but the principle still applied assumng this function is fr  sending e-mail
-
-# @shared_task(bind=True)
-# def process_paystack_refund(self,order_id):
-
-#     order = get_object_or_404(Order,id=order_id)
-#     try:
-#         refund = Refund(secrete_key=settings.PAYSTACK_SECRET_KEY)
-#         payment_response = refund.create(
-#         reference = order.payment_reference,
-#         amount = int(order.total_amount * 100)
-#         )
-
-#         print('THE MESSAGE: This actually worked')
-#         print(f'ANOTHER MESSAGE:{payment_response.get('status')}:')
-#         return payment_response.get('status','false')
-
-#     except Exception as e:
-#         print({'EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE':{str(e)}})
-
-
-@shared_task(bind=True)
-def process_paystack_refund(self, order_id, refund_id):
-
-    try:
-        order = Order.objects.get(id=order_id)
-        refund_request = RefundRequest.objects.get(id=refund_id)
-
-        print(f"[Refund Test] Starting refund for order {order_id}")
-        print(f"[Refund Test] Reference: {order.payment_reference}")
-        print(f"[Refund Test] Amount: {order.total_amount} NGN")
-
-        refund_api = Refund(secret_key=settings.PAYSTACK_SECRET_KEY)
-
-        response = refund_api.create(
-            transaction=order.payment_reference,
-            amount=int(order.total_amount * 100),
-            reason=refund_request.reason,
-        )
-
-        print(f"[Refund Test] Full Paystack Response: {response}")
-
-        success = response.get("status", False)
-        message = response.get("message", "No message")
-
-        if success:
-            print(f"[Refund SUCCESS] Order {order_id}")
-
-            for item in order.orderitems.all():
-                item.content_object.stock += item.quantity
-                item.content_object.save()
-
-                refund_request.status = "COMPLETED"
-                refund_request.save()
-
-                print("THIS IS WONDERFUL STAGE 33333 PRODUCTS UPDATED SUCCCESSFULLY")
-        else:
-            print(f"[Refund FAILED] Order {order_id} - Message: {message}")
-
-    except Exception as e:
-        print(f"[Refund ERROR] Order {order_id}: {e!s}")
-        return False
-
-
-# class ReturnRequestActionAPIView(APIView):
-#     # permission_classes = [IsAdminUser]
-
-#     def patch(self, request, return_id):
-#         refund_request = get_object_or_404(RefundRequest, id=return_id)
-
-#         serializer = RefundRequestUpdateSerializer(
-#             refund_request,
-#             data=request.data,
-#             partial=True
-#         )
-
-#         if serializer.is_valid():
-#             # This is the correct way
-#             updated_request = serializer.save()
-
-#             if updated_request.status == 'approved':
-#                 refund_success = process_paystack_refund.delay(updated_request.order)
-
-#                 if refund_success:
-#                     # Return stock
-#                     for item in updated_request.order.orderitems.all():
-#                         product = item.content_object
-#                         if product and hasattr(product, 'stock'):
-#                             product.stock += item.quantity
-#                             product.save()
-
-#                     updated_request.order.status = 'RETURNED'
-#                     updated_request.order.save()
-#                     print("Order status updated to RETURNED")
-
-#             # Trigger email here directly for testing
-#             print("Attempting to send confirmation email...")
-
-#             return Response({
-#                 "message": f"Return request updated to {updated_request.status}",
-#                 "data": RefundRequestSerializer(updated_request).data
-#             })
-
-#         return Response(serializer.errors, status=400)
+        return return_request

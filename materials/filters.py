@@ -1,4 +1,5 @@
 import django_filters
+from django.db.models import Avg
 
 from core.choices import MaterialCategory, Quality, Rating
 from materials.models import Materials
@@ -20,19 +21,26 @@ class MaterialsFilter(django_filters.FilterSet):
     quality_category = django_filters.ChoiceFilter(
         choices=Quality.choices, lookup_expr="iexact", label="All Qualities"
     )
-    categories = django_filters.ChoiceFilter(
+    category = django_filters.ChoiceFilter(
         choices=MaterialCategory.choices,
         field_name="categories__name",
         lookup_expr="iexact",
         label="All Categories",
     )
 
-    reviews = django_filters.ChoiceFilter(
+    ratings = django_filters.ChoiceFilter(
         choices=Rating.choices,
         label="Material Rating",
-        field_name="review__rating",
-        lookup_expr="iexact",
+        method="filter_by_average_rating",
     )
+
+    def filter_by_average_rating(self, queryset, name, value):
+        if value:
+            val = int(value)
+            return queryset.annotate(avg_rating=Avg("reviews__rating")).filter(
+                avg_rating__gte=val, avg_rating__lt=val + 1
+            )
+        return queryset
 
     class Meta:
         model = Materials

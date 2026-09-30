@@ -5,13 +5,12 @@ from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import AllowAny
 
 from core.choices import Status
-from core.pagination import CatalogPagination
 from core.permissions import IsAdminOrReadOnly
+from core.serializers import BaseCatalogCardSerializer
 from products.filters import ProductFilter
 from products.models import Products
 from products.serializers import (
     ProductDetailSerializer,
-    ProductListSerializer,
     ProductWriteSerializer,
 )
 
@@ -21,13 +20,13 @@ class ProductsListView(generics.ListAPIView):
         AllowAny,
     ]
 
-    paginator_class = CatalogPagination
-    serializer_class = ProductListSerializer
+    paginator_class = None
+    serializer_class = BaseCatalogCardSerializer
 
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = ProductFilter
     search_fields = ["name", "description"]
-    ordering_fields = ["price", "quality_category"]
+    ordering_fields = ["price", "quality_category", "category"]
 
     def get_queryset(self):
 
@@ -61,12 +60,6 @@ class ProductsListView(generics.ListAPIView):
 class ProductCreateView(generics.CreateAPIView):
     permission_classes = [IsAdminOrReadOnly]
     serializer_class = ProductWriteSerializer
-
-    def get_serializer_context(self):
-
-        context = super().get_serializer_context()
-        context["request"] = self.request
-        return context
 
 
 class ProductUpdateDeleteView(generics.UpdateAPIView, generics.DestroyAPIView):

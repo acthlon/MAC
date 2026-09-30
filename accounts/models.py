@@ -5,6 +5,8 @@ from django.db import models
 from django.utils.deconstruct import deconstructible
 from phonenumber_field.modelfields import PhoneNumberField
 
+from core.choices import Gender
+
 
 @deconstructible
 class generated_image_path:
@@ -51,11 +53,10 @@ class CustomUser(AbstractUser):
     FEMALE = "Female"
     OTHERS = "Others"
 
-    GENDER_CATEGORY = [(MALE, "Male"), (FEMALE, "Female"), (OTHERS, "Others")]
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     phone = PhoneNumberField()
     is_active = models.BooleanField(default=False)
-    gender = models.CharField(choices=GENDER_CATEGORY)
+    gender = models.CharField(choices=Gender.choices)
     email = models.EmailField(max_length=500, unique=True)
 
     # Profile fields

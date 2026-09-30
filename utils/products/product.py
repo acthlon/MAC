@@ -1,5 +1,3 @@
-from decimal import Decimal
-
 from django.db.models import Sum
 from rest_framework.reverse import reverse
 
@@ -25,14 +23,6 @@ class ProductUtils:
 
 
 class VariantUtils:
-    @staticmethod
-    def calculate_product_variant_final_price(variant):
-
-        price = variant.product.price + variant.price_adjustment
-        total_price = price - variant.product.discount
-
-        return total_price.quantize(Decimal("0.00"))
-
     @staticmethod
     def calculate_sku_value(variant):
 
@@ -74,7 +64,7 @@ class ProductDetailSerializerUtils:
 
     @staticmethod
     def get_details(product):
-        from products.serializers import ProductSpecificationSerializer  # isort : skip
+        from products.serializers import ProductSpecificationSerializer  # isort: skip
 
         spec = getattr(product, "specification", None) or getattr(
             product, "specification", None
@@ -123,7 +113,7 @@ class ProductDetailSerializerUtils:
                 reverse(
                     "review_create",
                     kwargs={
-                        "model_name": product.model_name,
+                        "model_name": product._meta.model_name,
                         "slug": product.slug,
                         "pk": product.id,
                     },
@@ -145,7 +135,7 @@ class ProductDetailSerializerUtils:
                 reverse(
                     "all_single_item_review",
                     kwargs={
-                        "model_name": product.model_name,
+                        "model_name": product._meta.model_name,
                         "slug": product.slug,
                         "pk": product.id,
                     },

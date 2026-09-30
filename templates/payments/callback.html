@@ -1,0 +1,141 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marvelam - Payment Status</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Montserrat:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #050505;
+            color: #fff;
+            font-family: 'Montserrat', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            text-align: center;
+        }
+
+        .card {
+            background-color: #0a0a0a;
+            border: 1px solid #1a1a1a;
+            padding: 50px 40px;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .logo-circle {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            border: 2px solid #FFB400;
+            background-color: #141208;
+            line-height: 60px;
+            font-size: 28px;
+            font-family: 'Cormorant Garamond', serif;
+            color: #FFB400;
+            margin: 0 auto 20px;
+            font-weight: bold;
+        }
+
+        h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 32px;
+            margin: 0 0 10px;
+            color: #fff;
+        }
+
+        p {
+            color: #aaa;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .reference {
+            background-color: #111;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            color: #FFB400;
+            margin-bottom: 30px;
+            font-size: 16px;
+            border: 1px dashed #333;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 15px 30px;
+            background-color: #FFB400;
+            color: #000;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            border-radius: 4px;
+            transition: 0.3s;
+        }
+
+        .btn:hover {
+            background-color: #e5a200;
+            box-shadow: 0 4px 15px rgba(255, 180, 0, 0.3);
+        }
+
+        .error-circle {
+            border-color: #e53e3e;
+            background-color: #2d0a0a;
+            color: #e53e3e;
+        }
+
+        .pending-circle {
+            border-color: #3b82f6;
+            background-color: #0e1b33;
+            color: #3b82f6;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="card">
+        {% if status == 'successful' %}
+        <div class="logo-circle">✓</div>
+        <h1>Payment Successful</h1>
+        <p>Thank you! Your payment has been received and your order is confirmed. You will receive an email receipt
+            shortly.</p>
+        {% elif status == 'failed' %}
+        <div class="logo-circle error-circle">✕</div>
+        <h1>Payment Failed</h1>
+        <p>Unfortunately, your payment could not be processed. Please try again or use a different payment method.</p>
+        {% else %}
+        <div class="logo-circle pending-circle">⌛</div>
+        <h1>Payment Pending</h1>
+        <p>Your payment is currently processing. We will notify you once it's complete.</p>
+        {% endif %}
+
+        <div class="reference">
+            Ref: {{ reference }}
+        </div>
+
+        {% if status == 'successful' %}
+        <a href="/order/details/{{ order_number }}/" class="btn">View Order Details</a>
+        {% elif status == 'failed' %}
+        <a href="/order/details/{{ order_number }}/" class="btn">Retry Payment</a>
+        {% else %}
+        <a href="/order/details/{{ order_number }}/" class="btn">View Order Details</a>
+        {% endif %}
+    </div>
+
+</body>
+
+</html>

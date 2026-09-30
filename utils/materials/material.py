@@ -1,5 +1,3 @@
-from decimal import Decimal
-
 from django.db.models import Sum
 from rest_framework.reverse import reverse
 
@@ -20,14 +18,6 @@ class VariantUtils:
 
             value = f"MAC-MTL-{category_code}-{sku_id}-{color_code}"
             return value
-
-    @staticmethod
-    def calculate_material_variant_final_price(variant):
-
-        price = variant.material.price + variant.price_adjustment
-        total_price = price - variant.material.discount
-        # return total_price
-        return total_price.quantize(Decimal("0.00"))
 
     @staticmethod
     def get_stock_status(variant):
@@ -71,9 +61,9 @@ class MaterialDetailSerializerUtils:
 
     @staticmethod
     def get_details(material):
-        from materials.serializers import (
+        from materials.serializers import (  # isort: skip
             MaterialSpecificationSerializer,
-        )  # isort : skip
+        )  # isort: skip
 
         spec = getattr(material, "material_spec", None)
         specification = None
@@ -118,7 +108,7 @@ class MaterialDetailSerializerUtils:
                 reverse(
                     "review_create",
                     kwargs={
-                        "model_name": material.model_name,
+                        "model_name": material._meta.model_name,
                         "slug": material.slug,
                         "pk": material.id,
                     },
@@ -140,7 +130,7 @@ class MaterialDetailSerializerUtils:
                 reverse(
                     "all_single_item_review",
                     kwargs={
-                        "model_name": material.model_name,
+                        "model_name": material._meta.model_name,
                         "slug": material.slug,
                         "pk": material.id,
                     },

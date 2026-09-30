@@ -26,7 +26,7 @@ class Reviews(TimeStampModel):
 
     @property
     def get_item_name(self):
-        from utils.reviews.review import ReviewUtils
+        from utils.reviews.review import ReviewUtils  # isort: skip
 
         return ReviewUtils.get_item_name(self)
         if self.content_object:
@@ -35,13 +35,13 @@ class Reviews(TimeStampModel):
     @property
     def calculate_item_average_rating(self):
 
-        from utils.reviews.review import ReviewUtils
+        from utils.reviews.review import ReviewUtils  # isort: skip
 
         return ReviewUtils.calculate_item_average_rating(self)
 
     @property
     def get_review_count(self):
-        from utils.reviews.review import ReviewUtils
+        from utils.reviews.review import ReviewUtils  # isort: skip
 
         return ReviewUtils.calculate_review_count(self)
 

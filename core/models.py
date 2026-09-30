@@ -65,6 +65,17 @@ generated_image_path = GeneratedImagePath
 generated_video_path = GeneratedVideoPath
 
 
+def get_refund_evidence_path(instance, filename):
+    # `instance` is the RefundRequest object
+    folder_name = instance.return_number or "general"
+    return f"refund_evidence/{folder_name}/{filename}"
+
+
+def get_refund_receipts(instance, filename):
+    folder_name = instance.return_number or "general"
+    return f"refund_receipts/{folder_name}/{filename}"
+
+
 class TimeStampModel(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -88,10 +99,6 @@ class CatalogBaseModel(TimeStampModel):
         abstract = True
 
     @property
-    def model_name(self):
-        return self._meta.model_name
-
-    @property
     def calculate_total_stock(self):
         total = self.variants.aggregate(Sum("stock"))["stock__sum"]
         return total if total else 0
@@ -109,7 +116,7 @@ class CatalogBaseModel(TimeStampModel):
 
     @property
     def calculate_average_rating(self):
-        from django.db.models import Avg
+        from django.db.models import Avg  # isort: skip
 
         avg = self.reviews.aggregate(Avg("rating"))["rating__avg"]
         return round(avg, 2) if avg is not None else 0.0
@@ -215,7 +222,51 @@ class VariantBaseModel(TimeStampModel):
     price_adjustment = models.DecimalField(
         max_digits=10, decimal_places=2, default=0.00
     )
-    status = models.CharField(choices=Status.choices, default="ACTIVE")
+    status = models.CharField(choices=Status.choices, default=Status.ACTIVE)
+
+    @property
+    def get_variant_pry_image(self):
+        if not hasattr(self, "images"):
+            return None
+        image_obj = (
+            self.images.filter(is_primary=True).first() or self.images.first()
+            if self
+            else None
+        )
+        image = image_obj.image if image_obj and image_obj.image else None
+        return image
+
+    @property
+    def calculate_variant_actual_unit_price(self):
+
+        catalog_item = getattr(self, "material", None) or getattr(self, "product", None)
+        if not catalog_item:
+            return Decimal("0.00")
+        price = catalog_item.price + self.price_adjustment
+        return price.quantize(Decimal("0.00"))
+
+    @property
+    def calculate_variant_discount(self):
+        catalog_item = getattr(self, "material", None) or getattr(self, "product", None)
+        if not catalog_item:
+            return Decimal("0.00")
+        return catalog_item.discount.quantize(Decimal("0.00"))
+
+    @property
+    def calculate_variant_discounted_price(self):
+        price = (
+            self.calculate_variant_actual_unit_price - self.calculate_variant_discount
+        )
+        return price.quantize(Decimal("0.00"))
+
+    @property
+    def calculate_variant_percent_discount(self):
+
+        discount = self.calculate_variant_discount
+        price = self.calculate_variant_actual_unit_price
+        if discount > 0 and price > 0:
+            return ((discount / price) * 100).quantize(Decimal("0.00"))
+        return Decimal("0.00")
 
     def save(self, *args, **kwargs):
 

@@ -1,39 +1,51 @@
 from django.contrib import admin
 
-from payments.models import Payment, RefundRequest
+from payments.models import Payment, PaymentMethod, ReturnRequest
+
+
+@admin.register(PaymentMethod)
+class PaymentMethodAdmin(admin.ModelAdmin):
+    list_display = ("code", "description", "status")
 
 
 class PaymentAdmin(admin.ModelAdmin):
     list_display = (
         "id",
-        "payment_method",
+        "payment_method_code",
         "amount",
         "currency",
         "status",
         "reference",
         "created_at",
         "updated_at",
-        "status",
+        "masked_card",
     )
 
+    # def get_readonly_fields(self, request, obj=None):
+    #     if obj:
+    #         return [field.name for field in self.model._meta.fields]
+    #     return []
+
     def masked_card(self, obj):
-        return obj.masked_card
+        from utils.payments.payment import PaymentUtils  # isort: skip
+
+        return PaymentUtils.masked_card(obj)
 
     masked_card.short_description = "Card Used"
 
 
-class RefundRequestAdmin(admin.ModelAdmin):
+class ReturnRequestAdmin(admin.ModelAdmin):
     list_display = (
         "reason",
         "status",
-        "requested_at",
+        "approved_at",
         "processed_at",
         "admin_notes",
-        "refund_amount",
+        "return_amount",
     )
 
-    readonly_fields = ("requested_at", "processed_at", "refund_amount")
+    readonly_fields = ("approved_at", "processed_at", "return_amount")
 
 
 admin.site.register(Payment, PaymentAdmin)
-admin.site.register(RefundRequest, RefundRequestAdmin)
+admin.site.register(ReturnRequest, ReturnRequestAdmin)

@@ -1,64 +1,34 @@
 import uuid
-from datetime import timedelta
 from decimal import Decimal
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django.db.models import DecimalField, ExpressionWrapper, F, Sum
 from django.utils import timezone
 from phonenumber_field.modelfields import PhoneNumberField
 
 from accounts.models import CustomUser
-from core.choices import PaymentStatus
-
-ORDER_STATUS_CHOICES = [
-    ("CREATED", "Created"),
-    ("CONFIRMED", "Confirmed"),
-    ("SHIPPED", "Shipped"),
-    ("COMPLETED", "Completed"),
-    ("CANCELED", "Canceled"),
-    ("FAILED", "Failed"),
-    ("RETURNED", "Returned"),
-]
-
-
-PAYMENT_METHOD_CHOICES = [
-    ("PAYSTACK", "Paystack"),
-    ("CASH_ON_DELIVERY", "Cash on Delivery"),
-]
-
-DELIVERY_STATUS_CHOICES = [
-    ("PENDING", "Pending"),
-    ("SHPPING", "Processing"),
-    ("OUT_FOR_DELIVERY", "Out For Delivery"),
-    ("DELIVERED", "Delivered"),
-    ("CANCELED", "Canceled"),
-    ("RETURNED", "Returned"),
-    ("FAILED_DELIVERY", "Failed Delivery"),
-]
-
-ADDRESS_TYPE_CHOICES = [
-    ("HOME", "Home"),
-    ("WORK", "Work"),
-    ("OTHERS", "Others"),
-]
-
-DELIVERY_CHOICES = [
-    ("STANDARD_DELIVERY", "Standard Delivery"),
-    ("EXPRESS_DELIVERY", "Express Delivery"),
-    ("PREMIUM_DELIVERY", "Premium Delivery"),
-]
+from core.choices import (
+    BOOLEAN_CHOICES,
+    AddressType,
+    DeliveryStatus,
+    DeliveryType,
+    OrderStatus,
+    PaymentStatus,
+    Status,
+)
+from core.models import TimeStampModel
 
 
-class Address(models.Model):
+class Address(TimeStampModel):
     id = models.UUIDField(
         unique=True, default=uuid.uuid4, editable=False, primary_key=True
     )
     user = models.ForeignKey(
-        CustomUser, on_delete=models.CASCADE, related_name="del_address"
+        CustomUser, on_delete=models.CASCADE, related_name="delivery_address"
     )
     phone_number = PhoneNumberField()
+    alternative_phone_number = PhoneNumberField(blank=True, null=True)
     first_name = models.CharField(max_length=150)
     last_name = models.CharField(max_length=150)
     delivery_address = models.CharField(max_length=200)
@@ -68,72 +38,45 @@ class Address(models.Model):
     country = models.CharField(max_length=100, default="Nigeria")
     additional_info = models.TextField(max_length=500, blank=True, null=True)
     is_default = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    address_type = models.CharField(choices=ADDRESS_TYPE_CHOICES, default="HOME")
+    address_type = models.CharField(choices=AddressType.choices, default="HOME")
+    is_selected = models.BooleanField(choices=BOOLEAN_CHOICES, default=False)
 
     def save(self, *args, **kwargs):
-        Address.objects.filter(user=self.user, is_default=True).exclude(
-            id=self.id
-        ).update(is_default=False)
+        if self.is_default:
+            Address.objects.filter(user=self.user, is_default=True).exclude(
+                id=self.id
+            ).update(is_default=False)
 
         super().save(*args, **kwargs)
 
     class Meta:
         verbose_name_plural = "Addresses"
-        ordering = ["-is_default", "-created_at"]
+        ordering = ["-created_at"]
 
     def __str__(self):
         return f"{self.user.username} - {self.delivery_address}, {self.city}"
 
 
 class DeliveryMethod(models.Model):
-    name = models.CharField(max_length=255, choices=DELIVERY_CHOICES)
+    name = models.CharField(max_length=255, choices=DeliveryType.choices)
     description = models.CharField(max_length=255, null=True, blank=True)
-    cost = models.DecimalField(max_digits=12, decimal_places=2)
+    cost = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
     estimated_date = models.CharField(max_length=100, null=True, blank=True)
-    display_order = models.PositiveSmallIntegerField(default=0)
-    is_active = models.BooleanField(default=True)
-    is_displayed = models.BooleanField(default=True)
-
-    def _add_business_days(self, start_date, days):
-
-        current_date = start_date
-        added_day = 0
-        while added_day < days:
-            current_date += timedelta(days=1)
-            if current_date.weekday() < 5:
-                added_day += 1
-        return current_date
+    display_order = models.PositiveIntegerField(null=True, blank=True)
+    status = models.CharField(
+        max_length=50, choices=Status.choices, default=Status.ACTIVE
+    )
+    is_selected = models.BooleanField(choices=BOOLEAN_CHOICES, default=False)
 
     @property
     def delivery_day(self):
-        start_date = timezone.now().date()
+        from utils.orders.order import DeliveryMethodUtils  # isort: skip
 
-        if self.name == "STANDARD_DELIVERY":
-            date1 = self._add_business_days(start_date, days=5)
-            date2 = self._add_business_days(start_date, days=7)
-            delivery_day = f"Delivery Between {date1.strftime('%a %d %b')} - {date2.strftime('%a %d %b')}"
-            return delivery_day
-
-        elif self.name == "EXPRESS_DELIVERY":
-            date1 = self._add_business_days(start_date, days=3)
-            date2 = self._add_business_days(start_date, days=5)
-            delivery_day = f"Delivery Between {date1.strftime('%a %d %b')} - {date2.strftime('%a %d %b')}"
-            return delivery_day
-
-        elif self.name == "PREMIUM_DELIVERY":
-            date1 = self._add_business_days(start_date, days=2)
-            date2 = self._add_business_days(start_date, days=3)
-            delivery_day = f"Delivery Between {date1.strftime('%a %d %b')} - {date2.strftime('%a %d %b')}"
-            return delivery_day
-
-        return "Delivery date not available"
+        return DeliveryMethodUtils().delivery_day(self)
 
     def save(self, *args, **kwargs):
 
         self.estimated_date = self.delivery_day
-        print(self.estimated_date)
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -144,189 +87,169 @@ class DeliveryMethod(models.Model):
         verbose_name_plural = "Delivery Methods"
 
 
-class PaymentMethod(models.Model):
-    id = models.UUIDField(
-        unique=True, default=uuid.uuid4, editable=False, primary_key=True
-    )
-    code = models.CharField(max_length=50, unique=True, choices=PAYMENT_METHOD_CHOICES)
+class Order(TimeStampModel):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._original_status = self.status
+        self._original_delivery_status = self.delivery_status
 
-    display_name = models.CharField(max_length=100, choices=PAYMENT_METHOD_CHOICES)
-    description = models.TextField(blank=True, null=True)
-    icon = models.ImageField(upload_to="payment_icons/", blank=True, null=True)
-
-    is_pre_pay = models.BooleanField(default=True)
-    requires_registration = models.BooleanField(default=False)
-    is_active = models.BooleanField(default=True)
-    display_order = models.PositiveSmallIntegerField(default=0)
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        verbose_name_plural = "Payment Methods"
-        ordering = ["display_order", "display_name"]
-
-    def __str__(self):
-        return self.display_name
-
-    @property
-    def icon_url(self):
-        if self.icon:
-            return self.icon.url
-        return None
-
-
-class Order(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(CustomUser, on_delete=models.PROTECT, related_name="order")
-    shipping_address = models.ForeignKey(
-        Address,
-        on_delete=models.PROTECT,
-        related_name="ordered_shipped",
-        null=True,
-        blank=True,
+    order_number = models.CharField(max_length=30, unique=True, null=True, blank=True)
+    shipping_address_snapshot = models.JSONField(null=True, blank=True)
+    delivery_method_name = models.CharField(max_length=200, null=True, blank=True)
+    payment_method_name = models.CharField(max_length=200, null=True, blank=True)
+    # shipping_address = models.ForeignKey(
+    #     Address,
+    #     on_delete=models.PROTECT,
+    #     related_name="orders",
+    #     null=True,
+    #     blank=True,
+    # )
+    total_items = models.IntegerField(default=0, editable=False)
+    # delivery_method = models.ForeignKey(
+    #     DeliveryMethod,
+    #     on_delete=models.PROTECT,
+    #     related_name="orders",
+    #     null=True,
+    #     blank=True,
+    # )
+
+    status = models.CharField(
+        max_length=30, choices=OrderStatus.choices, default=OrderStatus.CREATED
     )
-    total_items = models.IntegerField()  # S
-    delivery_method = models.ForeignKey(
-        DeliveryMethod,
-        on_delete=models.PROTECT,
-        related_name="order",
-        null=True,
-        blank=True,
+
+    # payment_method = models.ForeignKey(
+    #     PaymentMethod,
+    #     on_delete=models.PROTECT,
+    #     null=True,
+    #     blank=True,
+    #     related_name="order_payment",
+    # )
+
+    payment_reference = models.CharField(max_length=100, null=True, blank=True)
+    payment_status = models.CharField(
+        max_length=50, choices=PaymentStatus.choices, default=PaymentStatus.PENDING
     )
+    delivery_status = models.CharField(
+        max_length=40, default=DeliveryStatus.PENDING, choices=DeliveryStatus.choices
+    )
+    tracking_id = models.CharField(max_length=50, null=True, blank=True)
     total_amount = models.DecimalField(
         max_digits=12, decimal_places=2, default=0, editable=False
     )
-    status = models.CharField(
-        max_length=30, choices=ORDER_STATUS_CHOICES, default="CREATED"
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    payment_method = models.ForeignKey(
-        PaymentMethod,
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        related_name="order_payment",
-    )
-    payment_reference = models.CharField(max_length=100, null=True, blank=True)
-    payment_status = models.CharField(
-        max_length=50, choices=PaymentStatus.choices, default="PENDING"
-    )
-    delivery_status = models.CharField(
-        max_length=40, default="PENDING", choices=DELIVERY_STATUS_CHOICES
-    )
-    is_active = models.BooleanField(default=True)
-    tracking_id = models.CharField(max_length=50, null=True, blank=True)
     sub_total_amount = models.DecimalField(
+        max_digits=12, decimal_places=2, default=0, editable=False
+    )
+
+    shipping_fee = models.DecimalField(
         max_digits=12, decimal_places=2, default=0, editable=False
     )
     total_discount = models.DecimalField(
         max_digits=12, decimal_places=2, default=0, editable=False
     )
+    currency = models.CharField(max_length=5, default="NGN")
+    shipped_at = models.DateTimeField(null=True, blank=True)
+    delivered_at = models.DateTimeField(null=True, blank=True)
+    canceled_at = models.DateTimeField(null=True, blank=True)
+    out_for_delivery_at = models.DateTimeField(null=True, blank=True)
+    failed_delivery_at = models.DateTimeField(null=True, blank=True)
+    cancellation_reason = models.TextField(null=True, blank=True)
+    customer_note = models.TextField(null=True, blank=True)
+    admin_notes = models.TextField(null=True, blank=True)
 
     @property
     def calculate_total_items(self):
 
-        total_items = self.orderitems.aggregate(Sum("quantity"))["quantity__sum"] or 0
-        return total_items
+        from utils.orders.order import OrderUtils  # isort: skip
 
-    @property
-    def calculate_total_amount(self):
+        return OrderUtils.calculate_total_items(self)
 
-        total_amount_sum = self.orderitems.aggregate(
-            total_amount=Sum(
-                ExpressionWrapper(
-                    F("quantity") * F("unit_price") - F("discount_amount"),
-                    output_field=DecimalField(max_digits=12, decimal_places=2),
-                )
-            )
-        )["total_amount"] or Decimal("0.00")
-
-        # total_amount_sum = self.orderitems.aggregate(
-        # total_amount=Sum
-        # (ExpressionWrapper(F('sub_total'), output_field=DecimalField(max_digits=12, decimal_places=2)))
-        #                 )['total_amount'] or Decimal('0.00')
-
-        delivery_fee = (
-            self.delivery_method.cost if self.delivery_method else Decimal("0.00")
-        )
-
-        total_amount = total_amount_sum + delivery_fee
-        return total_amount
-
-    # @property
-    # def get_payment_reference(self):
-
-    #     ref = self.payment_method.display_name
-    #     return ref
     @property
     def calculate_sub_total_amount(self):
 
-        total_amount_sum = self.orderitems.aggregate(
-            total_amount=Sum(
-                ExpressionWrapper(
-                    F("quantity") * F("unit_price"),
-                    output_field=DecimalField(max_digits=12, decimal_places=2),
-                )
-            )
-        )["total_amount"] or Decimal("0.00")
+        from utils.orders.order import OrderUtils  # isort: skip
 
-        # total_amount_sum = self.orderitems.aggregate(
-        # total_amount=Sum
-        # (ExpressionWrapper(F('sub_total'), output_field=DecimalField(max_digits=12, decimal_places=2)))
-        #                 )['total_amount'] or Decimal('0.00')
-
-        delivery_fee = (
-            self.delivery_method.cost if self.delivery_method else Decimal("0.00")
-        )
-
-        total_amount = total_amount_sum
-        return total_amount
+        return OrderUtils.calculate_sub_total_amount(self)
 
     @property
     def calculate_total_discount_amount(self):
 
-        total_discount_sum = self.orderitems.aggregate(
-            total_discount=Sum(
-                ExpressionWrapper(
-                    F("discount_amount"),
-                    output_field=DecimalField(max_digits=12, decimal_places=2),
-                )
-            )
-        )["total_discount"] or Decimal("0.00")
+        from utils.orders.order import OrderUtils  # isort: skip
 
-        return total_discount_sum
+        return OrderUtils.calculate_total_discount_amount(self)
 
     @property
-    def generate_tracking_id(self):
+    def calculate_total_amount(self):
 
-        if not self.tracking_id:
-            unique_number = str(self.id)[:8].upper()
-            tracking_number = f"MAC-{unique_number}"
+        from utils.orders.order import OrderUtils  # isort: skip
 
-            self.tracking_id = tracking_number
-            self.save(update_fields=["tracking_id"])
-            print(f"THIS UNIQUE NUMBER IS TO BE PRINTED{unique_number}")
+        return OrderUtils.calculate_total_amount(self)
+
+    @property
+    def get_ordered_day(self):
+        from utils.orders.order import OrderUtils  # isort: skip
+
+        return OrderUtils.get_ordered_day(self)
+
+    @property
+    def get_delivered_day(self):
+        from utils.orders.order import OrderUtils  # isort: skip
+
+        return OrderUtils.get_delivered_day(self)
 
     def save(self, *args, **kwargs):
-        if self.pk:
+        from utils.orders.order import OrderUtils  # isort: skip
+
+        if self.id:
             self.total_amount = self.calculate_total_amount
             self.total_items = self.calculate_total_items
             self.sub_total_amount = self.calculate_sub_total_amount
             self.total_discount = self.calculate_total_discount_amount
 
-        if self.status == "CONFIRMED":
-            self.tracking_id = self.generate_tracking_id
-            self.is_active = False
-        elif not self.status == "COMPLETED":
-            self.is_active = True
+        if not self.order_number:
+            self.order_number = OrderUtils.generate_order_number(self)
 
-        # if self.payment_method:
-        #     self.payment_reference = self.get_payment_reference
+        if self.delivery_status == DeliveryStatus.DELIVERED:
+            self.status = OrderStatus.COMPLETED
+
+        if self.delivery_status == DeliveryStatus.CANCELED:
+            self.status = OrderStatus.CANCELED
+
+        if (
+            self.status == OrderStatus.COMPLETED
+            and self.delivery_status == DeliveryStatus.DELIVERED
+            and not self.delivered_at
+        ):
+            self.delivered_at = timezone.now()
+        if (
+            self.status == OrderStatus.CANCELED
+            or self.delivery_status == DeliveryStatus.CANCELED
+        ) and not self.canceled_at:
+            self.canceled_at = timezone.now()
+
+        if self.status == OrderStatus.CONFIRMED:
+            if not self.tracking_id:
+                self.tracking_id = OrderUtils.generate_tracking_id(self)
+
+            if self.delivery_status == DeliveryStatus.SHIPPED and not self.shipped_at:
+                self.shipped_at = timezone.now()
+
+            if (
+                self.delivery_status == DeliveryStatus.OUT_FOR_DELIVERY
+                and not self.out_for_delivery_at
+            ):
+                self.out_for_delivery_at = timezone.now()
+
+            if (
+                self.delivery_status == DeliveryStatus.FAILED_DELIVERY
+                and not self.failed_delivery_at
+            ):
+                self.failed_delivery_at = timezone.now()
 
         super().save(*args, **kwargs)
+        self._original_status = self.status
+        self._original_delivery_status = self.delivery_status
 
     class Meta:
         verbose_name_plural = "Orders"
@@ -337,26 +260,64 @@ class Order(models.Model):
 
 
 class OrderItem(models.Model):
-    order = models.ForeignKey(
-        Order, on_delete=models.CASCADE, related_name="orderitems"
-    )
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
     content_type = models.ForeignKey(ContentType, on_delete=models.PROTECT)
     object_id = models.UUIDField()
     content_object = GenericForeignKey("content_type", "object_id")
 
+    image = models.ImageField(null=True, blank=True)
     quantity = models.PositiveIntegerField(default=1)
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
     sub_total = models.DecimalField(max_digits=12, decimal_places=2, editable=False)
-    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    discount = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
+    total_amount = models.DecimalField(max_digits=12, decimal_places=2, editable=False)
 
+    @property
     def calculate_sub_total(self):
-        sub_total = (self.quantity * self.unit_price) - self.discount_amount
-        return sub_total
+        from utils.orders.order import OrderItemUtils  # isort: skip
+
+        return OrderItemUtils.calculate_sub_total(self)
+
+    @property
+    def calculate_item_total_discount(self):
+        from utils.orders.order import OrderItemUtils  # isort: skip
+
+        return OrderItemUtils.calculate_item_total_discount(self)
+
+    @property
+    def calculate_total_amount(self):
+        from utils.orders.order import OrderItemUtils  # isort: skip
+
+        return OrderItemUtils.calculate_total_amount(self)
+
+    @property
+    def get_image(self):
+        from utils.orders.order import OrderItemUtils  # isort: skip
+
+        return OrderItemUtils.get_image(self)
+
+    @property
+    def catalog_name(self):
+        from utils.orders.order import OrderItemUtils  # isort: skip
+
+        return OrderItemUtils.catalog_name(self)
 
     def save(self, *args, **kwargs):
-        self.sub_total = self.calculate_sub_total()
+
+        self.sub_total = self.calculate_sub_total
+        self.total_amount = self.calculate_total_amount
+        self.image = self.get_image
         super().save(*args, **kwargs)
-        self.order.save()
+        self.order.save(
+            update_fields=[
+                "total_amount",
+                "total_items",
+                "sub_total_amount",
+                "total_discount",
+            ]
+        )
 
     class Meta:
         unique_together = ["order", "object_id", "content_type"]

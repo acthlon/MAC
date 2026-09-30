@@ -5,7 +5,7 @@ from django.db import models
 from django.utils.text import slugify
 
 from accounts.models import CustomUser
-from core.choices import IS_PRIMARY_CHOICES, ProductSize
+from core.choices import BOOLEAN_CHOICES, ProductSize
 from core.models import (
     CatalogBaseModel,
     Category,
@@ -84,13 +84,6 @@ class ProductVariant(VariantBaseModel):
     )
 
     @property
-    def calculate_product_variant_final_price(self):
-
-        from utils.products.product import VariantUtils  # isort: skip
-
-        return VariantUtils.calculate_product_variant_final_price(self)
-
-    @property
     def calculate_sku_value(self):
 
         from utils.products.product import VariantUtils  # isort: skip
@@ -141,7 +134,7 @@ class ProductImages(models.Model):
     )
     image = models.ImageField(upload_to=image_path, null=True, blank=True)
     display_order = models.PositiveIntegerField(null=True, blank=True)
-    is_primary = models.BooleanField(choices=IS_PRIMARY_CHOICES, default=False)
+    is_primary = models.BooleanField(choices=BOOLEAN_CHOICES, default=False)
 
     class Meta:
         ordering = ["display_order"]

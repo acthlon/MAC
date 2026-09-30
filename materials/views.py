@@ -7,11 +7,11 @@ from rest_framework.permissions import AllowAny
 from core.choices import Status
 from core.pagination import CatalogPagination
 from core.permissions import IsAdminOrReadOnly
+from core.serializers import BaseCatalogCardSerializer
 from materials.filters import MaterialsFilter
 from materials.models import Materials
 from materials.serializers import (
     MaterialDetailSerializer,
-    MaterialListSerializer,
     MaterialWriteSerializer,
 )
 
@@ -21,7 +21,7 @@ class MaterialsListView(generics.ListAPIView):
         AllowAny,
     ]
 
-    serializer_class = MaterialListSerializer
+    serializer_class = BaseCatalogCardSerializer
     paginator_class = CatalogPagination
 
     filter_backends = (DjangoFilterBackend, SearchFilter, OrderingFilter)
@@ -47,7 +47,7 @@ class MaterialsListView(generics.ListAPIView):
             return queryset
 
     def list(self, request, *args, **kwargs):
-        from utils.core.core import CategoryUtils
+        from utils.core.core import CategoryUtils  # isort: skip
 
         response = super().list(request, *args, **kwargs)
 
@@ -63,13 +63,6 @@ class MaterialCreateView(generics.CreateAPIView):
         IsAdminOrReadOnly,
     ]
     serializer_class = MaterialWriteSerializer
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-
-        request = self.request
-        context["request"] = request
-        return context
 
 
 class MaterialUpdateDeleteView(generics.UpdateAPIView, generics.DestroyAPIView):

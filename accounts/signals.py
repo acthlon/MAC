@@ -1,3 +1,5 @@
+from functools import partial
+from django.db import transaction
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
@@ -21,4 +23,4 @@ def create_username(sender, instance, **kwargs):
 def welcome_email_handler(sender, instance, created, **kwargs):
 
     if instance.is_active and not instance.last_login:
-        send_welcome_email_task.delay(instance.id)
+        transaction.on_commit(partial(send_welcome_email_task.delay, instance.id))
