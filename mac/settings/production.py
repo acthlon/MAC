@@ -38,5 +38,9 @@ MIDDLEWARE = [
     "allauth.account.middleware.AccountMiddleware",
 ]
 
-# Tell WhiteNoise to compress and cache the static files (Removed 'Manifest' to prevent strict 500 crashes)
-STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
+# Tell WhiteNoise to compress and cache the static files
+STORAGES = {
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+    },
+}
