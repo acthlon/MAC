@@ -39,6 +39,9 @@ MIDDLEWARE = [
 ]
 
 # Tell WhiteNoise to compress and cache the static files
+# (Legacy setting added back just to prevent django-cloudinary-storage from crashing in Django 6.0)
+STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
+
 STORAGES = {
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
