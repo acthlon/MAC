@@ -1,5 +1,5 @@
 """
-ASGI config for MAC project.
+ASGI config for mac project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 
@@ -11,6 +11,6 @@ import os
 
 from django.core.asgi import get_asgi_application
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "MAC.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mac.settings.production")
 
 application = get_asgi_application()

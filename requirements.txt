@@ -16,6 +16,7 @@ cloudinary==1.46.2
 colorama==0.4.6
 cryptography==46.0.3
 distlib==0.4.3
+dj-database-url==3.1.2
 Django==6.0
 django-allauth==65.13.1
 django-cloudinary-storage==0.3.0
@@ -28,6 +29,7 @@ djangorestframework_simplejwt==5.5.1
 drf-spectacular==0.30.0
 filelock==3.32.0
 flake8==7.3.0
+gunicorn==26.2.0
 identify==2.6.19
 idna==3.11
 inflection==0.5.1
@@ -47,6 +49,7 @@ pillow==12.0.0
 platformdirs==4.5.1
 pre_commit==4.6.1
 prompt_toolkit==3.0.52
+psycopg2-binary==2.9.13
 pycodestyle==2.14.0
 pycparser==2.23
 pyflakes==3.4.0
@@ -74,3 +77,4 @@ vine==5.1.0
 virtualenv==21.7.0
 wcwidth==0.6.0
 Werkzeug==3.1.4
+whitenoise==6.12.0
