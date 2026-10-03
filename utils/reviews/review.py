@@ -14,7 +14,8 @@ class ReviewUtils:
         average_rating_for_item = Reviews.objects.filter(
             object_id=object_id, content_type=content_type
         ).aggregate(Avg("rating"))
-        item_avg_rating = round(average_rating_for_item.get("rating__avg", 0), 2)
+        avg_val = average_rating_for_item.get("rating__avg")
+        item_avg_rating = round(avg_val or 0, 2)
 
         return item_avg_rating
 
@@ -39,7 +40,8 @@ class ReviewAnalyticsUtils:
         from review.models import Reviews  # isort: skip
 
         average_rating = Reviews.objects.all().aggregate(Avg("rating"))
-        total_avg_rating = round(average_rating.get("rating__avg", 0), 2)
+        avg_val = average_rating.get("rating__avg")
+        total_avg_rating = round(avg_val or 0, 2)
         return total_avg_rating
 
     @staticmethod
