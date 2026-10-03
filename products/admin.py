@@ -5,6 +5,7 @@ from products.models import (
     Products,
     ProductSpecification,
     ProductVariant,
+    ProductVariantSize,
     ProductVideo,
 )
 
@@ -21,6 +22,11 @@ class ProductVideoInline(admin.TabularInline):
 
 class ProductVariantInline(admin.TabularInline):
     model = ProductVariant
+    extra = 0
+
+
+class ProductVariantSizeInline(admin.TabularInline):
+    model = ProductVariantSize
     extra = 0
 
 
@@ -44,19 +50,27 @@ class ProductsAdmin(admin.ModelAdmin):
 class ProductVariantAdmin(admin.ModelAdmin):
     list_display = (
         "product",
-        "size",
         "status",
         "color",
-        "stock",
-        "sku",
-        "price_adjustment",
     )
-    inlines = [ProductImageInline]
+    inlines = [ProductImageInline, ProductVariantSizeInline]
 
 
 @admin.register(ProductImages)
 class ProductImagesAdmin(admin.ModelAdmin):
     list_display = ("variant", "is_primary", "image")
+
+
+@admin.register(ProductVariantSize)
+class ProductSizesAdmin(admin.ModelAdmin):
+    list_display = (
+        "variant",
+        "size",
+        "stock",
+        "sku",
+        "price_adjustment",
+        "status",
+    )
 
 
 @admin.register(ProductSpecification)

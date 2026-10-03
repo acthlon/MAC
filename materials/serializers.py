@@ -57,7 +57,7 @@ class MaterialVariantSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
     color_display = serializers.CharField(source="get_color_display", read_only=True)
     stock_status = serializers.CharField(read_only=True, source="get_stock_status")
-    final_price = serializers.ReadOnlyField(source="calculate_variant_final_price")
+    final_price = serializers.ReadOnlyField(source="calculate_variant_discounted_price")
     images = MaterialImageSerializer(many=True, required=False)
 
     def validate(self, data):
@@ -186,20 +186,21 @@ class MaterialWriteSerializer(serializers.ModelSerializer):
         if videos_data is not None:
             for video_data in videos_data:
                 video_id = video_data.pop("id", None)
+                video_obj = (
+                    MaterialVideo.objects.filter(id=video_id, material=instance).first()
+                    if video_id
+                    else None
+                )
 
-                if video_id:
-                    video_obj = MaterialVideo.objects.get(
-                        id=video_id, material=instance
-                    )
-
+                if video_obj:
                     for field, value in video_data.items():
                         if hasattr(video_obj, field):
                             setattr(video_obj, field, value)
-                            video_obj.save(update_fields=[field])
                         else:
                             raise serializers.ValidationError(
                                 {"message": "Field does not exist"}
                             )
+                    video_obj.save()
                 else:
                     MaterialVideo.objects.create(material=instance, **video_data)
 
@@ -212,34 +213,38 @@ class MaterialWriteSerializer(serializers.ModelSerializer):
                     MaterialVariant.objects.filter(
                         id=variant_id, material=instance
                     ).update(**variant_data)
-                    variant = MaterialVariant.objects.get(
+                    variant = MaterialVariant.objects.filter(
                         id=variant_id, material=instance
-                    )
-                    variant.save()
+                    ).first()
+                    if variant:
+                        variant.save()
                 else:
                     variant = MaterialVariant.objects.create(
                         material=instance, **variant_data
                     )
 
-                for img_data in images_data:
-                    img_data_id = img_data.pop("id", None)
-
-                    if img_data_id:
-                        img_obj = MaterialImages.objects.get(
-                            id=img_data_id, variant=variant
+                if variant:
+                    for img_data in images_data:
+                        img_data_id = img_data.pop("id", None)
+                        img_obj = (
+                            MaterialImages.objects.filter(
+                                id=img_data_id, variant=variant
+                            ).first()
+                            if img_data_id
+                            else None
                         )
 
                         if img_obj:
                             for field, value in img_data.items():
                                 if hasattr(img_obj, field):
                                     setattr(img_obj, field, value)
-                                    img_obj.save(fields=[field])
                                 else:
                                     raise serializers.ValidationError(
-                                        {"message": "Fields does not exist"}
+                                        {"message": "Field does not exist"}
                                     )
-                    else:
-                        MaterialImages.objects.create(variant=variant, **img_data)
+                            img_obj.save()
+                        else:
+                            MaterialImages.objects.create(variant=variant, **img_data)
 
         return instance
 

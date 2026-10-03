@@ -18,33 +18,33 @@ class ProductUtils:
     @staticmethod
     def calculate_total_stock(product):
 
-        total = product.variants.aggregate(Sum("stock"))["stock__sum"]
+        total = product.variants.sizes.aggregate(Sum("stock"))["stock__sum"]
         return total if total else 0
 
 
-class VariantUtils:
+class VariantSizeUtils:
     @staticmethod
-    def calculate_sku_value(variant):
+    def calculate_sku_value(variantsize):
 
         sku_id = 10000
 
-        category_code = variant.product.categories
+        category_code = variantsize.variant.product.categories
 
-        if variant.id:
-            sku_id += variant.id
+        if variantsize.id:
+            sku_id += variantsize.id
 
-            color_code = str(variant.color).upper().replace(" ", "")
-            size_code = str(variant.size).upper().replace(" ", "")
+            color_code = str(variantsize.variant.color).upper().replace(" ", "")
+            size_code = str(variantsize.size).upper().replace(" ", "")
 
             value = f"MAC-PDT-{category_code}-{sku_id}-{color_code}-{size_code}"
             return value
 
     @staticmethod
-    def get_stock_status(variant):
-        if variant.stock <= 0:
+    def get_stock_status(variantsize):
+        if variantsize.stock <= 0:
             return "Product out of stock"
-        elif variant.stock <= 7:
-            return f"Only {variant.stock} left in stock"
+        elif variantsize.stock <= 7:
+            return f"Only {variantsize.stock} left in stock"
         return "In stock"
 
 
@@ -81,29 +81,6 @@ class ProductDetailSerializerUtils:
             "specification": specification,
         }
         return details
-
-    @staticmethod
-    def get_grouped_variant_sizes(variant_list):
-        grouped_variant_sizes = {}
-        available_colors = []
-
-        for variant in variant_list:
-            color_key = variant.get("color")
-
-            if color_key not in available_colors:
-                available_colors.append(color_key)
-
-            if color_key not in grouped_variant_sizes:
-                grouped_variant_sizes[color_key] = []
-
-            grouped_variant_sizes[color_key].append(
-                {
-                    "size_display": variant.get("size_display"),
-                    "size": variant.get("size"),
-                    "stock": variant.get("stock"),
-                }
-            )
-        return grouped_variant_sizes
 
     @staticmethod
     def get_reviews_urls(product, user_review, request):

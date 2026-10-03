@@ -1,18 +1,19 @@
 import uuid
+from decimal import Decimal
 
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django.utils.text import slugify
 
 from accounts.models import CustomUser
-from core.choices import BOOLEAN_CHOICES, Pattern
+from core.choices import BOOLEAN_CHOICES, Color, Pattern, Status
 from core.models import (
     CatalogBaseModel,
     Category,
     GeneratedImagePath,
     GeneratedVideoPath,
+    InventoryBaseModel,
     SpecificationBaseModel,
-    VariantBaseModel,
 )
 from review.models import Reviews
 
@@ -75,10 +76,58 @@ class Materials(CatalogBaseModel):
         return f"{self.name}"
 
 
-class MaterialVariant(VariantBaseModel):
+class MaterialVariant(InventoryBaseModel):
     material = models.ForeignKey(
         Materials, on_delete=models.CASCADE, related_name="variants"
     )
+    color = models.CharField(
+        max_length=100, choices=Color.choices, blank=True, null=True
+    )
+    status = models.CharField(choices=Status.choices, default=Status.ACTIVE)
+
+    @property
+    def get_variant_pry_image(self):
+        if not hasattr(self, "images"):
+            return None
+        image_obj = (
+            self.images.filter(is_primary=True).first() or self.images.first()
+            if self
+            else None
+        )
+        image = image_obj.image if image_obj and image_obj.image else None
+        return image
+
+    @property
+    def calculate_variant_actual_unit_price(self):
+
+        catalog_item = getattr(self, "material", None)
+        if not catalog_item:
+            return Decimal("0.00")
+        price = catalog_item.price + self.price_adjustment
+        return price.quantize(Decimal("0.00"))
+
+    @property
+    def calculate_variant_discount(self):
+        catalog_item = getattr(self, "material", None)
+        if not catalog_item:
+            return Decimal("0.00")
+        return catalog_item.discount.quantize(Decimal("0.00"))
+
+    @property
+    def calculate_variant_discounted_price(self):
+        price = (
+            self.calculate_variant_actual_unit_price - self.calculate_variant_discount
+        )
+        return price.quantize(Decimal("0.00"))
+
+    @property
+    def calculate_variant_percent_discount(self):
+
+        discount = self.calculate_variant_discount
+        price = self.calculate_variant_actual_unit_price
+        if discount > 0 and price > 0:
+            return ((discount / price) * 100).quantize(Decimal("0.00"))
+        return Decimal("0.00")
 
     @property
     def calculate_sku_value(self):

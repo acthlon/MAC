@@ -81,23 +81,16 @@ def send_refund_confirmation_email(self, refund_id, user_id):
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
 def process_paystack_return(self, return_id, user_id):
 
-    # Step 1: Lock the row and check if already processed
     with transaction.atomic():
         return_request = ReturnRequest.objects.select_for_update().get(
             id=return_id, user_id=user_id
         )
-
         if return_request.status in [ReturnStatus.PROCESSING, ReturnStatus.COMPLETED]:
-            return {
-                "status": "skipped",
-                "reason": "This return request has already been processed.",
-            }
+            return False
 
-        # Grab what we need while inside the lock
-        order = return_request.order
-        order_item = return_request.order_item if return_request.order_item else None
+    order = return_request.order
+    order_item = return_request.order_item if return_request.order_item else None
 
-    # Step 2: Call Paystack API (outside the lock — never hold a DB lock during a network call)
     return_amount = (
         return_request.return_amount
         if return_request.return_amount is not None
@@ -117,7 +110,6 @@ def process_paystack_return(self, return_id, user_id):
     message = response.get("message", "No message")
 
     if success:
-        # Step 3: Paystack succeeded — restore stock and update status
         with transaction.atomic():
             if order and not order_item:
                 for item in order.items.all():
@@ -139,7 +131,9 @@ def process_paystack_return(self, return_id, user_id):
             return True
 
     else:
-        # Step 4: Paystack failed — retry with exponential backoff
+        # 3B. PAYSTACK RETURNED FAILURE (e.g. temporary network error or insufficient funds)
+        # If retries remain, wait & retry (60s, 120s, 180s exponential backoff)
+
         if self.request.retries < self.max_retries:
             countdown = 60 * (self.request.retries + 1)
             raise self.retry(exc=Exception(message), countdown=countdown)

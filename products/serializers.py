@@ -13,6 +13,7 @@ from products.models import (
     Products,
     ProductSpecification,
     ProductVariant,
+    ProductVariantSize,
     ProductVideo,
 )
 from review.serializers import ItemReviewSerializer
@@ -50,13 +51,11 @@ class ProductImageSerializer(serializers.ModelSerializer):
         fields = ("id", "image", "display_order", "is_primary")
 
 
-class ProductVariantSerializer(serializers.ModelSerializer):
+class ProductVariantSizeSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
     size_display = serializers.CharField(source="get_size_display", read_only=True)
-    color_display = serializers.CharField(source="get_color_display", read_only=True)
     stock_status = serializers.CharField(read_only=True, source="get_stock_status")
-    final_price = serializers.ReadOnlyField(source="calculate_variant_final_price")
-    images = ProductImageSerializer(many=True, required=False)
+    final_price = serializers.ReadOnlyField(source="calculate_variant_discounted_price")
 
     def validate(self, data):
         if "price_adjustment" in data and data.get("price_adjustment") is not None:
@@ -69,22 +68,37 @@ class ProductVariantSerializer(serializers.ModelSerializer):
         return data
 
     class Meta:
-        model = ProductVariant
+        model = ProductVariantSize
         fields = (
             "id",
             "size",
             "size_display",
-            "color",
-            "color_display",
             "stock",
             "stock_status",
             "sku",
             "price_adjustment",
             "final_price",
             "status",
-            "images",
         )
         read_only_fields = ("sku",)
+
+
+class ProductVariantSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
+    color_display = serializers.CharField(source="get_color_display", read_only=True)
+    sizes = ProductVariantSizeSerializer(many=True, required=False)
+    images = ProductImageSerializer(many=True, required=False)
+
+    class Meta:
+        model = ProductVariant
+        fields = (
+            "id",
+            "color",
+            "color_display",
+            "status",
+            "sizes",
+            "images",
+        )
 
 
 class ProductVideoSerializer(serializers.ModelSerializer):
@@ -155,16 +169,20 @@ class ProductWriteSerializer(serializers.ModelSerializer):
         product = Products.objects.create(**validated_data, user=user)
 
         if spec_data:
-            ProductSpecification.objects.create(product=product, user=user, **spec_data)
+            ProductSpecification.objects.create(product=product, **spec_data)
 
         for video_data in videos_data:
             ProductVideo.objects.create(product=product, **video_data)
 
         for variant_data in variants_data:
             images_data = variant_data.pop("images", [])
+            sizes_data = variant_data.pop("sizes", [])
             variant = ProductVariant.objects.create(product=product, **variant_data)
             for img_data in images_data:
                 ProductImages.objects.create(variant=variant, **img_data)
+
+            for size_data in sizes_data:
+                ProductVariantSize.objects.create(variant=variant, **size_data)
 
         return product
 
@@ -188,7 +206,7 @@ class ProductWriteSerializer(serializers.ModelSerializer):
             for video_data in videos_data:
                 video_id = video_data.pop("id", None)
                 video_obj = (
-                    ProductVideo.objects.get(id=video_id, product=instance)
+                    ProductVideo.objects.filter(id=video_id, product=instance).first()
                     if video_id
                     else None
                 )
@@ -197,28 +215,30 @@ class ProductWriteSerializer(serializers.ModelSerializer):
                     for field, value in video_data.items():
                         if hasattr(video_obj, field):
                             setattr(video_obj, field, value)
-                            video_obj.save(update_fields=[field])
                         else:
                             raise serializers.ValidationError(
                                 {field: "Field does not exist"}
                             )
+                    video_obj.save()
 
                 else:
-                    ProductVideo.objects.create(product=instance, user=user**video_data)
+                    ProductVideo.objects.create(product=instance, **video_data)
 
         if variants_data is not None:
             for variant_data in variants_data:
                 variant_id = variant_data.pop("id", None)
                 images_data = variant_data.pop("images", [])
+                sizes_data = variant_data.pop("sizes", [])
 
                 if variant_id:
                     ProductVariant.objects.filter(
                         id=variant_id, product=instance
                     ).update(**variant_data)
-                    variant = ProductVariant.objects.get(
+                    variant = ProductVariant.objects.filter(
                         id=variant_id, product=instance
-                    )
-                    variant.save()
+                    ).first()
+                    if variant:
+                        variant.save()
                 else:
                     variant = ProductVariant.objects.create(
                         product=instance, **variant_data
@@ -227,7 +247,9 @@ class ProductWriteSerializer(serializers.ModelSerializer):
                 for img_data in images_data:
                     img_data_id = img_data.pop("id", None)
                     image_obj = (
-                        ProductImages.objects.get(id=img_data_id, variant=variant)
+                        ProductImages.objects.filter(
+                            id=img_data_id, variant=variant
+                        ).first()
                         if img_data_id
                         else None
                     )
@@ -236,17 +258,37 @@ class ProductWriteSerializer(serializers.ModelSerializer):
                         for field, value in img_data.items():
                             if hasattr(image_obj, field):
                                 setattr(image_obj, field, value)
-                                image_obj.save(update_fields=[field])
-
                             else:
                                 raise serializers.ValidationError(
                                     {field: "Field does not exist"}
                                 )
+                        image_obj.save()
                     else:
                         ProductImages.objects.create(variant=variant, **img_data)
-        return instance
 
-        # NOTE: update material serializers too.
+                for size_data in sizes_data:
+                    size_data_id = size_data.pop("id", None)
+                    size_obj = (
+                        ProductVariantSize.objects.filter(
+                            id=size_data_id, variant=variant
+                        ).first()
+                        if size_data_id
+                        else None
+                    )
+
+                    if size_obj:
+                        for field, value in size_data.items():
+                            if hasattr(size_obj, field):
+                                setattr(size_obj, field, value)
+                            else:
+                                raise serializers.ValidationError(
+                                    {field: "Field does not exist"}
+                                )
+                        size_obj.save()
+                    else:
+                        ProductVariantSize.objects.create(variant=variant, **size_data)
+
+        return instance
 
     class Meta:
         model = Products
@@ -322,7 +364,6 @@ class ProductInfoSerializer(serializers.ModelSerializer):
 class ProductDetailSerializer(serializers.ModelSerializer):
     product_info = serializers.SerializerMethodField()
     variant_details = serializers.SerializerMethodField()
-    grouped_variant_sizes = serializers.SerializerMethodField()
     videos = ProductVideoSerializer(many=True, read_only=True)
     details = serializers.SerializerMethodField()
     fabric_care = serializers.SerializerMethodField()
@@ -352,11 +393,10 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             variant_list.append(variant_details)
         return variant_list
 
-    def get_grouped_variant_sizes(self, obj):
-        variant_list = self.get_variant_details(obj)
-        from utils.products.product import ProductDetailSerializerUtils  # isort: skip
+    #     variant_list = self.get_variant_details(obj)
+    #     from utils.products.product import ProductDetailSerializerUtils  # isort: skip
 
-        return ProductDetailSerializerUtils.get_grouped_variant_sizes(variant_list)
+    #     return ProductDetailSerializerUtils.get_grouped_variant_sizes(variant_list)
 
     def get_details(self, obj):
         from utils.products.product import ProductDetailSerializerUtils  # isort: skip
@@ -404,7 +444,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             "add_to_cart_url",
             "product_info",
             "variant_details",
-            "grouped_variant_sizes",
+            # "grouped_variant_sizes",
             "videos",
             "details",
             "fabric_care",

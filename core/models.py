@@ -279,3 +279,24 @@ class VariantBaseModel(TimeStampModel):
 
     class Meta:
         abstract = True
+
+
+class InventoryBaseModel(TimeStampModel):
+    stock = models.PositiveIntegerField(default=0)
+    sku = models.CharField(max_length=100, unique=True, blank=True, null=True)
+    price_adjustment = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.00
+    )
+    status = models.CharField(choices=Status.choices, default=Status.ACTIVE)
+
+    def save(self, *args, **kwargs):
+
+        if self.stock <= 0:
+            self.is_active = False
+        elif self.stock > 0:
+            self.is_active = True
+
+        super().save(*args, **kwargs)
+
+    class Meta:
+        abstract = True
