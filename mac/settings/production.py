@@ -4,7 +4,7 @@ from decouple import Csv, config
 from .base import *
 from .base import BASE_DIR
 
-DEBUG = False
+DEBUG = config("DEBUG", default=False, cast=bool)
 
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", cast=Csv())
 CSRF_TRUSTED_ORIGINS = config("CSRF_TRUSTED_ORIGINS", cast=Csv())
@@ -38,5 +38,5 @@ MIDDLEWARE = [
     "allauth.account.middleware.AccountMiddleware",
 ]
 
-# Tell WhiteNoise to compress and cache the static files
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+# Tell WhiteNoise to compress and cache the static files (Removed 'Manifest' to prevent strict 500 crashes)
+STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
