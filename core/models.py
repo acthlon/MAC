@@ -147,25 +147,13 @@ class Banner(models.Model):
     display_order = models.PositiveIntegerField(default=0)
 
     class Meta:
-        ordering = ["display_order"]
+        ordering = ("display_order",)
 
     def __str__(self):
         return self.title
 
 
-# class HomepageContent(models.Model):
-
-#     section = models.CharField(max_length=100, unique=True)
-#     title = models.CharField(max_length=200)
-#     subtitle = models.TextField(blank=True, null=True)
-#     is_active = models.BooleanField(default=True)
-
-#     class Meta:
-#         verbose_name_plural = "Homepage Content"
-
-
 class Category(models.Model):
-    # NEW: This determines whether this category belongs to Products or Materials
     target_model = models.ForeignKey(
         ContentType,
         on_delete=models.CASCADE,
@@ -195,7 +183,10 @@ class Category(models.Model):
         super().save(*args, **kwargs)
 
     class Meta:
-        ordering = ["display_order", "name"]
+        ordering = (
+            "display_order",
+            "name",
+        )
         verbose_name_plural = "Categories"
 
     def __str__(self):

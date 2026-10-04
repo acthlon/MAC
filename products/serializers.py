@@ -7,7 +7,10 @@ from rest_framework.reverse import reverse
 
 from core.choices import MAX_FILE_SIZE
 from core.models import Category
-from core.serializers import BaseCatalogCardSerializer
+from core.serializers import (
+    BaseCatalogCardSerializer,
+    CatalogItemCategoriesReadSerializer,
+)
 from products.models import (
     ProductImages,
     Products,
@@ -58,11 +61,14 @@ class ProductVariantSizeSerializer(serializers.ModelSerializer):
     final_price = serializers.ReadOnlyField(source="calculate_variant_discounted_price")
 
     def validate(self, data):
-        if "price_adjustment" in data and data.get("price_adjustment") is not None:
-            if data["price_adjustment"] < 0:
-                raise serializers.ValidationError(
-                    {"price_adjustment": "Price adjustment cannot be negative."}
-                )
+        if (
+            "price_adjustment" in data
+            and data.get("price_adjustment") is not None
+            and data["price_adjustment"] < 0
+        ):
+            raise serializers.ValidationError(
+                {"price_adjustment": "Price adjustment cannot be negative."}
+            )
         if data.get("stock") is not None and data.get("stock") < 0:
             raise serializers.ValidationError({"stock": "Stock cannot be negative."})
         return data
@@ -110,12 +116,6 @@ class ProductVideoSerializer(serializers.ModelSerializer):
             "thumbnail",
             "display_order",
         )
-
-
-class ProductCategoriesSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Category
-        fields = ("name", "status")
 
 
 class ProductWriteSerializer(serializers.ModelSerializer):
@@ -290,6 +290,14 @@ class ProductWriteSerializer(serializers.ModelSerializer):
 
         return instance
 
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        if instance.categories:
+            representation["categories"] = CatalogItemCategoriesReadSerializer(
+                instance.categories
+            ).data
+        return representation
+
     class Meta:
         model = Products
         fields = (
@@ -385,18 +393,12 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
     def get_variant_details(self, obj):
 
-        request = self.context.get("request")
         variant_list = []
         for var in obj.variants.all():
             variant_details = ProductVariantSerializer(var, context=self.context).data
 
             variant_list.append(variant_details)
         return variant_list
-
-    #     variant_list = self.get_variant_details(obj)
-    #     from utils.products.product import ProductDetailSerializerUtils  # isort: skip
-
-    #     return ProductDetailSerializerUtils.get_grouped_variant_sizes(variant_list)
 
     def get_details(self, obj):
         from utils.products.product import ProductDetailSerializerUtils  # isort: skip

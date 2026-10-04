@@ -7,7 +7,10 @@ from rest_framework.reverse import reverse
 
 from core.choices import MAX_FILE_SIZE
 from core.models import Category
-from core.serializers import BaseCatalogCardSerializer
+from core.serializers import (
+    BaseCatalogCardSerializer,
+    CatalogItemCategoriesReadSerializer,
+)
 from materials.models import (
     MaterialImages,
     Materials,
@@ -61,11 +64,14 @@ class MaterialVariantSerializer(serializers.ModelSerializer):
     images = MaterialImageSerializer(many=True, required=False)
 
     def validate(self, data):
-        if "price_adjustment" in data and data.get("price_adjustment") is not None:
-            if data["price_adjustment"] < 0:
-                raise serializers.ValidationError(
-                    {"price_adjustment": "Price adjustment cannot be negative."}
-                )
+        if (
+            "price_adjustment" in data
+            and data.get("price_adjustment") is not None
+            and data["price_adjustment"] < 0
+        ):
+            raise serializers.ValidationError(
+                {"price_adjustment": "Price adjustment cannot be negative."}
+            )
         if data.get("stock") is not None and data.get("stock") < 0:
             raise serializers.ValidationError({"stock": "Stock cannot be negative."})
         return data
@@ -98,19 +104,16 @@ class MaterialVideoSerializer(serializers.ModelSerializer):
         )
 
 
-class MaterialCategoriesSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Category
-        fields = ("name", "status")
-
-
 class MaterialWriteSerializer(serializers.ModelSerializer):
     variants = MaterialVariantSerializer(many=True, required=False)
     videos = MaterialVideoSerializer(many=True, required=False)
     item_detail_url = serializers.SerializerMethodField(read_only=True)
     slug = serializers.SlugField(read_only=True)
     percent_discount = serializers.ReadOnlyField(source="calculate_percent_discount")
-    categories = MaterialCategoriesSerializer()
+    categories = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.filter(target_model__model="materials"),
+        required=False,
+    )
 
     def get_item_detail_url(self, obj):
         request = self.context.get("request")
@@ -248,6 +251,14 @@ class MaterialWriteSerializer(serializers.ModelSerializer):
 
         return instance
 
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        if instance.categories:
+            representation["categories"] = CatalogItemCategoriesReadSerializer(
+                instance.categories
+            ).data
+        return representation
+
     class Meta:
         model = Materials
         fields = (
@@ -342,7 +353,6 @@ class MaterialDetailSerializer(serializers.ModelSerializer):
 
     def get_variant_details(self, obj):
 
-        request = self.context.get("request")
         variant_list = []
         for var in obj.variants.all():
             variant_details = MaterialVariantSerializer(var, context=self.context).data

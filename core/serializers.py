@@ -9,6 +9,14 @@ from review.serializers import ItemReviewSerializer
 from utils.reviews.review import ReviewAnalyticsUtils
 
 
+class CatalogItemCategoriesReadSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Category
+        fields = ("id", "name", "status")
+
+
 class BaseCatalogCardSerializer(serializers.Serializer):
     id = serializers.UUIDField(read_only=True)
     name = serializers.CharField(read_only=True)
