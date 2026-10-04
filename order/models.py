@@ -99,33 +99,12 @@ class Order(TimeStampModel):
     shipping_address_snapshot = models.JSONField(null=True, blank=True)
     delivery_method_name = models.CharField(max_length=200, null=True, blank=True)
     payment_method_name = models.CharField(max_length=200, null=True, blank=True)
-    # shipping_address = models.ForeignKey(
-    #     Address,
-    #     on_delete=models.PROTECT,
-    #     related_name="orders",
-    #     null=True,
-    #     blank=True,
-    # )
+
     total_items = models.IntegerField(default=0, editable=False)
-    # delivery_method = models.ForeignKey(
-    #     DeliveryMethod,
-    #     on_delete=models.PROTECT,
-    #     related_name="orders",
-    #     null=True,
-    #     blank=True,
-    # )
 
     status = models.CharField(
         max_length=30, choices=OrderStatus.choices, default=OrderStatus.CREATED
     )
-
-    # payment_method = models.ForeignKey(
-    #     PaymentMethod,
-    #     on_delete=models.PROTECT,
-    #     null=True,
-    #     blank=True,
-    #     related_name="order_payment",
-    # )
 
     payment_reference = models.CharField(max_length=100, null=True, blank=True)
     payment_status = models.CharField(

@@ -5,4 +5,5 @@ class PaymentsConfig(AppConfig):
     name = "payments"
 
     def ready(self):
-        pass  # isort: skip
+
+        import payments.signals  # noqa: F401  # isort: skip

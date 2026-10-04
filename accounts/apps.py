@@ -5,4 +5,4 @@ class AccountsConfig(AppConfig):
     name = "accounts"
 
     def ready(self):
-        pass  # isort: skip
+        import accounts.signals  # noqa: F401 # isort: skip
