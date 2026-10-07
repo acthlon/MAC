@@ -172,6 +172,13 @@ class ProductVariantSize(InventoryBaseModel):
 
             super().save(update_fields=["sku"])
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["variant", "size"], name="unique_variant_size"
+            )
+        ]
+
 
 class ProductSpecification(SpecificationBaseModel):
     product = models.OneToOneField(

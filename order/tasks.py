@@ -34,16 +34,20 @@ def send_order_confirmation_email_task(self, order_id, user_id):
 
         plain_message = strip_tags(html_message)
 
+        recipient_email = (order.shipping_address_snapshot or {}).get(
+            "email"
+        ) or user.email
+
         send_mail(
             subject=subject,
             message=plain_message,
             from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[user.email],
+            recipient_list=[recipient_email],
             html_message=html_message,
             fail_silently=False,
         )
 
-        return {"status": "sent", "email": user.email, "status_code": 200}
+        return {"status": "sent", "email": recipient_email, "status_code": 200}
 
     except Exception as e:
         print(f"Error sending confirmation email: {e!s}")
@@ -154,16 +158,20 @@ def send_order_status_update_email_task(self, order_id, new_status, user_id):
 
         plain_message = strip_tags(html_message)
 
+        recipient_email = (order.shipping_address_snapshot or {}).get(
+            "email"
+        ) or user.email
+
         send_mail(
             subject=subject,
             message=plain_message,
             from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[user.email],
+            recipient_list=[recipient_email],
             html_message=html_message,
             fail_silently=False,
         )
 
-        return {"status": "sent", "email": user.email, "status_code": 200}
+        return {"status": "sent", "email": recipient_email, "status_code": 200}
 
     except Exception as e:
         raise self.retry(exc=e)

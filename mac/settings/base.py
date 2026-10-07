@@ -14,6 +14,7 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
+import dj_database_url
 from decouple import Csv, config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -115,12 +116,23 @@ WSGI_APPLICATION = "mac.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+DATABASE_URL = config("DATABASE_URL", default="")
+
+if DATABASE_URL:
+    DATABASES = {
+        "default": dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=600,
+        )
     }
-}
+    DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = True
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
 
 
 # Password validation
@@ -191,17 +203,7 @@ SIMPLE_JWT = {
 }
 
 
-# e-mail configuration settings
-
-# this configuration is specific for sendgrid
-# EMAIL_BACKEND = config('EMAIL_BACKEND')
-# SENDGRID_API_KEY = config('SENDGRID_API_KEY')
-# SENDGRID_SANDBOX_MODE_IN_DEBUG = config('SENDGRID_SANDBOX_MODE_IN_DEBUG')
-# DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL')
-
-
 # dynamic e-mail configuration
-
 
 EMAIL_BACKEND = config("EMAIL_BACKEND")
 EMAIL_HOST = config("EMAIL_HOST")

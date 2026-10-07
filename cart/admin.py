@@ -28,8 +28,8 @@ class CartItemAdmin(admin.ModelAdmin):
         if not obj.content_object:
             return "(Item no longer available)"
 
-        if obj.content_type.model == "productvariant":
-            name = obj.content_object.product.name
+        if obj.content_type.model == "productvariantsize":
+            name = obj.content_object.variant.product.name
 
         elif obj.content_type.model == "materialvariant":
             name = obj.content_object.material.name

@@ -1,22 +1,12 @@
-import dj_database_url
 from decouple import Csv, config
 
 from .base import *
-from .base import BASE_DIR
 
 DEBUG = config("DEBUG", default=False, cast=bool)
 
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", cast=Csv())
 CSRF_TRUSTED_ORIGINS = config("CSRF_TRUSTED_ORIGINS", cast=Csv())
 
-DATABASES = {
-    "default": dj_database_url.config(
-        default=config(
-            "DATABASE_URL", default="sqlite:///" + str(BASE_DIR / "db.sqlite3")
-        ),
-        conn_max_age=600,
-    )
-}
 
 # Production Security Settings
 SESSION_COOKIE_SECURE = True  # Only send cookies over HTTPS

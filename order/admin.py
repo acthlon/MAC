@@ -1,9 +1,9 @@
 from django.contrib import admin
 from django.contrib.contenttypes.models import ContentType
 
-from materials.models import Materials
+from materials.models import MaterialVariant
 from order.models import Address, DeliveryMethod, Order, OrderItem
-from products.models import Products
+from products.models import ProductVariantSize
 
 
 class OrderAdmin(admin.ModelAdmin):
@@ -38,21 +38,23 @@ class OrderItemAdmin(admin.ModelAdmin):
         "total_amount",
     )
 
+    @admin.display(description="Item Name")
     def item_name(self, obj):
-        from utils.orders.order import OrderItemSerializerUtils  # isort: skip
+        from utils.orders.order import OrderItemUtils  # isort: skip
 
-        catalog_item = OrderItemSerializerUtils.get_catalog_item(self, obj)
+        catalog_name = OrderItemUtils.catalog_name(obj)
+        return catalog_name
 
-        name = catalog_item.name
-        return name if catalog_item else "-"
-
+    @admin.display(description="Item Type")
     def item_type(self, obj):
-        return obj.content_type.model
+        return obj.content_type.model if obj.content_type else "-"
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
 
         if db_field.name == "content_type":
-            allowed_models = ContentType.objects.get_for_models(Materials, Products)
+            allowed_models = ContentType.objects.get_for_models(
+                MaterialVariant, ProductVariantSize
+            )
 
             kwargs["queryset"] = ContentType.objects.filter(
                 pk__in=[ct.id for ct in allowed_models.values()]

@@ -7,6 +7,7 @@ from django.utils import timezone
 from rest_framework.reverse import reverse
 
 from core.choices import DeliveryStatus, DeliveryType, OrderStatus
+from utils.core.core import CatalogUtils
 
 
 class OrderItemUtils:
@@ -37,11 +38,11 @@ class OrderItemUtils:
         return image
 
     @staticmethod
-    def catalog_name(order_item):
-        catalog_item = getattr(order_item.content_object, "product", None) or getattr(
-            order_item.content_object, "material", None
-        )
-        return getattr(catalog_item, "name", "Custom Marvelam Item")
+    def catalog_name(order_item_obj):
+
+        catalog_item = CatalogUtils.get_catalog_item(order_item_obj)
+
+        return getattr(catalog_item, "name", None)
 
 
 class OrderUtils:
@@ -158,19 +159,13 @@ class DeliveryMethodUtils:
 
 class OrderItemSerializerUtils:
     @staticmethod
-    def get_catalog_item(order_item, order_item_obj):
-        variant_obj = order_item_obj.content_object
-        catalog_item = getattr(variant_obj, "product", None) or getattr(
-            variant_obj, "material", None
-        )
-        return catalog_item
+    def get_catalog_item(order_item_obj):
+        return CatalogUtils.get_catalog_item(order_item_obj)
 
     @staticmethod
-    def get_item_create_review_url(order_item, order_item_obj):
-        request = order_item.context.get("request")
-        catalog_item = OrderItemSerializerUtils.get_catalog_item(
-            order_item, order_item_obj
-        )
+    def get_item_create_review_url(serializer, order_item_obj):
+        request = serializer.context.get("request")
+        catalog_item = OrderItemSerializerUtils.get_catalog_item(order_item_obj)
 
         model_name = order_item_obj.content_type.model
         if not catalog_item:
@@ -191,9 +186,9 @@ class OrderItemSerializerUtils:
         return url
 
     @staticmethod
-    def get_refund_request_url(order_item, order_item_obj):
+    def get_refund_request_url(serializer, order_item_obj):
 
-        request = order_item.context.get("request")
+        request = serializer.context.get("request")
         url = reverse(
             "create_return_request",
             kwargs={"order_number": order_item_obj.order.order_number},
@@ -203,9 +198,9 @@ class OrderItemSerializerUtils:
         return url
 
     @staticmethod
-    def get_tracking_order_url(order_item, order_item_obj):
+    def get_tracking_order_url(serializer, order_item_obj):
 
-        request = order_item.context.get("request")
+        request = serializer.context.get("request")
         url = reverse(
             "track_order",
             kwargs={"order_number": order_item_obj.order.order_number},
@@ -215,12 +210,10 @@ class OrderItemSerializerUtils:
         return url
 
     @staticmethod
-    def get_item_details_url(order_item, order_item_obj):
+    def get_item_details_url(serializer, order_item_obj):
 
-        request = order_item.context.get("request")
-        catalog_item = OrderItemSerializerUtils.get_catalog_item(
-            order_item, order_item_obj
-        )
+        request = serializer.context.get("request")
+        catalog_item = OrderItemSerializerUtils.get_catalog_item(order_item_obj)
 
         if not catalog_item:
             return None

@@ -9,14 +9,14 @@ from cart.models import Cart, CartItem
 from core.choices import Status
 from core.serializers import BaseCatalogCardSerializer
 from materials.models import Materials, MaterialVariant
-from products.models import Products, ProductVariant
+from products.models import Products, ProductVariantSize
 
 
 class CartItemWriteSerializer(serializers.ModelSerializer):
     material_var_id = serializers.IntegerField(
         required=False, allow_null=True, write_only=True
     )
-    product_var_id = serializers.IntegerField(
+    product_var_size_id = serializers.IntegerField(
         required=False, allow_null=True, write_only=True
     )
     quantity = serializers.IntegerField(default=1, min_value=1)
@@ -24,18 +24,20 @@ class CartItemWriteSerializer(serializers.ModelSerializer):
     def validate(self, data):
         request = self.context.get("request")
         material_var_id = request.data.get("material_var_id", None)
-        product_var_id = request.data.get("product_var_id", None)
+        product_var_size_id = request.data.get("product_var_size_id", None)
         quantity = Decimal(str(request.data.get("quantity", 1)))
 
         if not self.instance:
-            if not (material_var_id or product_var_id):
+            if not (material_var_id or product_var_size_id):
                 raise serializers.ValidationError(
-                    {"message": "Either material_var_id or product_var_id is required"}
+                    {
+                        "message": "Either material_var_id or product_var_size_id is required"
+                    }
                 )
 
-            if material_var_id and product_var_id:
+            if material_var_id and product_var_size_id:
                 raise serializers.ValidationError(
-                    {"message": "Send only one: material_var_id or product_var_id"}
+                    {"message": "Send only one: material_var_id or product_var_size_id"}
                 )
 
         return data
@@ -43,13 +45,13 @@ class CartItemWriteSerializer(serializers.ModelSerializer):
     @transaction.atomic
     def create(self, validated_data):
         material_var_id = validated_data.pop("material_var_id", None)
-        product_var_id = validated_data.pop("product_var_id", None)
+        product_var_size_id = validated_data.pop("product_var_size_id", None)
         quantity = validated_data.pop("quantity", 1)
 
         user = self.context.get("request").user
 
-        ModelClass = ProductVariant if product_var_id else MaterialVariant
-        item_id = product_var_id if product_var_id else material_var_id
+        ModelClass = ProductVariantSize if product_var_size_id else MaterialVariant
+        item_id = product_var_size_id if product_var_size_id else material_var_id
 
         try:
             item = ModelClass.objects.get(id=item_id)
@@ -125,7 +127,7 @@ class CartItemWriteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CartItem
-        fields = ("id", "quantity", "material_var_id", "product_var_id")
+        fields = ("id", "quantity", "material_var_id", "product_var_size_id")
 
 
 class CartItemSerializer(serializers.ModelSerializer):
@@ -133,7 +135,7 @@ class CartItemSerializer(serializers.ModelSerializer):
     name = serializers.CharField(source="get_item_name")
     model_name = serializers.CharField(source="content_type.model", required=True)
     image = serializers.ImageField(source="get_item_image")
-    color = serializers.CharField(source="content_object.color", allow_null=True)
+    color = serializers.SerializerMethodField(allow_null=True)
     size = serializers.SerializerMethodField()
     actual_price = serializers.DecimalField(
         source="content_object.calculate_variant_actual_unit_price",
@@ -156,6 +158,18 @@ class CartItemSerializer(serializers.ModelSerializer):
     quantity = serializers.IntegerField(required=True)
     item_subtotal_price = serializers.SerializerMethodField()
 
+    def get_color(self, obj):
+        if not obj or not obj.content_object:
+            return None
+
+        if obj.content_type.model == "productvariantsize":
+            variant = getattr(obj.content_object, "variant", None)
+            return getattr(variant, "color", None) if variant else None
+        elif obj.content_type.model == "materialvariant":
+            return getattr(obj.content_object, "color", None)
+
+        return None
+
     def get_item_subtotal_price(self, obj):
         from utils.cart.cart import CartItemUtils  # isort: skip
 
@@ -165,7 +179,7 @@ class CartItemSerializer(serializers.ModelSerializer):
         if not obj.content_object:
             return None
 
-        if obj.content_type.model == "productvariant":
+        if obj.content_type.model == "productvariantsize":
             return getattr(obj.content_object, "size", None)
 
         return None

@@ -45,7 +45,7 @@ class AddressUpdateDeleteAPIView(generics.UpdateAPIView, generics.DestroyAPIView
 
 class DeliveryMethodListCreateAPIView(generics.CreateAPIView):
     permission_classes = [
-        IsAuthenticated,
+        IsAdminOrReadOnly,
     ]
     serializer_class = DeliveryMethodSerializer
 

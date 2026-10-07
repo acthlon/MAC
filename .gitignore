@@ -31,3 +31,5 @@ celerybeat-schedule.*
 
 README.md
 media/
+
+*.json

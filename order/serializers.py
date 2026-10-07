@@ -2,7 +2,6 @@ from decimal import Decimal
 
 from django.conf import settings
 from django.db import transaction
-from django.shortcuts import get_object_or_404
 from paystackapi.transaction import Transaction
 from rest_framework import serializers
 from rest_framework.reverse import reverse
@@ -147,15 +146,6 @@ class CheckoutPreviewSerializer(serializers.ModelSerializer):
         url = reverse("place_order", request=request)
         return url
 
-    # def get_items(self,obj):
-    #     request=self.context.get("request")
-    #     user = request.user
-
-    #     cart = Cart.objects.get(user=user).first() if request and request.user.is_authenticated else None
-    #     cart_items = cart.items.all() if cart and cart.items else None
-    #     serialized_cart_items = CartItemSerializer(cart_items,many=True,context=self.context).data
-    #     return serialized_cart_items
-
     class Meta:
         model = Cart
         fields = [
@@ -181,16 +171,25 @@ class CreateOrderFromCartSerializer(serializers.ModelSerializer):
     )
 
     def validate_delivery_method_id(self, value):
-        user = self.context.get("request").user
-        return get_object_or_404(DeliveryMethod, id=value)
+        try:
+            return DeliveryMethod.objects.get(id=value)
+        except DeliveryMethod.DoesNotExist:
+            raise serializers.ValidationError("Delivery method not found.")
 
     def validate_delivery_address_id(self, value):
         user = self.context.get("request").user
-        return get_object_or_404(Address, id=value)
+        try:
+            return Address.objects.get(id=value, user=user)
+        except Address.DoesNotExist:
+            raise serializers.ValidationError(
+                "Delivery address not found for the current user."
+            )
 
     def validate_payment_method_id(self, value):
-        user = self.context.get("request").user
-        return get_object_or_404(PaymentMethod, id=value)
+        try:
+            return PaymentMethod.objects.get(id=value)
+        except PaymentMethod.DoesNotExist:
+            raise serializers.ValidationError("Payment method not found.")
 
     def create(self, validated_data):
         request = self.context.get("request")
@@ -248,7 +247,9 @@ class CreateOrderFromCartSerializer(serializers.ModelSerializer):
             cart_items = cart.items.select_related("content_type").all()
             for cart_item in cart_items:
                 item = cart_item.content_object
-                image_url = item.get_variant_pry_image
+                image_url = getattr(item, "get_variant_pry_image", None) or getattr(
+                    getattr(item, "variant", None), "get_variant_pry_image", None
+                )
 
                 orderitems = OrderItem.objects.create(
                     order=order,
@@ -383,7 +384,7 @@ class OrderItemListSerializer(serializers.ModelSerializer):
     def get_name(self, obj):
         from utils.orders.order import OrderItemSerializerUtils  # isort: skip
 
-        catalog_item = OrderItemSerializerUtils.get_catalog_item(self, obj)
+        catalog_item = OrderItemSerializerUtils.get_catalog_item(obj)
 
         if not catalog_item:
             return None

@@ -63,11 +63,16 @@ def send_refund_confirmation_email(self, refund_id, user_id):
 
         plain_message = strip_tags(html_message)
 
+        order = getattr(refund_request, "order", None)
+        recipient_email = (
+            (order.shipping_address_snapshot or {}).get("email") if order else None
+        ) or refund_request.user.email
+
         send_mail(
             subject=subject,
             message=plain_message,
             from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[refund_request.user.email],
+            recipient_list=[recipient_email],
             html_message=html_message,
             fail_silently=False,
         )
