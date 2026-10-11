@@ -28,17 +28,10 @@ from drf_spectacular.views import (
 )
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
-    path("materials/", include("materials.urls")),
-    path("products/", include("products.urls")),
-    path("api/", include("accounts.urls")),
+    path("api/v1/", include("api.v1.urls")),
+    path(settings.ADMIN_URL, admin.site.urls),
     path("accounts/", include("allauth.urls")),
-    path("review/", include("review.urls")),
-    path("cart/", include("cart.urls")),
-    path("order/", include("order.urls")),
-    path("checkout/", include("order.urls")),
     path("payments/", include("payments.urls")),
-    path("", include("core.urls")),
     # 1. This generates the raw JSON/YAML file
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     # 2. This creates the beautiful Swagger UI Website
