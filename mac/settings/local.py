@@ -2,6 +2,4 @@ from .base import *
 
 DEBUG = True
 
-ALLOWED_HOSTS = ("127.0.0.1", "localhost")
-
-CSRF_TRUSTED_ORIGINS = ["http://127.0.0.1:8000", "http://localhost:8000"]
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", cast=Csv())

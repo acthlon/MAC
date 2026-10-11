@@ -36,6 +36,10 @@ SECRET_KEY = config("SECRET_KEY")
 
 CSRF_TRUSTED_ORIGINS = config("CSRF_TRUSTED_ORIGINS", cast=Csv())
 
+
+ADMIN_URL = config("DJANGO_ADMIN_URL", "backoffice/")
+
+
 # Application definition
 
 INSTALLED_APPS = [
