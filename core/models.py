@@ -7,7 +7,7 @@ from django.db.models import Sum
 from django.utils.deconstruct import deconstructible
 from django.utils.text import slugify
 
-from core.choices import Color, MaterialCategory, Quality, Status
+from core.choices import Color, MaterialCategory, ProductCategory, Quality, Status
 
 
 @deconstructible
@@ -188,6 +188,22 @@ class Category(models.Model):
             "name",
         )
         verbose_name_plural = "Categories"
+
+    def get_name_display(self):
+        if self.target_model:
+            if self.target_model.model == "products":
+                return dict(ProductCategory.choices).get(self.name, self.name)
+            elif self.target_model.model == "materials":
+                return dict(MaterialCategory.choices).get(self.name, self.name)
+        return (
+            dict(ProductCategory.choices).get(self.name)
+            or dict(MaterialCategory.choices).get(self.name)
+            or self.name
+        )
+
+    @property
+    def name_display(self):
+        return self.get_name_display()
 
     def __str__(self):
         return self.name

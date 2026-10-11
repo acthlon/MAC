@@ -71,19 +71,17 @@ class BaseCatalogCardSerializer(serializers.Serializer):
 
 
 class CategorySerializer(serializers.ModelSerializer):
-    slug = serializers.SlugField(read_only=True)
     link = serializers.SerializerMethodField(read_only=True)
+    name_display = serializers.CharField(source="get_name_display", read_only=True)
 
     def get_link(self, obj):
-
         request = self.context.get("request")
         item_list_url = (
             reverse("product_list", request=request)
-            if obj.products and obj.target_model.model == "products"
+            if obj.target_model and obj.target_model.model == "products"
             else reverse("material_list", request=request)
         )
-        category_link = (f"{item_list_url}?categories={obj.name}" if obj.name else "#",)
-        return category_link
+        return f"{item_list_url}?categories={obj.name}" if obj.name else "#"
 
     class Meta:
         model = Category
@@ -91,9 +89,9 @@ class CategorySerializer(serializers.ModelSerializer):
             "id",
             "target_model",
             "name",
+            "name_display",
             "image",
             "description",
-            "slug",
             "link",
         )
 
