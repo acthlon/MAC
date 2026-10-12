@@ -460,6 +460,7 @@ class OrderListSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "order_number",
+            "tracking_id",
             "ordered_day",
             "delivered_day",
             "delivery_status",
@@ -476,6 +477,7 @@ class OrderDetailSerializer(serializers.ModelSerializer):
     delivered_day = serializers.ReadOnlyField(source="get_delivered_day")
     order_lists_url = serializers.SerializerMethodField()
     initialize_payment_url = serializers.SerializerMethodField()
+    order_status = serializers.ReadOnlyField(source="status")
 
     def get_order_lists_url(self, obj):
 
@@ -502,6 +504,8 @@ class OrderDetailSerializer(serializers.ModelSerializer):
             "order_number",
             "ordered_day",
             "delivered_day",
+            "order_status",
+            "delivery_status",
             "order_lists_url",
             "payment_status",
             "payment_reference",
