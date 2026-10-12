@@ -377,8 +377,7 @@ class OrderItemListSerializer(serializers.ModelSerializer):
     model_name = serializers.CharField(source="content_type.model")
     name = serializers.SerializerMethodField()
     item_create_review_url = serializers.SerializerMethodField()
-    refund_request_url = serializers.SerializerMethodField()
-    tracking_order_url = serializers.SerializerMethodField()
+    return_request_url = serializers.SerializerMethodField()
     item_details_url = serializers.SerializerMethodField()
 
     def get_name(self, obj):
@@ -397,15 +396,10 @@ class OrderItemListSerializer(serializers.ModelSerializer):
 
         return OrderItemSerializerUtils.get_item_create_review_url(self, obj)
 
-    def get_refund_request_url(self, obj):
+    def get_return_request_url(self, obj):
         from utils.orders.order import OrderItemSerializerUtils  # isort: skip
 
-        return OrderItemSerializerUtils.get_refund_request_url(self, obj)
-
-    def get_tracking_order_url(self, obj):
-        from utils.orders.order import OrderItemSerializerUtils  # isort: skip
-
-        return OrderItemSerializerUtils.get_tracking_order_url(self, obj)
+        return OrderItemSerializerUtils.get_return_request_url(self, obj)
 
     def get_item_details_url(self, obj):
         from utils.orders.order import OrderItemSerializerUtils  # isort: skip
@@ -417,8 +411,7 @@ class OrderItemListSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "item_create_review_url",
-            "refund_request_url",
-            "tracking_order_url",
+            "return_request_url",
             "item_details_url",
             "image",
             "name",
@@ -445,6 +438,8 @@ class OrderListSerializer(serializers.ModelSerializer):
     ordered_day = serializers.ReadOnlyField(source="get_ordered_day")
     delivered_day = serializers.ReadOnlyField(source="get_delivered_day")
     order_details_url = serializers.SerializerMethodField()
+    order_status = serializers.ReadOnlyField(source="status")
+    tracking_order_url = serializers.SerializerMethodField()
 
     def get_order_details_url(self, obj):
         request = self.context.get("request")
@@ -453,8 +448,12 @@ class OrderListSerializer(serializers.ModelSerializer):
         url = reverse(
             "order_details", kwargs={"order_number": order_number}, request=request
         )
-
         return url
+
+    def get_tracking_order_url(self, obj):
+        from utils.orders.order import OrderUtils  # isort: skip
+
+        return OrderUtils.get_tracking_order_url(self, obj)
 
     class Meta:
         model = Order
@@ -463,7 +462,10 @@ class OrderListSerializer(serializers.ModelSerializer):
             "order_number",
             "ordered_day",
             "delivered_day",
+            "delivery_status",
+            "order_status",
             "order_details_url",
+            "tracking_order_url",
             "orderitems",
         ]
 

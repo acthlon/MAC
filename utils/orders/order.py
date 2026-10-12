@@ -119,6 +119,18 @@ class OrderUtils:
         formatted_date = date.strftime("%d %b, %Y")
         return formatted_date
 
+    @staticmethod
+    def get_tracking_order_url(serializer, order):
+
+        request = serializer.context.get("request")
+        url = reverse(
+            "track_order",
+            kwargs={"order_number": order.order_number},
+            request=request,
+        )
+
+        return url
+
 
 class DeliveryMethodUtils:
     @staticmethod
@@ -186,23 +198,11 @@ class OrderItemSerializerUtils:
         return url
 
     @staticmethod
-    def get_refund_request_url(serializer, order_item_obj):
+    def get_return_request_url(serializer, order_item_obj):
 
         request = serializer.context.get("request")
         url = reverse(
             "create_return_request",
-            kwargs={"order_number": order_item_obj.order.order_number},
-            request=request,
-        )
-
-        return url
-
-    @staticmethod
-    def get_tracking_order_url(serializer, order_item_obj):
-
-        request = serializer.context.get("request")
-        url = reverse(
-            "track_order",
             kwargs={"order_number": order_item_obj.order.order_number},
             request=request,
         )
