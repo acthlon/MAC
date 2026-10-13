@@ -121,15 +121,19 @@ class OrderUtils:
 
     @staticmethod
     def get_tracking_order_url(serializer, order):
+        if not getattr(order, "tracking_id", None):
+            return None
 
         request = serializer.context.get("request")
-        url = reverse(
-            "track_order",
-            kwargs={"order_number": order.order_number},
-            request=request,
-        )
-
-        return url
+        try:
+            url = reverse(
+                "track_order",
+                kwargs={"tracking_id": order.tracking_id},
+                request=request,
+            )
+            return url
+        except Exception:
+            return None
 
 
 class DeliveryMethodUtils:
