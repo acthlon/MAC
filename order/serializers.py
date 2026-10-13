@@ -478,6 +478,7 @@ class OrderDetailSerializer(serializers.ModelSerializer):
     order_lists_url = serializers.SerializerMethodField()
     initialize_payment_url = serializers.SerializerMethodField()
     order_status = serializers.ReadOnlyField(source="status")
+    tracking_order_url = serializers.SerializerMethodField()
 
     def get_order_lists_url(self, obj):
 
@@ -494,8 +495,12 @@ class OrderDetailSerializer(serializers.ModelSerializer):
             and obj.payments.first().status == PaymentStatus.FAILED
             else None
         )
-
         return url
+
+    def get_tracking_order_url(self, obj):
+        from utils.orders.order import OrderUtils  # isort: skip
+
+        return OrderUtils.get_tracking_order_url(self, obj)
 
     class Meta:
         model = Order
@@ -509,6 +514,7 @@ class OrderDetailSerializer(serializers.ModelSerializer):
             "order_lists_url",
             "payment_status",
             "payment_reference",
+            "tracking_order_url",
             "initialize_payment_url",
             "delivery_method_name",
             "payment_method_name",
