@@ -23,7 +23,7 @@ urlpatterns = [
     path(
         "<str:order_number>/details/", OrderDetailsView.as_view(), name="order_details"
     ),
-    path("track/<str:order_number>/", TrackingOrderView.as_view(), name="track_order"),
+    path("track/<str:tracking_id>/", TrackingOrderView.as_view(), name="track_order"),
     path(
         "delivery-method/",
         DeliveryMethodListCreateAPIView.as_view(),

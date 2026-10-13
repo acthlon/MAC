@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
@@ -133,7 +134,11 @@ class TrackingOrderView(generics.RetrieveAPIView):
 
     def get_object(self):
         user = self.request.user
-        order_number = self.kwargs.get("order_number")
-        order = get_object_or_404(Order, user=user, order_number=order_number)
+        tracking_id = self.kwargs.get("tracking_id")
+        order = get_object_or_404(
+            Order,
+            Q(tracking_id__iexact=tracking_id),
+            user=user,
+        )
 
         return order
