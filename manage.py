@@ -4,10 +4,13 @@
 import os
 import sys
 
+from decouple import config
+
 
 def main():
     """Run administrative tasks."""
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mac.settings.local")
+    os.environ["DJANGO_SETTINGS_MODULE"] = config("DJANGO_SETTINGS_MODULE")
+    # os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mac.settings.local")
     try:
         from django.core.management import execute_from_command_line  # isort: skip
     except ImportError as exc:

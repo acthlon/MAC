@@ -3,7 +3,7 @@ from django.contrib.contenttypes.models import ContentType
 
 from cart.models import Cart, CartItem
 from materials.models import MaterialVariant
-from products.models import ProductVariant
+from products.models import ProductVariantSize
 
 
 class CartAdmin(admin.ModelAdmin):
@@ -42,7 +42,7 @@ class CartItemAdmin(admin.ModelAdmin):
 
         if db_field.name == "content_type":
             allowed_models = ContentType.objects.get_for_models(
-                ProductVariant, MaterialVariant
+                ProductVariantSize, MaterialVariant
             )
 
             kwargs["queryset"] = ContentType.objects.filter(

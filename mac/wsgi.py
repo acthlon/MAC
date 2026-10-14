@@ -9,8 +9,10 @@ https://docs.djangoproject.com/en/6.0/howto/deployment/wsgi/
 
 import os
 
+from decouple import config
 from django.core.wsgi import get_wsgi_application
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mac.settings.production")
+os.environ["DJANGO_SETTINGS_MODULE"] = config("DJANGO_SETTINGS_MODULE")
+# os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mac.settings.production")
 
 application = get_wsgi_application()
