@@ -139,9 +139,15 @@ class CatalogBaseModel(TimeStampModel):
 
 
 class Banner(models.Model):
-    title = models.CharField(max_length=200)
-    subtitle = models.CharField(max_length=300, blank=True, null=True)
+    tag = models.CharField(max_length=200, blank=True, null=True)
+    titlePrefix = models.CharField(max_length=200, blank=True, null=True)
+    titleHighlight = models.CharField(max_length=200, blank=True, null=True)
+    subtitle = models.CharField(max_length=200, blank=True, null=True)
     description = models.TextField(max_length=500, blank=True, null=True)
+    primaryCta = models.CharField(max_length=200, blank=True, null=True)
+    primaryPath = models.URLField(max_length=200, blank=True, null=True)
+    secondaryCta = models.CharField(max_length=200, blank=True, null=True)
+    secondaryPath = models.URLField(max_length=200, blank=True, null=True)
     image = models.ImageField(upload_to="banners/images", null=True, blank=True)
     status = models.CharField(choices=Status.choices)
     display_order = models.PositiveIntegerField(default=0)

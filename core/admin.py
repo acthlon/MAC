@@ -37,4 +37,4 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Banner)
 class BannerAdmin(admin.ModelAdmin):
-    list_display = ("title", "subtitle", "status")
+    list_display = ("tag", "subtitle", "status")
