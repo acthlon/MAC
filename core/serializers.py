@@ -106,7 +106,20 @@ class CategorySerializer(serializers.ModelSerializer):
 class BannerSeralizer(serializers.ModelSerializer):
     class Meta:
         model = Banner
-        fields = ("id", "title", "subtitle", "image")
+        fields = (
+            "id",
+            "tag",
+            "titlePrefix",
+            "titleHighlight",
+            "subtitle",
+            "description",
+            "primaryCta",
+            "primaryPath",
+            "secondaryCta",
+            "secondaryPath",
+            "image",
+            "status",
+        )
 
 
 class HomePageSerializer(serializers.Serializer):

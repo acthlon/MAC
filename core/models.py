@@ -156,7 +156,7 @@ class Banner(models.Model):
         ordering = ("display_order",)
 
     def __str__(self):
-        return self.title
+        return self.tag if self.tag else "-"
 
 
 class Category(models.Model):
