@@ -73,6 +73,13 @@ class BaseCatalogCardSerializer(serializers.Serializer):
 class CategorySerializer(serializers.ModelSerializer):
     link = serializers.SerializerMethodField(read_only=True)
     name_display = serializers.CharField(source="get_name_display", read_only=True)
+    type_label = serializers.SerializerMethodField()
+
+    def get_type_label(self, obj):
+
+        type_label = "Ready-Made" if obj.target_model.model == "products" else "Fabrics"
+
+        return type_label if obj.target_model else None
 
     def get_link(self, obj):
         request = self.context.get("request")
@@ -90,6 +97,7 @@ class CategorySerializer(serializers.ModelSerializer):
             "target_model",
             "name",
             "name_display",
+            "type_label",
             "image",
             "description",
             "link",
