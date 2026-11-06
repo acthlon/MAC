@@ -20,6 +20,7 @@ class CatalogItemCategoriesReadSerializer(serializers.ModelSerializer):
 class BaseCatalogCardSerializer(serializers.Serializer):
     id = serializers.UUIDField(read_only=True)
     name = serializers.CharField(read_only=True)
+    slug = serializers.CharField(read_only=True)
     model_type = serializers.CharField(source="_meta.model_name")
     category = serializers.CharField(source="categories")
     quality_category = serializers.CharField()

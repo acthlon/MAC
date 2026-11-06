@@ -126,7 +126,7 @@ class CatalogBaseModel(TimeStampModel):
         return self.reviews.count()
 
     @property
-    def calculate_percent_disount(self):
+    def calculate_percent_discount(self):
         if self.price > 0 and self.discount > 0:
             return round((self.discount / self.price) * 100, 2)
         return 0.0
