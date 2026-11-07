@@ -141,7 +141,7 @@ class HomePageSerializer(serializers.Serializer):
     product_categories = CategorySerializer(read_only=True, many=True)
     material_categories = CategorySerializer(read_only=True, many=True)
 
-    featured_products = BaseCatalogCardSerializer(read_only=True, many=True)
+    featured_items = BaseCatalogCardSerializer(read_only=True, many=True)
     new_arrivals = BaseCatalogCardSerializer(read_only=True, many=True)
     reviews = ItemReviewSerializer(read_only=True, many=True)
 

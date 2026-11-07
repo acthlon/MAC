@@ -1,5 +1,6 @@
 from django.urls import include, path
 
+from core.views import HomePageAPIView, NewArrivalsAPIView
 from order.views import CheckoutPreviewAPIView
 
 urlpatterns = [
@@ -11,5 +12,6 @@ urlpatterns = [
     path("checkout/", CheckoutPreviewAPIView.as_view(), name="cart_preview"),
     path("payments/", include("payments.urls")),
     path("reviews/", include("review.urls")),
-    path("home/", include("core.urls")),
+    path("home/", HomePageAPIView.as_view(), name="home_page"),
+    path("new-arrivals/", NewArrivalsAPIView.as_view(), name="new_arrivals"),
 ]
