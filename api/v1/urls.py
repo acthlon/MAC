@@ -12,6 +12,6 @@ urlpatterns = [
     path("checkout/", CheckoutPreviewAPIView.as_view(), name="cart_preview"),
     path("payments/", include("payments.urls")),
     path("reviews/", include("review.urls")),
-    path("home/", HomePageAPIView.as_view(), name="home_page"),
+    path("home/", HomePageAPIView.as_view(), name="home"),
     path("new-arrivals/", NewArrivalsAPIView.as_view(), name="new_arrivals"),
 ]
