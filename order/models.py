@@ -98,6 +98,7 @@ class Order(TimeStampModel):
     order_number = models.CharField(max_length=30, unique=True, null=True, blank=True)
     shipping_address_snapshot = models.JSONField(null=True, blank=True)
     delivery_method_name = models.CharField(max_length=200, null=True, blank=True)
+    estimated_delivery_day = models.CharField(max_length=200, null=True, blank=True)
     payment_method_name = models.CharField(max_length=200, null=True, blank=True)
 
     total_items = models.IntegerField(default=0, editable=False)

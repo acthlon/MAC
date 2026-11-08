@@ -135,6 +135,12 @@ class OrderUtils:
         except Exception:
             return None
 
+    @staticmethod
+    def get_delivery_address(order):
+        address = order.shipping_address_snapshot if order else None
+        delivery_address = address.get("delivery_address")
+        return delivery_address
+
 
 class DeliveryMethodUtils:
     @staticmethod

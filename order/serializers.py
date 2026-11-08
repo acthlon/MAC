@@ -240,6 +240,7 @@ class CreateOrderFromCartSerializer(serializers.ModelSerializer):
                 user=user,
                 shipping_address_snapshot=shipping_address,
                 delivery_method_name=delivery_method_obj.name,
+                estimated_delivery_day=delivery_method_obj.estimated_date,
                 payment_method_name=payment_method_obj.code,
                 shipping_fee=delivery_method_obj.cost,
             )
@@ -532,12 +533,17 @@ class OrderDetailSerializer(serializers.ModelSerializer):
 
 class TrackingOrderSerializer(serializers.ModelSerializer):
     timeline = serializers.SerializerMethodField()
+    delivery_address = serializers.SerializerMethodField()
 
     def get_timeline(self, obj):
-
         from utils.orders.order import TrackingOrderSerializerUtils  # isort: skip
 
         return TrackingOrderSerializerUtils.get_timeline(obj)
+
+    def get_delivery_address(self, obj):
+        from utils.orders.order import OrderUtils  # sort : skip
+
+        return OrderUtils.get_delivery_address(obj)
 
     class Meta:
         model = Order
@@ -547,5 +553,7 @@ class TrackingOrderSerializer(serializers.ModelSerializer):
             "tracking_id",
             "status",
             "delivery_status",
+            "estimated_delivery_day",
+            "delivery_address",
             "timeline",
         ]
