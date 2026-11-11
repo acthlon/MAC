@@ -1,6 +1,9 @@
 from django.db import models
 
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+MAX_VIDEO_SIZE = 50 * 1024 * 1024  # 50MB
+ALLOWED_VIDEO_EXTENSIONS = ["mp4", "mov", "webm", "m4v"]
+
 
 BOOLEAN_CHOICES = (
     (True, "True"),

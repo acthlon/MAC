@@ -2,11 +2,18 @@ import uuid
 from decimal import Decimal
 
 from django.contrib.contenttypes.fields import GenericRelation
+from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.utils.text import slugify
 
 from accounts.models import CustomUser
-from core.choices import BOOLEAN_CHOICES, Color, ProductSize, Status
+from core.choices import (
+    ALLOWED_VIDEO_EXTENSIONS,
+    BOOLEAN_CHOICES,
+    Color,
+    ProductSize,
+    Status,
+)
 from core.models import (
     CatalogBaseModel,
     Category,
@@ -15,6 +22,8 @@ from core.models import (
     InventoryBaseModel,
     SpecificationBaseModel,
     TimeStampModel,
+    select_video_storage,
+    validate_video_size,
 )
 from review.models import Reviews
 
@@ -210,7 +219,16 @@ class ProductVideo(models.Model):
     product = models.ForeignKey(
         Products, on_delete=models.CASCADE, related_name="videos"
     )
-    video = models.FileField(upload_to=video_path, null=True, blank=True)
+    video = models.FileField(
+        upload_to=video_path,
+        storage=select_video_storage,
+        validators=[
+            FileExtensionValidator(allowed_extensions=ALLOWED_VIDEO_EXTENSIONS),
+            validate_video_size,
+        ],
+        null=True,
+        blank=True,
+    )
     thumbnail = models.ImageField(upload_to=video_path, null=True, blank=True)
     display_order = models.PositiveIntegerField(null=True, blank=True)
 

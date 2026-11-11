@@ -2,12 +2,34 @@ from decimal import Decimal
 from secrets import token_hex
 
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
+from django.core.files.storage import Storage, storages
 from django.db import models
 from django.db.models import Sum
+from django.db.models.fields.files import FieldFile
 from django.utils.deconstruct import deconstructible
 from django.utils.text import slugify
 
-from core.choices import Color, MaterialCategory, ProductCategory, Quality, Status
+from core.choices import (
+    MAX_VIDEO_SIZE,
+    Color,
+    MaterialCategory,
+    ProductCategory,
+    Quality,
+    Status,
+)
+
+
+def select_video_storage() -> Storage:
+    return storages["video"]
+
+
+def validate_video_size(value) -> None:
+    # Prevents a Cloudinary HEAD request when saving unrelated fields in Admin
+    if isinstance(value, FieldFile) and getattr(value, "_committed", False):
+        return
+    if value and value.size > MAX_VIDEO_SIZE:
+        raise ValidationError("Video size must be less than 50MB.")
 
 
 @deconstructible
