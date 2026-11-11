@@ -2,7 +2,7 @@ import os
 
 import django
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "MAC.settings.production")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mac.settings.production")
 django.setup()
 
 from django.contrib.auth import get_user_model

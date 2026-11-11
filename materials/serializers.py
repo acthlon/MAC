@@ -290,7 +290,7 @@ class MaterialInfoSerializer(serializers.ModelSerializer):
         source="calculate_total_stock", read_only=True, required=False
     )
     percent_discount = serializers.ReadOnlyField(
-        source="calculate_percent_disount", required=False
+        source="calculate_percent_discount", required=False
     )
     is_new_arrival = serializers.SerializerMethodField(read_only=True, required=False)
     average_rating = serializers.ReadOnlyField(

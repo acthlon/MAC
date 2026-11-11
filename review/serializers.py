@@ -22,9 +22,11 @@ class ItemReviewSerializer(serializers.ModelSerializer):
     def get_username(self, obj):
 
         username = obj.user.username if obj.user and obj.user.username else "Anonymous"
-
         first_two_letters = obj.user.username[:2]
         last_two_letters = obj.user.username[-2:]
+
+        if len(username) <= 3:
+            return f"{username[:1]}***"
         combined = f"{first_two_letters}***{last_two_letters}"
         return combined
 

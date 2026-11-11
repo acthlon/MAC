@@ -157,6 +157,7 @@ class CartItemSerializer(serializers.ModelSerializer):
     )
     quantity = serializers.IntegerField(required=True)
     item_subtotal_price = serializers.SerializerMethodField()
+    type_label = serializers.SerializerMethodField()
 
     def get_color(self, obj):
         if not obj or not obj.content_object:
@@ -164,9 +165,11 @@ class CartItemSerializer(serializers.ModelSerializer):
 
         if obj.content_type.model == "productvariantsize":
             variant = getattr(obj.content_object, "variant", None)
-            return getattr(variant, "color", None) if variant else None
+            return variant.get_color_display()
+
         elif obj.content_type.model == "materialvariant":
-            return getattr(obj.content_object, "color", None)
+            cart_object = getattr(obj, "content_object", None)
+            return cart_object.get_color_display()
 
         return None
 
@@ -184,12 +187,22 @@ class CartItemSerializer(serializers.ModelSerializer):
 
         return None
 
+    def get_type_label(self, obj):
+
+        label = (
+            "Ready-Made"
+            if obj.content_type.model == "productvariantsize"
+            else "Fabrics"
+        )
+        return label
+
     class Meta:
         model = CartItem
         fields = (
             "id",
             "name",
             "model_name",
+            "type_label",
             "image",
             "color",
             "size",

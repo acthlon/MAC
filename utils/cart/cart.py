@@ -1,10 +1,13 @@
 from decimal import Decimal
 
+from django.db.models import Sum
+
 
 class CartUtils:
     @staticmethod
     def calculate_cart_total_item_count(cart):
-        return cart.items.count()
+        total = cart.items.aggregate(total_quantity=Sum("quantity"))["total_quantity"]
+        return total or 0
 
     @staticmethod
     def cart_total_actual_price(cart):

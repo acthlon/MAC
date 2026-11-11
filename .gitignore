@@ -33,3 +33,5 @@ README.md
 media/
 
 *.json
+
+create_admin.py

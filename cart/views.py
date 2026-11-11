@@ -7,17 +7,15 @@ from cart.serializers import CartItemWriteSerializer, CartSerializer
 
 
 class CartView(generics.RetrieveAPIView):
-    # you will need to add guest logic for this at the frontend before you can make use of AllowAny.
-
     permission_classes = [
         IsAuthenticated,
-    ]  # NOTE: change to IsAuthentcated
+    ]
     serializer_class = CartSerializer
 
     def get_object(self):
 
         user = self.request.user
-        cart = get_object_or_404(Cart.objects.prefetch_related("items"), user=user)
+        cart = Cart.objects.prefetch_related("items").get_or_create(user=user)
         return cart
 
 
