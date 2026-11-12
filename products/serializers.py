@@ -36,7 +36,6 @@ class ProductSpecificationSerializer(serializers.ModelSerializer):
             "weight",
             "material_type",
             "material_type_display",
-            "key_features",
         )
         read_only_fields = ("id",)
 

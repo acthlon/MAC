@@ -66,15 +66,11 @@ class ProductDetailSerializerUtils:
     def get_details(product):
         from products.serializers import ProductSpecificationSerializer  # isort: skip
 
-        spec = getattr(product, "specification", None) or getattr(
-            product, "specification", None
-        )
+        spec = getattr(product, "specification", None)
         specification = None
         if not spec:
             return None
-        specification = {
-            "specification": ProductSpecificationSerializer(spec).data if spec else None
-        }
+        specification = ProductSpecificationSerializer(spec).data if spec else None
 
         details = {
             "key_features": spec.key_features,
