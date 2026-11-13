@@ -20,13 +20,14 @@ from rest_framework.reverse import reverse
 
 from core.choices import (
     OrderStatus,
-    PaymentMethodChoice,
     PaymentStatus,
     ReturnStatus,
 )
 from core.permissions import IsAdminOrReadOnly
 from order.models import Order
 from payments.models import Payment, PaymentMethod, ReturnRequest
+from payments.payment_service import PaymentService
+from payments.processors.base import PaymentContext
 from payments.serializers import (
     InitiatePaymentResponseSerializer,
     InitiatePaymentSerializer,
@@ -49,6 +50,8 @@ class InitializePaymentAPIView(generics.GenericAPIView):
         IsAuthenticated,
     ]
     serializer_class = InitiatePaymentSerializer
+
+    payment_service = PaymentService()
 
     @extend_schema(
         request=InitiatePaymentSerializer,
@@ -73,11 +76,11 @@ class InitializePaymentAPIView(generics.GenericAPIView):
             status__in=[PaymentStatus.INITIALIZED, PaymentStatus.PENDING],
         ).first()
 
-        if existing_payment:
-            return Response(
-                {"message": "Payment has been initialized for this order"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        # if existing_payment:
+        #     return Response(
+        #         {"message": "Payment has been initialized for this order"},
+        #         status=status.HTTP_400_BAD_REQUEST,
+        #     )
 
         if order.payment_method_name != payment_method.code:
             order.payment_method_name = payment_method.code
@@ -91,69 +94,36 @@ class InitializePaymentAPIView(generics.GenericAPIView):
             currency="NGN",
         )
 
-        if payment.payment_method_code == PaymentMethodChoice.PAYSTACK:
-            amount_in_kobo = int(order.total_amount * 100)
-            paystack_tx = Transaction(secret_key=settings.PAYSTACK_SECRET_KEY)
+        callback_url = reverse("payment_callback", request=request)
+        customer_email = (order.shipping_address_snapshot or {}).get(
+            "email"
+        ) or user.email
 
-            callback_url = reverse("payment_callback", request=request)
-            customer_email = (order.shipping_address_snapshot or {}).get(
-                "email"
-            ) or user.email
-
-            paystack_response = paystack_tx.initialize(
-                email=customer_email,
-                amount=amount_in_kobo,
-                reference=str(payment.id),
-                currency="NGN",
-                callback_url=callback_url,
-                metadata={"order_id": str(order.id), "payment_id": str(payment.id)},
-                label=f"Checkout_{order.id}",
-            )
-
-            if paystack_response.get("status"):
-                reference = paystack_response.get("data", {}).get("reference")
-
-                with transaction.atomic():
-                    order.payment_reference = reference
-                    payment.reference = reference
-                    payment.status = PaymentStatus.INITIALIZED
-
-                    order.save(update_fields=["payment_reference"])
-                    payment.save(update_fields=["reference", "status"])
-
-                    return Response(
-                        {
-                            "authorization_url": paystack_response.get("data", {}).get(
-                                "authorization_url"
-                            ),
-                            "reference": reference,
-                        },
-                        status=status.HTTP_200_OK,
-                    )
-
-            else:
-                payment.status = PaymentStatus.FAILED
-                payment.save()
-                return Response(
-                    {"detail": "Payment initialization failed"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-        elif payment.payment_method_code == PaymentMethodChoice.CASH_ON_DELIVERY:
-            with transaction.atomic():
-                order.status = OrderStatus.CONFIRMED
-                order.save()
-                return Response(
-                    {
-                        "message": "Order placed successfully with Cash on Delivery",
-                        "order_id": str(order.id),
-                    },
-                    status=status.HTTP_200_OK,
-                )
-
-        return Response(
-            {"error": "Unsupported payment method"}, status=status.HTTP_400_BAD_REQUEST
+        context = PaymentContext(
+            amount=order.total_amount,
+            customer_email=customer_email,
+            reference=str(payment.id),
+            callback_url=callback_url,
+            metadata={
+                "order_id": str(order.id),
+                "payment_id": str(payment.id),
+            },
         )
+
+        try:
+            result = self.payment_service.initialize_payment(
+                method_code=payment_method.code,
+                context=context,
+                payment=payment,
+                order=order,
+            )
+        except Exception as exc:
+            return Response({"error": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        if result["success"]:
+            return Response(result["data"], status=status.HTTP_200_OK)
+
+        return Response(result["data"], status=status.HTTP_400_BAD_REQUEST)
 
 
 class PaymentCallbackAPIView(generics.GenericAPIView):
