@@ -28,7 +28,13 @@ class VariantSizeUtils:
 
         sku_id = 10000
 
-        category_code = variantsize.variant.product.categories
+        category = getattr(variantsize.variant.product, "categories", None)
+
+        if category:
+            if category.name == "TWO_PIECE":
+                category_code = "2PC"
+            else:
+                category_code = category.name.replace("_", "").upper()
 
         if variantsize.id:
             sku_id += variantsize.id
