@@ -65,7 +65,7 @@ class MaterialDetailSerializerUtils:
             MaterialSpecificationSerializer,
         )  # isort: skip
 
-        spec = getattr(material, "material_spec", None)
+        spec = getattr(material, "specifications", None)
         specification = None
         if not spec:
             return None

@@ -32,7 +32,6 @@ class MaterialSpecificationSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "width",
-            "width",
             "thread_count",
             "weight",
             "pattern",
@@ -114,6 +113,7 @@ class MaterialWriteSerializer(serializers.ModelSerializer):
         queryset=Category.objects.filter(target_model__model="materials"),
         required=False,
     )
+    specification = MaterialSpecificationSerializer(required=False)
 
     def get_item_detail_url(self, obj):
         request = self.context.get("request")
@@ -273,6 +273,7 @@ class MaterialWriteSerializer(serializers.ModelSerializer):
             "quality_category",
             "status",
             "categories",
+            "specification",
             "variants",
             "videos",
         )
