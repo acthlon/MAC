@@ -1,9 +1,13 @@
+import logging
+
 from django.conf import settings
 from django.db import transaction
 from paystackapi.transaction import Transaction as PaystackAPI
 
 from core.choices import PaymentStatus
 from payments.processors.base import BasePaymentProcessor, PaymentContext
+
+logger = logging.getLogger("payments.processors.paystack")
 
 
 class PaystackPaymentProcessor(BasePaymentProcessor):
@@ -14,6 +18,8 @@ class PaystackPaymentProcessor(BasePaymentProcessor):
 
         amount_in_kobo = int(context.amount * 100)
         paystack_tx = PaystackAPI(secret_key=settings.PAYSTACK_SECRET_KEY)
+        reference = context.reference or str(payment.id)
+        order_num = getattr(order, "order_number", order.id)
 
         try:
             paystack_response = paystack_tx.initialize(
@@ -54,6 +60,11 @@ class PaystackPaymentProcessor(BasePaymentProcessor):
                 },
             }
 
+        logger.warning(
+            f"[PAYSTACK INIT REJECTED] Gateway rejected initialization for Payment: {payment.id} | "
+            f"Order: #{order_num} | Ref: {reference} | Reason: '{rejection_msg}' | "
+            f"Raw Response: {paystack_response}"
+        )
         rejection_msg = (
             paystack_response.get("message")
             if isinstance(paystack_response, dict)

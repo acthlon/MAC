@@ -1,0 +1,250 @@
+{% load static %}
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="x-apple-disable-message-reformatting" />
+  <title>Marvelam — Balance Due On Order</title>
+
+  <!-- Google Web Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
+
+  <style type="text/css">
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-collapse: collapse !important; }
+    img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; display: block; }
+    body { margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #050505; }
+
+    .font-serif { font-family: 'Cormorant Garamond', Didot, 'Bodoni MT', Georgia, serif !important; }
+    .font-sans { font-family: 'Montserrat', -apple-system, BlinkMacOSystemFont, 'Segoe UI', Roboto, sans-serif !important; }
+
+    .btn-urgent:hover {
+      background-color: #e5a200 !important;
+      border-color: #e5a200 !important;
+      box-shadow: 0 6px 24px rgba(255, 180, 0, 0.5) !important;
+    }
+
+    @media only screen and (max-width: 600px) {
+      .email-wrapper { width: 100% !important; }
+      .email-padding { padding: 24px 18px !important; }
+      .hero-title { font-size: 26px !important; line-height: 32px !important; }
+      .action-btn { display: block !important; width: 100% !important; text-align: center !important; box-sizing: border-box !important; }
+    }
+  </style>
+</head>
+
+<body style="margin:0;padding:0;background-color:#050505;font-family:'Cormorant Garamond',Didot,'Bodoni MT',Georgia,serif;">
+
+  <!-- Preheader Preview Text -->
+  <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;color:#050505;line-height:1px;">
+    Action Required: Balance due of ₦{{ difference_amount|floatformat:"2g" }} for Order #{{ order.order_number|default:order.id }}. Settle securely to release your items to production. &#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;
+  </div>
+
+  <!-- Background Canvas -->
+  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:#050505;table-layout:fixed;">
+    <tr>
+      <td align="center" style="padding:36px 16px 56px;">
+
+        <!-- Main Email Container -->
+        <table role="presentation" class="email-wrapper" cellpadding="0" cellspacing="0" width="600" style="max-width:600px;width:100%;background-color:#0d0d0d;border:1px solid #332000;border-radius:4px;overflow:hidden;">
+
+          <!-- Top Amber Line -->
+          <tr>
+            <td style="background-color:#FFB400;height:4px;font-size:1px;line-height:4px;">&nbsp;</td>
+          </tr>
+
+          <!-- Brand Header -->
+          <tr>
+            <td align="center" style="padding:40px 40px 28px;background-color:#0a0a0a;border-bottom:1px solid #1a1a1a;">
+              <table role="presentation" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center">
+                    <div style="width:52px;height:52px;border-radius:50%;border:1px solid #FFB400;background-color:#141208;line-height:50px;text-align:center;margin-bottom:14px;">
+                      <span class="font-serif" style="font-family:'Cormorant Garamond',Georgia,serif;font-size:24px;font-weight:700;color:#FFB400;letter-spacing:1px;">M</span>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+              <h1 class="font-sans" style="margin:0;font-family:'Montserrat',sans-serif;font-size:14px;font-weight:700;letter-spacing:8px;color:#ffffff;text-transform:uppercase;text-align:center;">
+                M A R V E L A M
+              </h1>
+              <p class="font-sans" style="margin:6px 0 0;font-family:'Montserrat',sans-serif;font-size:9px;font-weight:500;letter-spacing:4px;color:#FFB400;text-transform:uppercase;text-align:center;">
+                BESPOKE APPAREL & FINE MATERIALS
+              </p>
+            </td>
+          </tr>
+
+          <!-- Hero Section -->
+          <tr>
+            <td align="center" class="email-padding" style="padding:40px 40px 24px;background:linear-gradient(180deg, #0d0d0d 0%, #161003 100%);">
+              
+              <!-- Status Pill: On Hold -->
+              <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 16px;">
+                <tr>
+                  <td style="background-color:#241600;border:1px solid #664400;padding:4px 14px;border-radius:20px;">
+                    <span class="font-sans" style="font-family:'Montserrat',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;color:#FFB400;text-transform:uppercase;">
+                      ORDER STATUS: ON HOLD (BALANCE DUE)
+                    </span>
+                  </td>
+                </tr>
+              </table>
+
+              <h2 class="hero-title font-serif" style="margin:0 0 10px;font-family:'Cormorant Garamond',Didot,Georgia,serif;font-size:30px;font-weight:600;color:#ffffff;text-align:center;letter-spacing:1px;">
+                Outstanding Balance Required
+              </h2>
+
+              <p class="font-serif" style="margin:0;font-family:'Cormorant Garamond',Georgia,serif;font-size:17px;font-style:italic;color:#aaaaaa;text-align:center;line-height:24px;">
+                We received a partial payment for Order #{{ order.order_number|default:order.id }}. An outstanding balance of <span class="font-sans" style="color:#FFB400;font-weight:700;font-style:normal;">₦{{ difference_amount|floatformat:"2g" }}</span> is required to release your pieces to production.
+              </p>
+
+              <!-- Gold Divider -->
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin:26px 0 0;">
+                <tr>
+                  <td style="background-color:#222;height:1px;font-size:1px;">&nbsp;</td>
+                  <td width="10" align="center" valign="middle" style="font-size:8px;color:#FFB400;padding:0 12px;">◆</td>
+                  <td style="background-color:#222;height:1px;font-size:1px;">&nbsp;</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Financial Breakdown Ledger -->
+          <tr>
+            <td class="email-padding" style="padding:0 40px;background-color:#0d0d0d;">
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border:2px solid #553b00;background-color:#141005;border-radius:4px;">
+                <tr>
+                  <td style="padding:22px 24px;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                      <tr>
+                        <td class="font-sans" style="font-family:'Montserrat',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;color:#FFB400;text-transform:uppercase;">
+                          PAYMENT SHORTAGE BREAKDOWN
+                        </td>
+                        <td align="right" class="font-sans" style="font-family:'Montserrat',sans-serif;font-size:10px;color:#777777;">
+                          Ref: {{ reference|truncatechars:18|default:"Paystack" }}
+                        </td>
+                      </tr>
+                    </table>
+
+                    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-top:14px;">
+                      <tr>
+                        <td class="font-serif" style="padding:6px 0;font-family:'Cormorant Garamond',Georgia,serif;font-size:16px;color:#888888;">Total Invoice Amount</td>
+                        <td align="right" class="font-sans" style="padding:6px 0;font-family:'Montserrat',sans-serif;font-size:14px;color:#cccccc;">₦{{ actual_amount|floatformat:"2g" }}</td>
+                      </tr>
+                      <tr>
+                        <td class="font-serif" style="padding:6px 0;font-family:'Cormorant Garamond',Georgia,serif;font-size:16px;color:#888888;">Amount Received (Partial)</td>
+                        <td align="right" class="font-sans" style="padding:6px 0;font-family:'Montserrat',sans-serif;font-size:14px;font-weight:600;color:#34d399;">₦{{ amount_paid|floatformat:"2g" }}</td>
+                      </tr>
+                      <tr>
+                        <td colspan="2" style="padding:10px 0;"><div style="height:1px;background-color:#2e2400;"></div></td>
+                      </tr>
+
+                      <!-- Highlighted Due Row -->
+                      <tr>
+                        <td colspan="2">
+                          <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:#211500;border:1px solid #664600;border-radius:3px;padding:12px 14px;">
+                            <tr>
+                              <td>
+                                <span class="font-sans" style="display:block;font-family:'Montserrat',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;color:#FFB400;text-transform:uppercase;">
+                                  REMAINING BALANCE DUE
+                                </span>
+                                <span class="font-serif" style="font-family:'Cormorant Garamond',Georgia,serif;font-size:12px;color:#888888;font-style:italic;">
+                                  Instant verification via Paystack
+                                </span>
+                              </td>
+                              <td align="right">
+                                <span class="font-sans" style="font-family:'Montserrat',sans-serif;font-size:18px;font-weight:800;color:#FFB400;">
+                                  ₦{{ difference_amount|floatformat:"2g" }}
+                                </span>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Instructional Letter -->
+          <tr>
+            <td class="email-padding" style="padding:24px 40px 0;background-color:#0d0d0d;">
+              <p class="font-serif" style="margin:0 0 12px;font-family:'Cormorant Garamond',Georgia,serif;font-size:17px;color:#cccccc;line-height:24px;">
+                Dear {{ user.first_name|default:"Patron" }},
+              </p>
+              <p class="font-serif" style="margin:0 0 14px;font-family:'Cormorant Garamond',Georgia,serif;font-size:16px;color:#999999;line-height:24px;">
+                Your bespoke garment materials are reserved at our atelier. To avoid tailoring delays or release of inventory, please complete the balance payment using the direct checkout link below.
+              </p>
+            </td>
+          </tr>
+
+          <!-- PRIMARY CALL TO ACTION BUTTON (TOKENIZED ONE-CLICK) -->
+          <tr>
+            <td align="center" class="email-padding" style="padding:16px 40px 10px;background-color:#0d0d0d;">
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td>
+                    <a href="{{ resolve_payment_url }}" class="action-btn btn-urgent font-sans" style="display:block;text-align:center;padding:18px 24px;background-color:#FFB400;border:1px solid #FFB400;color:#000000 !important;font-family:'Montserrat',sans-serif;font-size:12px;font-weight:800;letter-spacing:3px;text-transform:uppercase;text-decoration:none;border-radius:2px;box-shadow:0 4px 18px rgba(255,180,0,0.3);">
+                      SETTLE BALANCE NOW (₦{{ difference_amount|floatformat:"2g" }}) &rarr;
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Security & Expiration Notice -->
+          <tr>
+            <td align="center" class="email-padding" style="padding:10px 40px 0;background-color:#0d0d0d;">
+              <p class="font-sans" style="margin:0 0 6px;font-family:'Montserrat',sans-serif;font-size:10px;font-weight:600;letter-spacing:1px;color:#777777;text-transform:uppercase;">
+                🔒 Cryptographically Signed Checkout Link &bull; Valid for 7 Days
+              </p>
+              <p class="font-serif" style="margin:0;font-family:'Cormorant Garamond',Georgia,serif;font-size:13px;font-style:italic;color:#555555;line-height:18px;">
+                Reserved commissions left unsettled after 7 calendar days will be automatically cancelled, and partial funds credited to your account wallet.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td align="center" class="email-padding" style="padding:36px 40px;background-color:#070707;border-top:1px solid #1a1a1a;margin-top:24px;">
+              <p class="font-sans" style="margin:0 0 10px;font-family:'Montserrat',sans-serif;font-size:10px;font-weight:700;letter-spacing:6px;color:#FFB400;text-transform:uppercase;">
+                M A R V E L A M
+              </p>
+              <p class="font-serif" style="margin:0 0 16px;font-family:'Cormorant Garamond',Georgia,serif;font-size:15px;font-style:italic;color:#777777;">
+                Need concierge assistance? Contact <a href="mailto:concierge@marvelam.com" style="color:#FFB400;text-decoration:none;">concierge@marvelam.com</a>
+              </p>
+              <div style="width:100px;height:1px;background-color:#222222;margin:0 auto 16px;"></div>
+              <p class="font-sans" style="margin:0 0 6px;font-family:'Montserrat',sans-serif;font-size:10px;color:#555555;">
+                &copy; {{ paid_at|date:"Y"|default:"2026" }} Marvelam Apparel & Fine Clothing. All rights reserved.
+              </p>
+              <p class="font-sans" style="margin:0;font-family:'Montserrat',sans-serif;font-size:9px;color:#444444;">
+                This discrepancy notice was generated for transaction ref: {{ reference }}.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+        <!-- End Main Email Container -->
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>

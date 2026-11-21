@@ -1,11 +1,14 @@
 import hashlib
 import hmac
 import json
+import logging
+from decimal import Decimal
 from functools import partial
 
 from django.conf import settings
+from django.core.signing import BadSignature, SignatureExpired
 from django.db import transaction
-from django.http import HttpResponse
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.views import View
@@ -41,8 +44,10 @@ from payments.serializers import (
 )
 from payments.tasks import (
     send_admin_stock_shortage_alert_task,
+    send_payment_discrepancy_notification_task,
     send_refund_confirmation_email,
 )
+from payments.tokens import verify_underpayment_token
 
 
 class InitializePaymentAPIView(generics.GenericAPIView):
@@ -64,7 +69,12 @@ class InitializePaymentAPIView(generics.GenericAPIView):
 
         user = request.user
 
-        order = get_object_or_404(Order, id=pk, status=OrderStatus.CREATED, user=user)
+        order = get_object_or_404(
+            Order,
+            id=pk,
+            status__in=[OrderStatus.CREATED, OrderStatus.ON_HOLD],
+            user=user,
+        )
 
         payment_method = get_object_or_404(
             PaymentMethod, code=serializer.validated_data.get("method_code")
@@ -76,11 +86,11 @@ class InitializePaymentAPIView(generics.GenericAPIView):
             status__in=[PaymentStatus.INITIALIZED, PaymentStatus.PENDING],
         ).first()
 
-        # if existing_payment:
-        #     return Response(
-        #         {"message": "Payment has been initialized for this order"},
-        #         status=status.HTTP_400_BAD_REQUEST,
-        #     )
+        if existing_payment:
+            return Response(
+                {"message": "Payment has been initialized for this order"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         if order.payment_method_name != payment_method.code:
             order.payment_method_name = payment_method.code
@@ -208,36 +218,58 @@ class PaymentCallbackHTMLView(View):
         return render(request, "payments/callback.html", context)
 
 
+logger = logging.getLogger("payments.webhook")
+
+
 @require_POST
 @csrf_exempt
 def paystack_webhook(request):
 
-    # Verify Paystack signature
-    request_body = request.body
-    secret = settings.PAYSTACK_SECRET_KEY.encode()
     signature = request.headers.get("x-paystack-signature")
 
     if not signature:
+        logger.warning(
+            "[PAYSTACK WEBHOOK] Rejected: Missing 'x-paystack-signature' header."
+        )
         return HttpResponse(status=400)
 
-    expected_signature = hmac.new(secret, request_body, hashlib.sha512).hexdigest()
+    secret_key = getattr(settings, "PAYSTACK_SECRET_KEY", "").strip()
 
-    if signature != expected_signature:
+    if not secret_key:
+        logger.critical(
+            "[PAYSTACK WEBHOOK] Server Configuration Error: PAYSTACK_SECRET_KEY is empty."
+        )
+        return HttpResponse(status=500)
+
+    payload_bytes = request.body
+
+    expected_signature = hmac.new(
+        secret_key.encode("utf-8"), payload_bytes, hashlib.sha512
+    ).hexdigest()
+
+    if not hmac.compare_digest(signature, expected_signature):
+        logger.warning("[PAYSTACK WEBHOOK] Rejected: Cryptographic signature mismatch.")
         return HttpResponse(status=400)
 
-    # Parse the webhook data
     try:
-        post_response = json.loads(request_body)
-
-    except json.JSONDecodeError:
+        event_data = json.loads(payload_bytes.decode("utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        logger.error(f"[PAYSTACK WEBHOOK] JSON Decode Failure: {exc}")
         return HttpResponse(status=400)
 
-    # all the aove are stll security check below is the processing of the real handling of successful payment
-    if post_response["event"] == "charge.success":
-        data = post_response["data"]
-        reference = data.get("reference")
-        authorization = data.get("authorization", {})
+    event_type = event_data.get("event")
+    data = event_data.get("data", {})
+    reference = data.get("reference")
 
+    logger.info(
+        f"[PAYSTACK WEBHOOK] Processing event '{event_type}' for reference: {reference}"
+    )
+
+    if event_type == "charge.success":
+        paid_amount_kobo = data.get("amount", 0)
+        paid_naira = Decimal(paid_amount_kobo) / Decimal(100)
+
+        authorization = data.get("authorization") or {}
         card_brand = authorization.get("brand")
         card_last4 = authorization.get("last4")
         auth_code = authorization.get("authorization_code")
@@ -246,62 +278,165 @@ def paystack_webhook(request):
             try:
                 payment = Payment.objects.select_for_update().get(reference=reference)
             except Payment.DoesNotExist:
+                logger.error(
+                    f"[PAYSTACK WEBHOOK] Payment with reference {reference} not found in database."
+                )
                 return HttpResponse(status=200)
 
-            # Prevent processing the same payment multiple times
-            if payment.status != PaymentStatus.SUCCESSFUL:
-                payment.status = PaymentStatus.SUCCESSFUL
-                payment.processed_at = timezone.now()
-                payment.paid_at = timezone.now()
+            # Idempotency Guard
+            if payment.status == PaymentStatus.SUCCESSFUL:
+                logger.info(
+                    f"[PAYSTACK WEBHOOK] Idempotency: Payment {reference} is already processed."
+                )
+                return HttpResponse(status=200)
+
+            order = payment.order
+            expected_amount_kobo = int(payment.amount * 100)
+            difference_kobo = paid_amount_kobo - expected_amount_kobo
+
+            # CASE 1: UNDERPAYMENT (Deficit Settlement)
+            if difference_kobo < 0:
+                shortage_naira = abs(Decimal(difference_kobo) / Decimal(100))
+                logger.warning(
+                    f"[LEDGER UNDERPAYMENT] Ref: {reference}. "
+                    f"Expected: ₦{payment.amount}, Received: ₦{paid_naira}, Shortage: ₦{shortage_naira}"
+                )
+
+                payment.status = PaymentStatus.UNDERPAID
+                payment.amount_paid = paid_naira
+                payment.difference_amount = shortage_naira
+                payment.payment_reason = (
+                    f"Partial Payment: Shortage of ₦{shortage_naira:,.2f}"
+                )
                 payment.card_brand = card_brand
                 payment.card_last4 = card_last4
                 payment.authorization_code = auth_code
-                payment.save()
+                payment.save(
+                    update_fields=[
+                        "status",
+                        "amount_paid",
+                        "difference_amount",
+                        "payment_reason",
+                        "card_brand",
+                        "card_last4",
+                        "authorization_code",
+                    ]
+                )
 
-                order = payment.order
-
-                stock_shortage = False
-                # Deduct stock from products using row locking
-                for order_item in order.items.select_related("content_type").all():
-                    ModelClass = order_item.content_type.model_class()
-
-                    # 1. Fetch and lock the specific variant/item row
-                    locked_item = ModelClass.objects.select_for_update().get(
-                        pk=order_item.object_id
-                    )
-
-                    # 2. Check stock on the freshly locked object and update
-                    if hasattr(locked_item, "stock"):
-                        if locked_item.stock >= order_item.quantity:
-                            locked_item.stock -= order_item.quantity
-                        else:
-                            stock_shortage = True
-                            locked_item.stock = 0
-
-                        locked_item.save(update_fields=["stock"])
-
-                # Update order status - This is the most important part
-
-                if stock_shortage:
-                    order.admin_notes = (
-                        "STOCK SHORTAGE: Item was out of stock when payment was confirmed. "
-                        "Admin needs to procure item immediately to meet delivery timeframe."
-                    )
-                    transaction.on_commit(
-                        partial(send_admin_stock_shortage_alert_task.delay, order.id)
-                    )
-                order.status = OrderStatus.CONFIRMED
-                order.payment_status = PaymentStatus.SUCCESSFUL
+                order.status = OrderStatus.ON_HOLD
                 order.payment_reference = payment.reference
-                order.save()
+                order.admin_notes = f"PAYMENT SHORTAGE: ₦{shortage_naira:,.2f} required to release order."
+                order.save(update_fields=["status", "payment_reference", "admin_notes"])
 
-    elif post_response["event"] == "charge.failed":
-        data = post_response["data"]
-        reference = data.get("reference")
+                if payment.user:
+                    transaction.on_commit(
+                        partial(
+                            send_payment_discrepancy_notification_task.delay,
+                            str(payment.id),
+                            str(payment.user.id),
+                        )
+                    )
+                return HttpResponse(status=200)
+
+            # CASE 2 & 3: FULL PAYMENT OR OVERPAYMENT
+
+            payment.status = PaymentStatus.SUCCESSFUL
+            payment.amount_paid = paid_naira
+            payment.processed_at = timezone.now()
+            payment.paid_at = timezone.now()
+            payment.card_brand = card_brand
+            payment.card_last4 = card_last4
+            payment.authorization_code = auth_code
+
+            is_overpayment = difference_kobo > 0
+            if is_overpayment:
+                excess_naira = Decimal(difference_kobo) / Decimal(100)
+                payment.difference_amount = excess_naira
+                payment.payment_reason = (
+                    f"Full Payment with Excess: Overpaid ₦{excess_naira:,.2f}"
+                )
+                logger.info(
+                    f"[LEDGER OVERPAYMENT] Ref: {reference}. Excess: ₦{excess_naira}"
+                )
+            else:
+                payment.difference_amount = Decimal("0.00")
+                payment.payment_reason = "Full Payment Confirmed"
+
+            payment.save(
+                update_fields=[
+                    "status",
+                    "amount_paid",
+                    "difference_amount",
+                    "payment_reason",
+                    "processed_at",
+                    "paid_at",
+                    "card_brand",
+                    "card_last4",
+                    "authorization_code",
+                ]
+            )
+
+            # Deduct stock safely with sorted row locks
+            stock_shortage = False
+            ordered_items = (
+                order.items.select_related("content_type")
+                .order_by("content_type_id", "object_id")
+                .all()
+            )
+
+            for order_item in ordered_items:
+                model_class = order_item.content_type.model_class()
+                locked_item = model_class.objects.select_for_update().get(
+                    pk=order_item.object_id
+                )
+
+                if hasattr(locked_item, "stock"):
+                    if locked_item.stock >= order_item.quantity:
+                        locked_item.stock -= order_item.quantity
+                    else:
+                        stock_shortage = True
+                        locked_item.stock = 0
+                    locked_item.save(update_fields=["stock"])
+
+            if stock_shortage:
+                order.admin_notes = (
+                    "STOCK SHORTAGE: Item was out of stock when payment was confirmed. "
+                    "Admin procurement required."
+                )
+                transaction.on_commit(
+                    partial(send_admin_stock_shortage_alert_task.delay, order.id)
+                )
+
+            order.status = OrderStatus.CONFIRMED
+            order.payment_status = PaymentStatus.SUCCESSFUL
+            order.payment_reference = payment.reference
+            order.save(
+                update_fields=[
+                    "status",
+                    "payment_status",
+                    "payment_reference",
+                    "admin_notes",
+                ]
+            )
+
+            # If overpaid, queue alert post-commit
+            if is_overpayment and payment.user:
+                transaction.on_commit(
+                    partial(
+                        send_payment_discrepancy_notification_task.delay,
+                        str(payment.id),
+                        str(payment.user.id),
+                    )
+                )
+
+            return HttpResponse(status=200)
+
+    elif event_type == "charge.failed":
         failure_message = (
-            data.get("gateway_response") or data.get("message") or "Payment failed"
+            data.get("gateway_response")
+            or data.get("message")
+            or "Payment authorization failed"
         )
-
         with transaction.atomic():
             try:
                 payment = Payment.objects.select_for_update().get(reference=reference)
@@ -309,29 +444,26 @@ def paystack_webhook(request):
                     payment.status = PaymentStatus.FAILED
                     payment.failure_reason = failure_message
                     payment.processed_at = timezone.now()
-
-                    payment.save()
+                    payment.save(
+                        update_fields=["status", "failure_reason", "processed_at"]
+                    )
             except Payment.DoesNotExist:
                 pass
+        return HttpResponse(status=200)
 
-    elif post_response["event"] == "refund.processed":
-        data = post_response["data"]
-
-        # Paystack includes the original transaction reference in the refund data
-        transaction_reference = data.get("transaction", {}).get("reference")
-        if not transaction_reference:
-            transaction_reference = data.get("transaction_reference")
-
+    elif event_type == "refund.processed":
+        tx_reference = data.get("transaction", {}).get("reference") or data.get(
+            "transaction_reference"
+        )
         with transaction.atomic():
             try:
                 return_request = ReturnRequest.objects.select_for_update().get(
-                    order__payment_reference=transaction_reference,
+                    order__payment_reference=tx_reference,
                     status__in=[ReturnStatus.APPROVED, ReturnStatus.PROCESSING],
                 )
-
                 return_request.status = ReturnStatus.COMPLETED
                 return_request.completed_at = timezone.now()
-                return_request.save()
+                return_request.save(update_fields=["status", "completed_at"])
 
                 transaction.on_commit(
                     partial(
@@ -340,28 +472,9 @@ def paystack_webhook(request):
                         return_request.user.id,
                     )
                 )
-
             except ReturnRequest.DoesNotExist:
                 pass
-
-    elif post_response["event"] == "refund.failed":
-        data = post_response["data"]
-        transaction_reference = data.get("transaction", {}).get(
-            "reference"
-        ) or data.get("transaction_reference")
-
-        with transaction.atomic():
-            try:
-                return_request = ReturnRequest.objects.select_for_update().get(
-                    order__payment_reference=transaction_reference,
-                    status__in=[ReturnStatus.APPROVED, ReturnStatus.PROCESSING],
-                )
-
-                # Log the failure so the Admin can manually check it
-                return_request.admin_notes = f"Paystack automatic refund failed: {data.get('message', 'Unknown error')}"
-                return_request.save()
-            except ReturnRequest.DoesNotExist:
-                pass
+        return HttpResponse(status=200)
 
     return HttpResponse(status=200)
 
@@ -482,3 +595,60 @@ class ReturnRequestTrackingAPIView(generics.RetrieveAPIView):
         )
 
         return return_request
+
+
+class ResolveUnderpaymentRedirectView(View):
+    payment_service = PaymentService()
+
+    def get(self, request: HttpRequest, token: str) -> HttpResponse:
+        frontend_url = settings.FRONTEND_URL.rstrip("/")
+
+        # 1. Authenticate via signed token instead of request.user
+        try:
+            payment_id, user_id = verify_underpayment_token(token)
+        except (BadSignature, SignatureExpired, KeyError):
+            return HttpResponseRedirect(
+                f"{frontend_url}/orders?error=invalid_or_expired_link"
+            )
+
+        with transaction.atomic():
+            try:
+                payment = (
+                    Payment.objects.select_for_update()
+                    .select_related("order", "user")
+                    .get(id=payment_id, user_id=user_id)
+                )
+            except Payment.DoesNotExist:
+                return HttpResponseRedirect(
+                    f"{frontend_url}/orders?error=payment_not_found"
+                )
+            order = payment.order
+
+            balance_due = self.payment_service.get_remaining_order_balance(order)
+            if balance_due <= Decimal("0.00") or order.status != OrderStatus.ON_HOLD:
+                return HttpResponseRedirect(
+                    f"{frontend_url}/orders/{order.id}?status=already_paid"
+                )
+
+            callback_url = f"{settings.SITE_URL}/payment-callback"
+
+            result = self.payment_service.create_and_initialize_underpayment(
+                order=order,
+                original_payment=payment,
+                callback_url=callback_url,
+            )
+
+        if result.get("success") and result.get("data", {}).get("authorization_url"):
+            return HttpResponseRedirect(result["data"]["authorization_url"])
+
+        if (
+            result.get("data", {}).get("detail")
+            == "No remaining balance due for this order."
+        ):
+            return HttpResponseRedirect(
+                f"{frontend_url}/orders/{order.id}?status=already_paid"
+            )
+
+        return HttpResponseRedirect(
+            f"{frontend_url}/orders/{order.id}?error=gateway_unavailable"
+        )

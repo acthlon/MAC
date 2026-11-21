@@ -121,6 +121,7 @@ class OrderStatus(models.TextChoices):
     COMPLETED = "COMPLETED", "Completed"
     CANCELED = "CANCELED", "Canceled"
     FAILED = "FAILED", "Failed"
+    ON_HOLD = "ON_HOLD", "On Hold (Pending Balance)"
 
 
 class PaymentMethodChoice(models.TextChoices):
@@ -156,6 +157,7 @@ class PaymentStatus(models.TextChoices):
     INITIALIZED = "INITIALIZED", "Initialized"
     SUCCESSFUL = "SUCCESSFUL", "Successful"
     FAILED = "FAILED", "Failed"
+    UNDERPAID = "UNDERPAID", "Underpaid"
 
 
 class ReturnStatus(models.TextChoices):

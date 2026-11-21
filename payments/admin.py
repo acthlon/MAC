@@ -13,6 +13,8 @@ class PaymentAdmin(admin.ModelAdmin):
         "id",
         "payment_method_code",
         "amount",
+        "amount_paid",
+        "balance",
         "currency",
         "status",
         "reference",
@@ -32,6 +34,11 @@ class PaymentAdmin(admin.ModelAdmin):
         return PaymentUtils.masked_card(obj)
 
     masked_card.short_description = "Card Used"
+
+    def balance(self, obj):
+
+        balance = abs(obj.amount - obj.amount_paid)
+        return balance
 
 
 class ReturnRequestAdmin(admin.ModelAdmin):

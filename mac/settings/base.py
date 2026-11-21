@@ -37,7 +37,7 @@ CSRF_TRUSTED_ORIGINS = config("CSRF_TRUSTED_ORIGINS", cast=Csv())
 
 
 ADMIN_URL = config("DJANGO_ADMIN_URL", "backoffice/")
-
+FRONTEND_URL = config("FRONTEND_URL")
 
 # Application definition
 

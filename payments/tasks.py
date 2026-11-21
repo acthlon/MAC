@@ -3,14 +3,16 @@ from django.conf import settings
 from django.core.mail import send_mail
 from django.db import transaction
 from django.template.loader import render_to_string
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import strip_tags
 from paystackapi.refund import Refund
 
 from accounts.models import CustomUser
-from core.choices import ReturnStatus
+from core.choices import PaymentStatus, ReturnStatus
 from order.models import Order
-from payments.models import ReturnRequest
+from payments.models import Payment, ReturnRequest
+from payments.tokens import make_underpayment_token
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
@@ -20,7 +22,7 @@ def send_refund_confirmation_email(self, refund_id, user_id):
         refund_request = ReturnRequest.objects.get(id=refund_id, user__id=user_id)
         site_url = settings.SITE_URL
 
-        subject = f"Refund Processed Successfully - Order #{refund_request.order.id}"
+        subject = f"Refund Processed Successfully - Order #{refund_request.order.order_number}"
 
         context = {
             "user": refund_request.user,
@@ -202,3 +204,70 @@ def send_admin_stock_shortage_alert_task(self, order_id):
 
     except Exception as exc:
         raise self.retry(exc=exc)
+
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+def send_payment_discrepancy_notification_task(self, payment_id, user_id):
+
+    try:
+        payment = Payment.objects.get(id=payment_id, user__id=user_id)
+
+        site_url = settings.SITE_URL.rstrip("/")
+        difference_amount = payment.amount_paid - payment.amount
+
+        context = {
+            "user": payment.user,
+            "order": payment.order,
+            "reason": payment.payment_reason,
+            "actual_amount": payment.amount,
+            "amount_paid": payment.amount_paid,
+            "currency": payment.currency,
+            "reference": payment.reference,
+            "difference_amount": abs(payment.difference_amount),
+            "paid_at": payment.paid_at,
+            "site_url": site_url,
+        }
+
+        print(f"DIFFERENCE AMOUNT IS {difference_amount}--- DID YOU GET IT RIGHT")
+
+        if (difference_amount < 0) and (payment.status == PaymentStatus.UNDERPAID):
+            token = make_underpayment_token(payment.id, payment.user_id)
+            relative_path = reverse("resolve_underpayment", kwargs={"token": token})
+            context["resolve_payment_url"] = f"{site_url}{relative_path}"
+            subject = (
+                f"Action Required: Balance Due for Order #{payment.order.order_number}"
+            )
+
+            html_message = render_to_string(
+                "email/order/under-payment.html", context=context
+            )
+
+            print(context["resolve_payment_url"])
+            print("UNDERPAYMENT WAS SUCCESSFUL")
+
+        elif (difference_amount > 0) and (payment.status == PaymentStatus.SUCCESSFUL):
+            subject = f"Overpayment Notice - Order #{payment.order.order_number}"
+            html_message = render_to_string(
+                "email/order/over-payment.html", context=context
+            )
+            print("OVERPAYMENT WAS SUCCESSFUL")
+        else:
+            print("NON WAS SUCCESSFUL")
+            return
+
+        plain_message = strip_tags(html_message)
+        recipient = (payment.order.shipping_address_snapshot or {}).get(
+            "email"
+        ) or payment.user.email
+
+        send_mail(
+            subject=subject,
+            message=plain_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[recipient],
+            html_message=html_message,
+            fail_silently=False,
+        )
+
+    except Exception as exe:
+        raise self.retry(exc=exe)

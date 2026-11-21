@@ -5,6 +5,7 @@ from payments.views import (
     InitializePaymentAPIView,
     PaymentCallbackAPIView,
     PaymentCallbackHTMLView,
+    ResolveUnderpaymentRedirectView,
     ReturnRequestAdminManageAPIView,
     ReturnRequestCustomerManageAPIView,
     ReturnRequestDetailAPIView,
@@ -49,5 +50,10 @@ urlpatterns = [
         "return/<str:return_number>/<str:tracking_id>/",
         ReturnRequestTrackingAPIView.as_view(),
         name="return_tracking",
+    ),
+    path(
+        "payments/resolve-underpayment/<str:token>/",
+        ResolveUnderpaymentRedirectView.as_view(),
+        name="resolve_underpayment",
     ),
 ]

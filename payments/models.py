@@ -1,4 +1,5 @@
 import uuid
+from decimal import Decimal
 
 from django.db import models
 from django.utils import timezone
@@ -57,14 +58,23 @@ class Payment(TimeStampModel):
     )
 
     amount = models.DecimalField(max_digits=12, decimal_places=2)
+    amount_paid = models.DecimalField(
+        max_digits=20, decimal_places=2, default=Decimal("0.00")
+    )
     currency = models.CharField(max_length=4, default="NGN")
     status = models.CharField(
         choices=PaymentStatus.choices, max_length=20, default=PaymentStatus.PENDING
     )
+    difference_amount = models.DecimalField(
+        max_digits=12, decimal_places=2, default=Decimal("0.00")
+    )
 
+    payment_reason = models.TextField(max_length=255, blank=True, null=True)
     failure_reason = models.CharField(max_length=255, blank=True, null=True)
 
-    reference = models.CharField(max_length=100, blank=True, null=True)
+    reference = models.CharField(
+        max_length=100, blank=True, null=True, unique=True, db_index=True
+    )
     card_brand = models.CharField(max_length=50, blank=True, null=True)
     card_last4 = models.CharField(max_length=4, blank=True, null=True)
     authorization_code = models.CharField(max_length=100, blank=True, null=True)

@@ -115,9 +115,7 @@ class Order(TimeStampModel):
         max_length=40, default=DeliveryStatus.PENDING, choices=DeliveryStatus.choices
     )
     tracking_id = models.CharField(max_length=50, null=True, blank=True)
-    total_amount = models.DecimalField(
-        max_digits=12, decimal_places=2, default=0, editable=False
-    )
+    total_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     sub_total_amount = models.DecimalField(
         max_digits=12, decimal_places=2, default=0, editable=False
     )
