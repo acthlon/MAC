@@ -50,7 +50,7 @@ class MaterialUtils:
 class MaterialDetailSerializerUtils:
     @staticmethod
     def get_fabric_care(material):
-        spec = getattr(material, "material_spec", None)
+        spec = getattr(material, "specifications", None)
 
         if spec and spec.material_type:
             fabric_care = FABRIC_CARE_INSTRUCTIONS.get(
