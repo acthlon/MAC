@@ -1,9 +1,10 @@
 from functools import partial
 
+from django.conf import settings
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.tokens import default_token_generator
 from django.db import transaction
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -14,6 +15,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from accounts.models import CustomUser
 from accounts.serializers import (
     CustomUserSerializer,
+    ResendActivationSerializer,
     UpdatePasswordSerializer,
     UpdateUserProfileSerializer,
     UserProfileSerializer,
@@ -61,12 +63,7 @@ class VerifyEmailView(APIView):
                 user.is_active = True
                 user.save(update_fields=["is_active"])
 
-                return Response(
-                    {
-                        "messsage": "verification was successful, your account is now active and you can proceed to login"
-                    },
-                    status=status.HTTP_200_OK,
-                )
+                return redirect(f"{settings.FRONTEND_URL}/login?verified=true")
 
             else:
                 return Response(
@@ -76,6 +73,32 @@ class VerifyEmailView(APIView):
 
         except Exception as e:
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ResendActivationView(generics.GenericAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = ResendActivationSerializer
+
+    def post(self, request, *args, **kwargs):
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        email = serializer.validated_data["email"].lower().strip()
+        user = CustomUser.objects.filter(email__iexact=email).first()
+
+        if user and not user.is_active:
+            transaction.on_commit(partial(send_registration_email_task.delay, user.id))
+
+        return Response(
+            {
+                "detail": (
+                    "If an unactivated account exists with this email, "
+                    "a verification link has been sent."
+                )
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class PasswordResetRequestView(APIView):

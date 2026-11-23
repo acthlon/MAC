@@ -7,6 +7,7 @@ from accounts.views import (
     PasswordResetRequestView,
     RefreshTokenView,
     RegistrationView,
+    ResendActivationView,
     UpdatePasswordView,
     UserProfileView,
     VerifyEmailView,
@@ -38,5 +39,8 @@ urlpatterns = [
         "update-password/<uuid:pk>/",
         UpdatePasswordView.as_view(),
         name="password_update",
+    ),
+    path(
+        "resend-activation/", ResendActivationView.as_view(), name="resend_activation"
     ),
 ]

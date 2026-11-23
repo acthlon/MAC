@@ -97,15 +97,15 @@ def send_password_reset_email_task(self, user_id, email):
         user = CustomUser.objects.get(id=user_id)
         token = default_token_generator.make_token(user)
 
-        password_reset_link = reverse(
-            "password_reset_confirm",
-            kwargs={"password_reset_token": token, "user_id": user_id},
-        )
+        # password_reset_link = reverse(
+        #     "password_reset_confirm",
+        #     kwargs={"password_reset_token": token, "user_id": user_id},
+        # )
+        frontend_url = settings.FRONTEND_URL.rstrip("/")
+        site_domain = settings.SITE_URL
         password_resend_link = reverse("password_reset_request")
 
-        site_domain = settings.SITE_URL
-
-        password_reset_url = f"{site_domain}{password_reset_link}"
+        password_reset_url = f"{frontend_url}/password-reset/{user_id}/{token}/"
         password_resend_url = (
             f"{site_domain}{password_resend_link}?resend_email={email}"
         )
