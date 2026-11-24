@@ -238,10 +238,6 @@ LOGOUT_REDIRECT_URL = "/"  # Redirect to homepage after logout
 PAYSTACK_SECRET_KEY = config("PAYSTACK_SECRET_KEY")
 PAYSTACK_PUBLIC_KEY = config("PAYSTACK_PUBLIC_KEY")
 
-# celery task setup
-CELERY_BROKER_URL = config("CELERY_BROKER_URL")
-CELERY_RESULT_BACKEND = config("CELERY_RESULT_BACKEND")
-
 SPECTACULAR_SETTINGS = {
     "TITLE": "Marvelam API",
     "DESCRIPTION": "Official API documentation for the Marvelam E-Commerce Platform.",
@@ -265,3 +261,22 @@ STORAGES = {
         "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
     },
 }
+
+REDIS_URL = config("REDIS_URL", "redis://127.0.0.1:6379")
+BASE_REDIS_URL = REDIS_URL.rstrip("/")
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": f"{BASE_REDIS_URL}/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            # CRITICAL DEFENSE: If Redis ever drops or restarts, Django will
+            # gracefully fall back to the database instead of crashing with HTTP 500
+            "IGNORE_EXCEPTIONS": True,
+        },
+    }
+}
+
+CELERY_BROKER_URL = f"{BASE_REDIS_URL}/0"
+CELERY_RESULT_BACKEND = f"{BASE_REDIS_URL}/0"
