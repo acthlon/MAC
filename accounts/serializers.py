@@ -1,5 +1,9 @@
+import redis
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 from rest_framework import serializers
+from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 
 from accounts.models import CustomUser
 from accounts.utils.passwordvalidate import validate_password_strength
@@ -151,3 +155,42 @@ class UpdatePasswordSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = ["password", "old_password", "confirm_password"]
+
+
+redis_client = redis.Redis(host="localhost", port=6379, db=0, decode_responses=True)
+
+
+class LogoutSerializer(serializers.Serializer):
+    refresh = serializers.CharField(
+        required=True,
+    )
+    access = serializers.CharField(
+        required=False,
+        allow_blank=True,
+    )
+
+    def validate(self, attrs):
+        self.refresh_token = attrs.get("refresh")
+        self.access_token = attrs.get("access")
+        return attrs
+
+    def save(self, **kwargs):
+
+        try:
+            token = RefreshToken(self.refresh_token)
+            token.blacklist()
+        except TokenError:
+            pass
+
+        if self.access_token:
+            try:
+                access = AccessToken(self.access_token)
+                jti = access.get("jti")
+                exp_timestamp = access.get("exp")
+                if jti and exp_timestamp:
+                    now_timestamp = int(timezone.now().timestamp())
+                    ttl = exp_timestamp - now_timestamp
+                    if ttl > 0:
+                        redis_client.setex(f"blacklist:{jti}", ttl, "revoked")
+            except TokenError:
+                pass

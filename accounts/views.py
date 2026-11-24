@@ -15,6 +15,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from accounts.models import CustomUser
 from accounts.serializers import (
     CustomUserSerializer,
+    LogoutSerializer,
     ResendActivationSerializer,
     UpdatePasswordSerializer,
     UpdateUserProfileSerializer,
@@ -260,32 +261,20 @@ class RefreshTokenView(APIView):
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class LogoutView(APIView):
-    permission_classes = [
-        IsAuthenticated,
-    ]
+class LogoutAPIView(generics.GenericAPIView):
+    serializer_class = LogoutSerializer
+    permission_classes = [IsAuthenticated]
 
-    def post(self, request):
+    def post(self, request, *args, **kwargs):
 
-        try:
-            refresh_token = request.data.get("refresh_token")
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
 
-            if refresh_token:
-                token = RefreshToken(refresh_token)
-                # cache
-                token.blacklist()
-
-                return Response(
-                    {"message": "Logout successful"}, status=status.HTTP_200_OK
-                )
-
-            else:
-                return Response({"message": "rfresh token not provided"})
-
-        except TokenError:
-            return Response(
-                {"messsage": "invalid token"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        return Response(
+            {"detail": "Session terminated. Both tokens successfully revoked."},
+            status=status.HTTP_200_OK,
+        )
 
 
 class UserProfileView(generics.RetrieveUpdateAPIView):

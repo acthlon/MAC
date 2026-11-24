@@ -2,7 +2,7 @@ from django.urls import path
 
 from accounts.views import (
     LoginView,
-    LogoutView,
+    LogoutAPIView,
     PasswordResetConfirmView,
     PasswordResetRequestView,
     RefreshTokenView,
@@ -31,7 +31,7 @@ urlpatterns = [
         PasswordResetConfirmView.as_view(),
         name="password_reset_confirm",
     ),
-    path("logout/", LogoutView.as_view(), name="logout"),
+    path("logout/", LogoutAPIView.as_view(), name="logout"),
     path("token/refresh/", RefreshTokenView.as_view(), name="regenerate_access_token"),
     path("profile/<uuid:pk>/", UserProfileView.as_view(), name="retrieve_profile"),
     path("update-profile/<uuid:pk>/", UserProfileView.as_view(), name="profile_update"),
