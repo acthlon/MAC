@@ -1,4 +1,5 @@
 import redis
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from rest_framework import serializers
@@ -157,7 +158,8 @@ class UpdatePasswordSerializer(serializers.ModelSerializer):
         fields = ["password", "old_password", "confirm_password"]
 
 
-redis_client = redis.Redis(host="localhost", port=6379, db=0, decode_responses=True)
+redis_url = settings.BASE_REDIS_URL
+redis_client = redis.from_url(f"{redis_url}/0", decode_responses=True)
 
 
 class LogoutSerializer(serializers.Serializer):

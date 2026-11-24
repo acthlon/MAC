@@ -1,8 +1,10 @@
 import redis
+from django.conf import settings
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.exceptions import InvalidToken
 
-redis_client = redis.Redis(host="localhost", port=6379, db=0, decode_responses=True)
+redis_url = settings.BASE_REDIS_URL
+redis_client = redis.from_url(f"{redis_url}/0", decode_responses=True)
 
 
 class RedisCheckedJWTAuthentication(JWTAuthentication):
