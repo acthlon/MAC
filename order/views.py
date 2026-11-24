@@ -105,7 +105,11 @@ class OrderListView(generics.ListAPIView):
         user = self.request.user
         items = (
             Order.objects.filter(user=user)
-            .prefetch_related("items")
+            .prefetch_related(
+                "items",
+                "items__content_type",
+                "items__content_object",
+            )
             .order_by("-created_at")
         )
         return items
