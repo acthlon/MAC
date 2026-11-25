@@ -1,4 +1,5 @@
 from core.choices import ReturnStatus
+from order.models import Order
 
 
 class PaymentUtils:
@@ -7,6 +8,34 @@ class PaymentUtils:
         if payment.card_brand and payment.card_last4:
             return f"{payment.card_brand}******{payment.card_last4}"
         return "N/A"
+
+    @staticmethod
+    def confirm_payment(
+        order: Order, payment_reference: str, admin_notes: str = None
+    ) -> None:
+        """
+        Domain Method: Transitions order to CONFIRMED upon successful payment.
+        Guarantees tracking_id generation and performs a surgical database write.
+        """
+        from core.choices import OrderStatus, PaymentStatus  # isort: skip
+        from utils.orders.order import OrderUtils  # isort: skip
+
+        order.status = OrderStatus.CONFIRMED
+        order.payment_status = PaymentStatus.SUCCESSFUL
+        order.payment_reference = payment_reference
+        if not order.tracking_id:
+            order.tracking_id = OrderUtils.generate_tracking_id(order)
+        fields_to_update = [
+            "status",
+            "payment_status",
+            "payment_reference",
+            "tracking_id",
+        ]
+
+        if admin_notes:
+            order.admin_notes = admin_notes
+            fields_to_update.append("admin_notes")
+        order.save(update_fields=fields_to_update)
 
 
 class ReturnUtils:

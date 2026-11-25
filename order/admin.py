@@ -26,6 +26,39 @@ class OrderAdmin(admin.ModelAdmin):
         "tracking_id",
     )
 
+    def save_model(self, request, obj, form, change):
+
+        if change:
+            # 1. Get the list of fields you actually changed on screen
+            fields_to_update = set(form.changed_data)
+
+            # 2. If you changed status to CONFIRMED, make sure tracking_id is saved too
+            if "status" in fields_to_update and obj.status == "CONFIRMED":
+                fields_to_update.add("tracking_id")
+
+            # 3. If you changed delivery_status, make sure timestamps are saved too
+            if "delivery_status" in fields_to_update:
+                fields_to_update.update(
+                    [
+                        "status",
+                        "delivered_at",
+                        "shipped_at",
+                        "out_for_delivery_at",
+                        "canceled_at",
+                        "failed_delivery_at",
+                    ]
+                )
+
+            # 4. Keep only real database columns (prevents crashes)
+            valid_columns = {f.name for f in obj._meta.fields}
+            safe_fields = list(fields_to_update.intersection(valid_columns))
+            # 5. Save only those fields!
+
+            obj.save(update_fields=safe_fields)
+        else:
+            # New order created from admin: normal full save
+            obj.save()
+
 
 class OrderItemAdmin(admin.ModelAdmin):
     list_display = (
@@ -33,8 +66,9 @@ class OrderItemAdmin(admin.ModelAdmin):
         "item_name",
         "quantity",
         "unit_price",
+        "unit_discount",
         "sub_total",
-        "discount",
+        "total_discount",
         "total_amount",
     )
 

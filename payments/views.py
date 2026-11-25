@@ -398,25 +398,32 @@ def paystack_webhook(request):
                         locked_item.stock = 0
                     locked_item.save(update_fields=["stock"])
 
+            shortage_alert = (
+                "STOCK SHORTAGE: Item was out of stock when payment was confirmed. "
+                "Admin procurement required."
+            )
+
             if stock_shortage:
-                order.admin_notes = (
-                    "STOCK SHORTAGE: Item was out of stock when payment was confirmed. "
-                    "Admin procurement required."
+                existing_notes = order.admin_notes.strip() if order.admin_notes else ""
+                shortage_note = (
+                    f"{existing_notes}\n[ALERT] {shortage_alert}".strip()
+                    if existing_notes
+                    else shortage_alert
                 )
+            else:
+                shortage_note = None
+
+            if stock_shortage:
                 transaction.on_commit(
                     partial(send_admin_stock_shortage_alert_task.delay, order.id)
                 )
 
-            order.status = OrderStatus.CONFIRMED
-            order.payment_status = PaymentStatus.SUCCESSFUL
-            order.payment_reference = payment.reference
-            order.save(
-                update_fields=[
-                    "status",
-                    "payment_status",
-                    "payment_reference",
-                    "admin_notes",
-                ]
+            from utils.payments.payment import PaymentUtils  # isort: skip
+
+            PaymentUtils.confirm_payment(
+                order=order,
+                payment_reference=payment.reference,
+                admin_notes=shortage_note,
             )
 
             # If overpaid, queue alert post-commit
