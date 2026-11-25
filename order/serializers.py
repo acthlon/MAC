@@ -200,41 +200,97 @@ class CreateOrderFromCartSerializer(serializers.ModelSerializer):
         delivery_method_obj = validated_data.pop("delivery_method_id")
 
         shipping_address = AddressSerializer(delivery_address_obj).data
-        shipping_address.pop("create_address_url", None)
-        shipping_address.pop("update_address_url", None)
-        shipping_address.pop("delete_address_url", None)
-        shipping_address.pop("id", None)
-        shipping_address.pop("is_default", None)
+        for redundant_key in (
+            "create_address_url",
+            "update_address_url",
+            "delete_address_url",
+            "id",
+            "is_default",
+        ):
+            shipping_address.pop(redundant_key, None)
 
         with transaction.atomic():
             cart = Cart.objects.filter(user=user).select_for_update().first()
-
-            last_order = Order.objects.filter(user=user).order_by("-created_at").first()
-
-            # CRITICAL FIX: Only run these errors IF the cart is actually empty!
             if not cart or not cart.items.exists():
-                last_order = (
-                    Order.objects.filter(user=user).order_by("-created_at").first()
-                )
-                if last_order:
-                    if (
-                        last_order.status == OrderStatus.CONFIRMED
-                        and last_order.payment_status == PaymentStatus.PENDING
-                    ):
-                        raise serializers.ValidationError(
-                            {"message": "Your order has been placed successfully."}
-                        )
-                    elif (
-                        last_order.status == OrderStatus.CREATED
-                        and last_order.payment_status == PaymentStatus.PENDING
-                    ):
-                        raise serializers.ValidationError(
-                            {
-                                "message": f"You have a pending payment for order {last_order.order_number}."
-                            }
-                        )
-
                 raise serializers.ValidationError({"message": "Your cart is empty."})
+
+            cart_items = list(cart.items.select_related("content_type").all())
+
+            order_sub_total = Decimal("0.00")
+            order_total_discount = Decimal("0.00")
+            order_total_items_count = 0
+
+            order_item_instances = []
+
+            for cart_item in cart_items:
+                variant_obj = cart_item.content_object
+                quantity = cart_item.quantity
+
+                unit_price = variant_obj.calculate_variant_actual_unit_price
+                unit_discount = variant_obj.calculate_variant_discount or Decimal(
+                    "0.00"
+                )
+                unit_discounted_price = variant_obj.calculate_variant_discounted_price
+                # Line item computations (Immutable Financial Contract)
+                sub_total = unit_price * quantity
+                total_discount = unit_discount * quantity
+                total_amount = unit_discounted_price * quantity
+
+                order_sub_total += sub_total
+                order_total_discount += total_discount
+                order_total_items_count += quantity
+
+                image_url = getattr(
+                    variant_obj, "get_variant_pry_image", None
+                ) or getattr(
+                    getattr(variant_obj, "variant", None), "get_variant_pry_image", None
+                )
+
+                from utils.core.core import CatalogUtils  # isort: skip
+
+                catalog_item = CatalogUtils.get_catalog_item(cart_item)
+                item_name = getattr(catalog_item, "name", "Unnamed Item")
+                item_sku = getattr(variant_obj, "sku", "") or ""
+
+                variant_details = {}
+
+                if hasattr(variant_obj, "size") and variant_obj.size:
+                    variant_details["size"] = (
+                        variant_obj.get_size_display() or variant_obj.size
+                    )
+
+                if hasattr(variant_obj, "variant") and hasattr(
+                    variant_obj.variant, "color"
+                ):
+                    variant_details["color"] = (
+                        variant_obj.variant.get_color_display()
+                        or variant_obj.variant.color
+                    )
+
+                elif hasattr(variant_obj, "color") and variant_obj.color:
+                    variant_details["color"] = (
+                        variant_obj.get_color_display() or variant_obj.color
+                    )
+
+                order_item_instances.append(
+                    OrderItem(
+                        content_type=cart_item.content_type,
+                        object_id=cart_item.object_id,
+                        name=item_name,
+                        sku=item_sku,
+                        variant_details=variant_details,
+                        quantity=quantity,
+                        image=image_url,
+                        unit_price=unit_price,
+                        unit_discount=unit_discount,
+                        total_discount=total_discount,
+                        sub_total=sub_total,
+                        total_amount=total_amount,
+                    )
+                )
+
+            shipping_fee = delivery_method_obj.cost
+            final_order_total = (order_sub_total + shipping_fee) - order_total_discount
 
             order = Order.objects.create(
                 user=user,
@@ -242,27 +298,17 @@ class CreateOrderFromCartSerializer(serializers.ModelSerializer):
                 delivery_method_name=delivery_method_obj.name,
                 estimated_delivery_day=delivery_method_obj.estimated_date,
                 payment_method_name=payment_method_obj.code,
-                shipping_fee=delivery_method_obj.cost,
+                shipping_fee=shipping_fee,
+                sub_total_amount=order_sub_total,
+                total_discount=order_total_discount,
+                total_items=order_total_items_count,
+                total_amount=final_order_total,
             )
 
-            cart_items = cart.items.select_related("content_type").all()
-            for cart_item in cart_items:
-                item = cart_item.content_object
-                image_url = getattr(item, "get_variant_pry_image", None) or getattr(
-                    getattr(item, "variant", None), "get_variant_pry_image", None
-                )
+            for order_item in order_item_instances:
+                order_item.order = order
 
-                orderitems = OrderItem.objects.create(
-                    order=order,
-                    content_type=cart_item.content_type,
-                    object_id=cart_item.object_id,
-                    quantity=cart_item.quantity,
-                    image=image_url,
-                    unit_price=item.calculate_variant_actual_unit_price,
-                    discount=item.calculate_variant_discount,
-                )
-
-            order.save()
+            OrderItem.objects.bulk_create(order_item_instances)
 
             payment = Payment.objects.create(
                 user=user,
@@ -376,21 +422,9 @@ class CreateOrderFromCartSerializer(serializers.ModelSerializer):
 
 class OrderItemListSerializer(serializers.ModelSerializer):
     model_name = serializers.CharField(source="content_type.model")
-    name = serializers.SerializerMethodField()
     item_create_review_url = serializers.SerializerMethodField()
     return_request_url = serializers.SerializerMethodField()
     item_details_url = serializers.SerializerMethodField()
-
-    def get_name(self, obj):
-        from utils.orders.order import OrderItemSerializerUtils  # isort: skip
-
-        catalog_item = OrderItemSerializerUtils.get_catalog_item(obj)
-
-        if not catalog_item:
-            return None
-
-        name = catalog_item.name
-        return name
 
     def get_item_create_review_url(self, obj):
         from utils.orders.order import OrderItemSerializerUtils  # isort: skip
@@ -419,6 +453,7 @@ class OrderItemListSerializer(serializers.ModelSerializer):
             "model_name",
             "quantity",
             "unit_price",
+            "sub_total",
             "total_amount",
         ]
         read_only_fields = ["id"]
@@ -428,8 +463,10 @@ class OrderItemSerializer(OrderItemListSerializer):
     class Meta(OrderItemListSerializer.Meta):
         model = OrderItem
         fields = OrderItemListSerializer.Meta.fields + [
+            "sku",
+            "unit_discount",
+            "total_discount",
             "sub_total",
-            "discount",
         ]
         read_only_fields = ["id"]
 

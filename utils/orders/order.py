@@ -1,8 +1,6 @@
 from datetime import timedelta
-from decimal import Decimal
 from secrets import token_hex
 
-from django.db.models import DecimalField, ExpressionWrapper, F, Sum
 from django.utils import timezone
 from rest_framework.reverse import reverse
 
@@ -12,32 +10,6 @@ from utils.core.core import CatalogUtils
 
 class OrderItemUtils:
     @staticmethod
-    def calculate_sub_total(order_item):
-        sub_total = order_item.quantity * order_item.unit_price
-        return sub_total
-
-    @staticmethod
-    def calculate_item_total_discount(order_item):
-        discount_total = order_item.discount * order_item.quantity
-        return discount_total
-
-    @staticmethod
-    def calculate_total_amount(order_item):
-        total_discount_amount = OrderItemUtils.calculate_item_total_discount(order_item)
-        sub_total = OrderItemUtils.calculate_sub_total(order_item)
-
-        total_amount = sub_total - total_discount_amount
-        return total_amount
-
-    @staticmethod
-    def get_image(order_item):
-        images = getattr(order_item.content_object, "images", None)
-        image_object = images.filter(is_primary=True).first() if images else None
-        image = image_object.image if image_object else None
-
-        return image
-
-    @staticmethod
     def catalog_name(order_item_obj):
 
         catalog_item = CatalogUtils.get_catalog_item(order_item_obj)
@@ -46,47 +18,6 @@ class OrderItemUtils:
 
 
 class OrderUtils:
-    @staticmethod
-    def calculate_total_items(order):
-
-        total_items = order.items.aggregate(Sum("quantity"))["quantity__sum"] or 0
-        return total_items
-
-    # @staticmethod
-    # def get_payment_reference(order):
-
-    #     ref = order.payment_method.display_name
-    #     return ref
-
-    @staticmethod
-    def calculate_sub_total_amount(order):
-
-        sub_total_amount = order.items.aggregate(total_amount=Sum("sub_total"))[
-            "total_amount"
-        ] or Decimal("0.00")
-
-        return sub_total_amount
-
-    @staticmethod
-    def calculate_total_discount_amount(order):
-
-        total_discount_sum = order.items.aggregate(
-            total_discount=Sum(
-                ExpressionWrapper(
-                    F("discount") * F("quantity"),
-                    output_field=DecimalField(max_digits=12, decimal_places=2),
-                )
-            )
-        )["total_discount"] or Decimal("0.00")
-
-        return total_discount_sum
-
-    @staticmethod
-    def calculate_total_amount(order):
-
-        total = (order.sub_total_amount + order.shipping_fee) - order.total_discount
-        return total
-
     @staticmethod
     def generate_tracking_id(order):
 

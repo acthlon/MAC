@@ -137,34 +137,6 @@ class Order(TimeStampModel):
     admin_notes = models.TextField(null=True, blank=True)
 
     @property
-    def calculate_total_items(self):
-
-        from utils.orders.order import OrderUtils  # isort: skip
-
-        return OrderUtils.calculate_total_items(self)
-
-    @property
-    def calculate_sub_total_amount(self):
-
-        from utils.orders.order import OrderUtils  # isort: skip
-
-        return OrderUtils.calculate_sub_total_amount(self)
-
-    @property
-    def calculate_total_discount_amount(self):
-
-        from utils.orders.order import OrderUtils  # isort: skip
-
-        return OrderUtils.calculate_total_discount_amount(self)
-
-    @property
-    def calculate_total_amount(self):
-
-        from utils.orders.order import OrderUtils  # isort: skip
-
-        return OrderUtils.calculate_total_amount(self)
-
-    @property
     def get_ordered_day(self):
         from utils.orders.order import OrderUtils  # isort: skip
 
@@ -179,32 +151,18 @@ class Order(TimeStampModel):
     def save(self, *args, **kwargs):
         from utils.orders.order import OrderUtils  # isort: skip
 
-        if self.id:
-            self.total_amount = self.calculate_total_amount
-            self.total_items = self.calculate_total_items
-            self.sub_total_amount = self.calculate_sub_total_amount
-            self.total_discount = self.calculate_total_discount_amount
-
         if not self.order_number:
             self.order_number = OrderUtils.generate_order_number(self)
 
         if self.delivery_status == DeliveryStatus.DELIVERED:
             self.status = OrderStatus.COMPLETED
+            if not self.delivered_at:
+                self.delivered_at = timezone.now()
 
         if self.delivery_status == DeliveryStatus.CANCELED:
             self.status = OrderStatus.CANCELED
-
-        if (
-            self.status == OrderStatus.COMPLETED
-            and self.delivery_status == DeliveryStatus.DELIVERED
-            and not self.delivered_at
-        ):
-            self.delivered_at = timezone.now()
-        if (
-            self.status == OrderStatus.CANCELED
-            or self.delivery_status == DeliveryStatus.CANCELED
-        ) and not self.canceled_at:
-            self.canceled_at = timezone.now()
+            if not self.canceled_at:
+                self.canceled_at = timezone.now()
 
         if self.status == OrderStatus.CONFIRMED:
             if not self.tracking_id:
@@ -243,38 +201,21 @@ class OrderItem(models.Model):
     object_id = models.UUIDField()
     content_object = GenericForeignKey("content_type", "object_id")
 
+    name = models.CharField(max_length=255, null=True, blank=True)
+    sku = models.CharField(max_length=100, null=True, blank=True)
+    variant_details = models.JSONField(default=dict, blank=True)
     image = models.ImageField(null=True, blank=True)
+
     quantity = models.PositiveIntegerField(default=1)
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    unit_discount = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
     sub_total = models.DecimalField(max_digits=12, decimal_places=2, editable=False)
-    discount = models.DecimalField(
+    total_discount = models.DecimalField(
         max_digits=10, decimal_places=2, default=Decimal("0.00")
     )
     total_amount = models.DecimalField(max_digits=12, decimal_places=2, editable=False)
-
-    @property
-    def calculate_sub_total(self):
-        from utils.orders.order import OrderItemUtils  # isort: skip
-
-        return OrderItemUtils.calculate_sub_total(self)
-
-    @property
-    def calculate_item_total_discount(self):
-        from utils.orders.order import OrderItemUtils  # isort: skip
-
-        return OrderItemUtils.calculate_item_total_discount(self)
-
-    @property
-    def calculate_total_amount(self):
-        from utils.orders.order import OrderItemUtils  # isort: skip
-
-        return OrderItemUtils.calculate_total_amount(self)
-
-    @property
-    def get_image(self):
-        from utils.orders.order import OrderItemUtils  # isort: skip
-
-        return OrderItemUtils.get_image(self)
 
     @property
     def catalog_name(self):
@@ -284,9 +225,8 @@ class OrderItem(models.Model):
 
     def save(self, *args, **kwargs):
 
-        self.sub_total = self.calculate_sub_total
-        self.total_amount = self.calculate_total_amount
         self.image = self.get_image
+
         super().save(*args, **kwargs)
         self.order.save(
             update_fields=[
