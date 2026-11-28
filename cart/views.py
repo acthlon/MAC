@@ -15,7 +15,7 @@ class CartView(generics.RetrieveAPIView):
     def get_object(self):
 
         user = self.request.user
-        cart = Cart.objects.prefetch_related("items").get_or_create(user=user)
+        cart, created = Cart.objects.prefetch_related("items").get_or_create(user=user)
         return cart
 
 

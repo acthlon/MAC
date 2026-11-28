@@ -1,11 +1,15 @@
+import logging
 from datetime import timedelta
 from secrets import token_hex
 
+from django.urls import NoReverseMatch
 from django.utils import timezone
 from rest_framework.reverse import reverse
 
 from core.choices import DeliveryStatus, DeliveryType, OrderStatus
 from utils.core.core import CatalogUtils
+
+logger = logging.getLogger(__name__)
 
 
 class OrderItemUtils:
@@ -113,63 +117,91 @@ class DeliveryMethodUtils:
 class OrderItemSerializerUtils:
     @staticmethod
     def get_catalog_item(order_item_obj):
+        from utils.core.core import CatalogUtils  # isort: skip
+
         return CatalogUtils.get_catalog_item(order_item_obj)
 
     @staticmethod
-    def get_item_create_review_url(serializer, order_item_obj):
-        request = serializer.context.get("request")
-        catalog_item = OrderItemSerializerUtils.get_catalog_item(order_item_obj)
+    def get_item_create_review_url(request, order_item_obj):
 
-        model_name = order_item_obj.content_type.model
-        if not catalog_item:
-            return None
-
-        slug = catalog_item.slug
-        id = order_item_obj.object_id
-
-        url = reverse(
-            "review_create",
-            kwargs={
-                "model_name": model_name,
-                "slug": slug,
-                "pk": id,
-            },
-            request=request,
-        )
-        return url
-
-    @staticmethod
-    def get_return_request_url(serializer, order_item_obj):
-
-        request = serializer.context.get("request")
-        url = reverse(
-            "create_return_request",
-            kwargs={"order_number": order_item_obj.order.order_number},
-            request=request,
-        )
-
-        return url
-
-    @staticmethod
-    def get_item_details_url(serializer, order_item_obj):
-
-        request = serializer.context.get("request")
         catalog_item = OrderItemSerializerUtils.get_catalog_item(order_item_obj)
 
         if not catalog_item:
             return None
 
-        slug = catalog_item.slug
-        id = catalog_item.id
+        model_name = catalog_item._meta.model_name
+
+        slug = getattr(catalog_item, "slug", None)
+        item_id = getattr(catalog_item, "id", None)
+
+        if not slug or not item_id:
+            return None
+
+        try:
+            return reverse(
+                "review_create",
+                kwargs={
+                    "model_name": model_name,
+                    "slug": str(slug).strip(),
+                    "pk": str(item_id),
+                },
+                request=request,
+            )
+
+        except NoReverseMatch as exc:
+            logger.error("Failed to reverse review_create: %s", exc)
+            return None
+
+    @staticmethod
+    def get_return_request_url(request, order_item_obj):
+        order = getattr(order_item_obj, "order", None)
+
+        if not order or not order.order_number:
+            return None
+
+        try:
+            return reverse(
+                "create_return_request",
+                kwargs={"order_number": order.order_number},
+                request=request,
+            )
+
+        except NoReverseMatch as exc:
+            logger.error("Failed to reverse create_return_request: %s", exc)
+            return None
+
+    @staticmethod
+    def get_item_details_url(request, order_item_obj):
+
+        catalog_item = OrderItemSerializerUtils.get_catalog_item(order_item_obj)
+
+        if not catalog_item:
+            return None
+
+        slug = getattr(catalog_item, "slug", None)
+        item_id = getattr(catalog_item, "id", None)
+
+        if not slug or not item_id:
+            return None
+
+        content_type_model = getattr(order_item_obj.content_type, "model", "")
 
         url_name = (
             "material_details"
-            if order_item_obj.content_type.model == "materialvariant"
+            if content_type_model == "materialvariant"
             else "product_details"
         )
 
-        url = reverse(url_name, kwargs={"pk": id, "slug": slug}, request=request)
-        return url
+        try:
+            return reverse(
+                url_name,
+                kwargs={"slug": str(slug).strip(), "pk": str(item_id)},
+                request=request,
+            )
+
+        except NoReverseMatch as exc:
+            logger.error("Failed to reverse %s: %s", url_name, exc)
+            return None
 
 
 class TrackingOrderSerializerUtils:

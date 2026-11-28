@@ -54,7 +54,7 @@ class CartItemWriteSerializer(serializers.ModelSerializer):
         item_id = product_var_size_id if product_var_size_id else material_var_id
 
         try:
-            item = ModelClass.objects.get(id=item_id)
+            item = ModelClass.objects.filter(id=item_id).first()
         except ModelClass.DoesNotExist:
             raise serializers.ValidationError({"message": "Item is absent"})
         stock = getattr(item, "stock", 0)
@@ -239,8 +239,6 @@ class CartSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         url = reverse("home", request=request)
         return url
-
-        return total_discount if total_discount else Decimal("0.00")
 
     def get_other_similar_items(self, obj):
 

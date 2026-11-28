@@ -14,6 +14,7 @@ from core.choices import (
     DeliveryStatus,
     DeliveryType,
     OrderStatus,
+    PaymentDiscrepancyStatus,
     PaymentStatus,
     Status,
 )
@@ -135,6 +136,13 @@ class Order(TimeStampModel):
     cancellation_reason = models.TextField(null=True, blank=True)
     customer_note = models.TextField(null=True, blank=True)
     admin_notes = models.TextField(null=True, blank=True)
+    payment_discrepancy = models.CharField(
+        max_length=20,
+        choices=PaymentDiscrepancyStatus.choices,
+        null=True,
+        blank=True,
+        db_index=True,
+    )
 
     @property
     def get_ordered_day(self):
@@ -198,7 +206,7 @@ class Order(TimeStampModel):
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
     content_type = models.ForeignKey(ContentType, on_delete=models.PROTECT)
-    object_id = models.UUIDField()
+    object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey("content_type", "object_id")
 
     name = models.CharField(max_length=255, null=True, blank=True)

@@ -23,6 +23,7 @@ class PaymentUtils:
         order.status = OrderStatus.CONFIRMED
         order.payment_status = PaymentStatus.SUCCESSFUL
         order.payment_reference = payment_reference
+
         if not order.tracking_id:
             order.tracking_id = OrderUtils.generate_tracking_id(order)
         fields_to_update = [

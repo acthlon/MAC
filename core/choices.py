@@ -22,6 +22,15 @@ class Status(models.TextChoices):
     INACTIVE = "INACTIVE", "Inactive"
 
 
+class PaymentDiscrepancyStatus(models.TextChoices):
+    CLEARED = "CLEARED", "Cleared"
+    UNDERPAID = "UNDERPAID", "Underpaid"
+    OVERPAID = "OVERPAID", "Overpaid"
+    CREDITED_TO_WALLET = "CREDITED_TO_WALLET", "Credited to Wallet"
+    REFUND_REQUESTED = "REFUND_REQUESTED", "Refund Requested"
+    REFUNDED = "REFUNDED", "Refunded"
+
+
 class ProductCategory(models.TextChoices):
     DRESS = "DRESS", "Dress"
     GOWN = "GOWN", "Gown"

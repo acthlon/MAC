@@ -23,6 +23,7 @@ from rest_framework.reverse import reverse
 
 from core.choices import (
     OrderStatus,
+    PaymentDiscrepancyStatus,
     PaymentStatus,
     ReturnStatus,
 )
@@ -326,7 +327,15 @@ def paystack_webhook(request):
                 order.status = OrderStatus.ON_HOLD
                 order.payment_reference = payment.reference
                 order.admin_notes = f"PAYMENT SHORTAGE: ₦{shortage_naira:,.2f} required to release order."
-                order.save(update_fields=["status", "payment_reference", "admin_notes"])
+                order.payment_discrepancy = PaymentDiscrepancyStatus.UNDERPAID
+                order.save(
+                    update_fields=[
+                        "status",
+                        "payment_reference",
+                        "admin_notes",
+                        "payment_discrepancy",
+                    ]
+                )
 
                 if payment.user:
                     transaction.on_commit(

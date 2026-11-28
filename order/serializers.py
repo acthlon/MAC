@@ -420,6 +420,29 @@ class CreateOrderFromCartSerializer(serializers.ModelSerializer):
         ]
 
 
+# class OrderItemListSerializer(serializers.ModelSerializer):
+# model_name = serializers.CharField(source="content_type.model")
+# item_create_review_url = serializers.SerializerMethodField()
+# return_request_url = serializers.SerializerMethodField()
+# item_details_url = serializers.SerializerMethodField()
+
+
+# def get_item_create_review_url(self, obj):
+#     from utils.orders.order import OrderItemSerializerUtils  # isort: skip
+#     request = self.context.get("request")
+#     return OrderItemSerializerUtils.get_item_create_review_url(request, obj)
+
+# def get_return_request_url(self, obj):
+#     from utils.orders.order import OrderItemSerializerUtils  # isort: skip
+#     request = self.context.get("request")
+#     return OrderItemSerializerUtils.get_return_request_url(request, obj)
+
+# def get_item_details_url(self, obj):
+#     from utils.orders.order import OrderItemSerializerUtils  # isort: skip
+#     request = self.context.get("request")
+#     return OrderItemSerializerUtils.get_item_details_url(request, obj)
+
+
 class OrderItemListSerializer(serializers.ModelSerializer):
     model_name = serializers.CharField(source="content_type.model")
     item_create_review_url = serializers.SerializerMethodField()
@@ -429,17 +452,20 @@ class OrderItemListSerializer(serializers.ModelSerializer):
     def get_item_create_review_url(self, obj):
         from utils.orders.order import OrderItemSerializerUtils  # isort: skip
 
-        return OrderItemSerializerUtils.get_item_create_review_url(self, obj)
+        request = self.context.get("request")
+        return OrderItemSerializerUtils.get_item_create_review_url(request, obj)
 
     def get_return_request_url(self, obj):
         from utils.orders.order import OrderItemSerializerUtils  # isort: skip
 
-        return OrderItemSerializerUtils.get_return_request_url(self, obj)
+        request = self.context.get("request")
+        return OrderItemSerializerUtils.get_return_request_url(request, obj)
 
     def get_item_details_url(self, obj):
         from utils.orders.order import OrderItemSerializerUtils  # isort: skip
 
-        return OrderItemSerializerUtils.get_item_details_url(self, obj)
+        request = self.context.get("request")
+        return OrderItemSerializerUtils.get_item_details_url(request, obj)
 
     class Meta:
         model = OrderItem
@@ -530,6 +556,7 @@ class OrderDetailSerializer(serializers.ModelSerializer):
         url = (
             reverse("initialize_payment", kwargs={"pk": obj.id}, request=request)
             if obj.status in [OrderStatus.CREATED, OrderStatus.FAILED]
+            and obj.payments.exists()
             and obj.payments.first().status == PaymentStatus.FAILED
             else None
         )
